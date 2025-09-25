@@ -1,154 +1,184 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, LogIn } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SigmaLogo } from '@/components/SigmaLogo';
+import { Eye, EyeOff, Loader2, ShoppingCart, BarChart3, Package, Users } from 'lucide-react';
 
 export default function LoginPage() {
+  const { isAuthenticated, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [error, setError] = useState('');
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
+    setError('');
 
-    try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/dashboard');
-      } else {
-        setError('Credenciais inválidas. Tente novamente.');
-      }
-    } catch (err) {
-      setError('Erro ao fazer login. Tente novamente.');
-    } finally {
-      setIsLoading(false);
+    const success = await login(email, password);
+    
+    if (!success) {
+      setError('Credenciais inválidas. Tente novamente.');
     }
+    
+    setIsLoading(false);
   };
 
+  // Animação de background com ícones flutuantes
+  const floatingIcons = [
+    { Icon: ShoppingCart, delay: '0s', top: '20%', left: '10%' },
+    { Icon: BarChart3, delay: '2s', top: '60%', left: '15%' },
+    { Icon: Package, delay: '4s', top: '30%', left: '85%' },
+    { Icon: Users, delay: '6s', top: '70%', left: '80%' },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo e Título */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center">
-            {/* Logo placeholder - será substituído quando a imagem for gerada */}
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary-foreground">Σ</span>
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Background com gradiente e animações */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5"></div>
+      
+      {/* Ícones flutuantes no fundo */}
+      {floatingIcons.map(({ Icon, delay, top, left }, index) => (
+        <div
+          key={index}
+          className="absolute opacity-10 animate-float"
+          style={{
+            top,
+            left,
+            animationDelay: delay,
+            animationDuration: '6s'
+          }}
+        >
+          <Icon className="w-12 h-12 text-primary" />
+        </div>
+      ))}
+
+      {/* Efeito de brilho sutil */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-20 animate-shimmer"></div>
+
+      <div className="relative z-10 w-full max-w-md space-y-8 p-4">
+        {/* Header com logo e título */}
+        <div className="text-center animate-fade-in">
+          <div className="mb-8">
+            <SigmaLogo size="xl" showText className="mx-auto mb-6 drop-shadow-lg" />
           </div>
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold text-foreground tracking-tight">
-              S.I.G.M.A.
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Sistema Integrado de Gerenciamento
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Compre Bem Supermercado
-            </p>
-          </div>
+          <h1 className="text-4xl font-bold text-foreground mb-2 tracking-tight">
+            S.I.G.M.A.
+          </h1>
+          <p className="text-muted-foreground text-lg font-medium">
+            Sistema Integrado de Gestão
+          </p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Mercados e Afins
+          </p>
         </div>
 
-        {/* Formulário de Login */}
-        <Card className="border-border/50 shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center text-foreground">
+        {/* Card de login */}
+        <Card className="border-border/50 shadow-2xl backdrop-blur-sm bg-card/95 animate-scale-in">
+          <CardHeader className="space-y-2 pb-6">
+            <CardTitle className="text-2xl text-center font-bold">
               Acesso ao Sistema
             </CardTitle>
-            <p className="text-sm text-muted-foreground text-center">
-              Entre com suas credenciais para continuar
-            </p>
+            <CardDescription className="text-center text-base">
+              Digite suas credenciais para entrar
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-group">
-                <label htmlFor="email" className="form-label">
-                  E-mail / Login
-                </label>
+          
+          <CardContent className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold">
+                  Login / E-mail
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu.email@comprebem.com"
+                  placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-input border-border focus:border-primary"
                   required
+                  className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
               
-              <div className="form-group">
-                <label htmlFor="password" className="form-label">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-semibold">
                   Senha
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-input border-border focus:border-primary"
-                  required
-                />
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1 h-10 w-10 hover:bg-muted/50 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                  <AlertCircle className="h-4 w-4 text-destructive" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
+                <Alert variant="destructive" className="animate-fade-in">
+                  <AlertDescription className="text-center">
+                    {error}
+                  </AlertDescription>
+                </Alert>
               )}
 
               <Button 
                 type="submit" 
-                variant="hero" 
-                size="lg" 
-                className="w-full"
+                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl" 
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Entrando...
                   </>
                 ) : (
-                  <>
-                    <LogIn className="h-4 w-4" />
-                    Entrar no Sistema
-                  </>
+                  'Entrar no Sistema'
                 )}
               </Button>
             </form>
 
-            {/* Informações de Teste */}
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg space-y-2">
-              <p className="text-xs text-muted-foreground font-medium">
-                Contas de Teste (senha: 123456):
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="font-medium text-foreground">Admin:</p>
-                  <p className="text-muted-foreground">admin@comprebem.com</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Supervisor:</p>
-                  <p className="text-muted-foreground">supervisor@comprebem.com</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Caixa:</p>
-                  <p className="text-muted-foreground">caixa@comprebem.com</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Estoque:</p>
-                  <p className="text-muted-foreground">estoque@comprebem.com</p>
+            {/* Informações de teste */}
+            <div className="pt-4 border-t border-border/50">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Credenciais para demonstração:
+                </p>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                  <p className="font-mono text-xs text-foreground">
+                    <strong>Admin:</strong> admin@comprebem.com
+                  </p>
+                  <p className="font-mono text-xs text-foreground">
+                    <strong>Senha:</strong> 123456
+                  </p>
                 </div>
               </div>
             </div>
@@ -156,9 +186,10 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground">
-          © 2024 S.I.G.M.A. - Todos os direitos reservados
-        </p>
+        <div className="text-center text-xs text-muted-foreground space-y-1 animate-fade-in">
+          <p className="font-semibold">© 2024 Compre Bem Supermercado</p>
+          <p>Sistema desenvolvido para gestão completa</p>
+        </div>
       </div>
     </div>
   );

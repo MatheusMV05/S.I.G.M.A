@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
+import { SigmaLogo } from "@/components/SigmaLogo";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
@@ -32,16 +33,17 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-header border-b border-border bg-card px-6 flex items-center justify-between">
+          <header className="h-header border-b border-border bg-card/50 backdrop-blur-sm px-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <div className="h-6 w-px bg-border" />
-              <h2 className="font-semibold text-foreground">Sistema S.I.G.M.A.</h2>
+              <SigmaLogo size="sm" showText variant="compact" />
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Compre Bem Supermercado
-              </span>
+              <div className="text-right">
+                <div className="text-sm font-semibold text-foreground">Compre Bem Supermercado</div>
+                <div className="text-xs text-muted-foreground">Sistema Integrado de Gestão</div>
+              </div>
             </div>
           </header>
           <main className="flex-1 overflow-auto">

@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { SigmaLogo } from '@/components/SigmaLogo';
 import {
   Sidebar,
   SidebarContent,
@@ -119,17 +120,11 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-sm font-bold text-primary-foreground">Σ</span>
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="font-bold text-sidebar-foreground text-lg">S.I.G.M.A.</span>
-              <span className="text-xs text-sidebar-foreground/70">Compre Bem</span>
-            </div>
-          )}
-        </div>
+        <SigmaLogo 
+          size="lg" 
+          showText={!isCollapsed}
+          variant="default"
+        />
       </SidebarHeader>
 
       <SidebarContent className="px-2">

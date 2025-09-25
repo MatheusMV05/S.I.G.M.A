@@ -3,315 +3,565 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp,
+  TrendingDown,
   DollarSign,
   ShoppingCart,
   Package,
   AlertTriangle,
-  Calendar,
   Users,
   BarChart3,
+  PlusCircle,
+  FileText,
+  Calendar,
+  Target,
+  Clock,
+  Store,
+  CreditCard,
+  Activity
 } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from 'recharts';
 
-// Mock data para métricas
-const mockMetrics = {
-  dailyRevenue: 15420.50,
-  averageTicket: 87.30,
-  lowStockItems: 12,
-  dailySales: 176,
-  weeklyGrowth: 8.2,
-  monthlyCustomers: 1247,
+// Mock KPIs data com dados realistas
+const dashboardKPIs = {
+  todayRevenue: 18750.40,
+  yesterdayRevenue: 16420.30,
+  averageTicket: 94.25,
+  avgTicketChange: 12.5,
+  todaySales: 198,
+  yesterdaySales: 176,
+  lowStockItems: 15,
+  totalProducts: 2847,
+  activePromotions: 8,
+  weeklyGrowth: 15.8,
+  monthlyCustomers: 1568,
+  customerRetention: 78.5
 };
 
-// Mock data para produtos em destaque
-const mockTopProducts = [
-  { name: 'Arroz Branco 5kg', sales: 45, revenue: 1350.00 },
-  { name: 'Coca-Cola 2L', sales: 89, revenue: 2225.00 },
-  { name: 'Pão Francês kg', sales: 156, revenue: 936.00 },
-  { name: 'Leite Integral 1L', sales: 67, revenue: 335.00 },
+// Dados para gráfico de faturamento dos últimos 30 dias
+const revenueData = [
+  { day: '01', revenue: 12500, target: 15000 },
+  { day: '02', revenue: 14200, target: 15000 },
+  { day: '03', revenue: 16800, target: 15000 },
+  { day: '04', revenue: 13400, target: 15000 },
+  { day: '05', revenue: 17600, target: 15000 },
+  { day: '06', revenue: 19200, target: 15000 },
+  { day: '07', revenue: 15800, target: 15000 },
+  { day: '08', revenue: 14600, target: 15000 },
+  { day: '09', revenue: 18400, target: 15000 },
+  { day: '10', revenue: 16200, target: 15000 },
+  { day: '11', revenue: 17800, target: 15000 },
+  { day: '12', revenue: 20400, target: 15000 },
+  { day: '13', revenue: 16600, target: 15000 },
+  { day: '14', revenue: 15200, target: 15000 },
+  { day: '15', revenue: 18900, target: 15000 },
+  { day: '16', revenue: 17400, target: 15000 },
+  { day: '17', revenue: 16800, target: 15000 },
+  { day: '18', revenue: 19600, target: 15000 },
+  { day: '19', revenue: 18200, target: 15000 },
+  { day: '20', revenue: 17000, target: 15000 },
+  { day: '21', revenue: 20800, target: 15000 },
+  { day: '22', revenue: 19400, target: 15000 },
+  { day: '23', revenue: 18600, target: 15000 },
+  { day: '24', revenue: 16400, target: 15000 },
+  { day: '25', revenue: 17800, target: 15000 },
+  { day: '26', revenue: 19200, target: 15000 },
+  { day: '27', revenue: 18400, target: 15000 },
+  { day: '28', revenue: 17600, target: 15000 },
+  { day: '29', revenue: 19800, target: 15000 },
+  { day: '30', revenue: 18750, target: 15000 }
 ];
 
-// Mock data para alertas
-const mockAlerts = [
-  { type: 'stock', message: 'Açúcar Cristal está com estoque baixo', priority: 'high' },
-  { type: 'expiry', message: '8 produtos vencem em 3 dias', priority: 'medium' },
-  { type: 'promotion', message: 'Promoção de Natal termina em 5 dias', priority: 'low' },
+// Dados para gráfico de produtos mais vendidos
+const topProductsData = [
+  { name: 'Arroz Branco 5kg', sales: 145, color: '#9333FF' },
+  { name: 'Coca-Cola 2L', sales: 128, color: '#FF33CC' },
+  { name: 'Pão Francês kg', sales: 112, color: '#00FF7F' },
+  { name: 'Leite Integral 1L', sales: 98, color: '#FFD700' },
+  { name: 'Açúcar Cristal 1kg', sales: 87, color: '#FF3333' },
+  { name: 'Óleo de Soja 900ml', sales: 76, color: '#33CCFF' }
 ];
 
-export default function Dashboard() {
-  const { user } = useAuth();
+// Dados para vendas por hora do dia atual
+const hourlyData = [
+  { hour: '08h', sales: 12 },
+  { hour: '09h', sales: 28 },
+  { hour: '10h', sales: 45 },
+  { hour: '11h', sales: 38 },
+  { hour: '12h', sales: 52 },
+  { hour: '13h', sales: 41 },
+  { hour: '14h', sales: 35 },
+  { hour: '15h', sales: 48 },
+  { hour: '16h', sales: 56 },
+  { hour: '17h', sales: 62 },
+  { hour: '18h', sales: 58 },
+  { hour: '19h', sales: 44 }
+];
 
-  const getRoleSpecificContent = () => {
-    switch (user?.role) {
-      case 'cashier':
-        return <CashierDashboard />;
-      case 'stock':
-        return <StockDashboard />;
-      default:
-        return <AdminSupervisorDashboard />;
-    }
+// Alertas e notificações
+const alerts = [
+  { 
+    id: 1, 
+    type: 'stock', 
+    icon: Package, 
+    title: 'Estoque Baixo', 
+    message: '15 produtos estão abaixo do nível mínimo', 
+    priority: 'high',
+    time: '5 min atrás'
+  },
+  { 
+    id: 2, 
+    type: 'expiry', 
+    icon: Clock, 
+    title: 'Produtos Próximos do Vencimento', 
+    message: '23 itens vencem nos próximos 5 dias', 
+    priority: 'medium',
+    time: '1 hora atrás'
+  },
+  { 
+    id: 3, 
+    type: 'promotion', 
+    icon: Target, 
+    title: 'Promoção Ativa', 
+    message: 'Promoção "Black Week" com 78% de adesão', 
+    priority: 'low',
+    time: '2 horas atrás'
+  }
+];
+
+// Componente KPI Card
+const KPICard = ({ 
+  title, 
+  value, 
+  change, 
+  changeType, 
+  icon: Icon, 
+  trend, 
+  subtitle,
+  color = 'primary' 
+}: {
+  title: string;
+  value: string | number;
+  change?: number;
+  changeType?: 'increase' | 'decrease';
+  icon: React.ElementType;
+  trend?: 'up' | 'down';
+  subtitle?: string;
+  color?: string;
+}) => {
+  const isPositive = changeType === 'increase' || trend === 'up';
+  const colorClasses = {
+    primary: 'text-primary bg-primary/10',
+    success: 'text-success bg-success/10',
+    warning: 'text-warning bg-warning/10',
+    destructive: 'text-destructive bg-destructive/10'
   };
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Dashboard - S.I.G.M.A.
-          </h1>
-          <p className="text-muted-foreground">
-            Bem-vindo(a), {user?.name}! Aqui está o resumo do sistema.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString('pt-BR', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </span>
-        </div>
-      </div>
-
-      {getRoleSpecificContent()}
-    </div>
-  );
-}
-
-// Dashboard para Administrador e Supervisor
-function AdminSupervisorDashboard() {
-  return (
-    <>
-      {/* Métricas Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Faturamento do Dia"
-          value={`R$ ${mockMetrics.dailyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          change="+12.5%"
-          changeType="positive"
-          icon={<DollarSign className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Ticket Médio"
-          value={`R$ ${mockMetrics.averageTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          change="+3.2%"
-          changeType="positive"
-          icon={<ShoppingCart className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Vendas do Dia"
-          value={mockMetrics.dailySales.toString()}
-          change="+8.1%"
-          changeType="positive"
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Estoque Baixo"
-          value={mockMetrics.lowStockItems.toString()}
-          change="-2"
-          changeType="negative"
-          icon={<AlertTriangle className="h-5 w-5" />}
-        />
-      </div>
-
-      {/* Gráficos e Listas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Produtos Mais Vendidos */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Produtos Mais Vendidos (Hoje)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mockTopProducts.map((product, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">{index + 1}</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.sales} unidades vendidas</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-foreground">
-                      R$ {product.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Alertas e Ações Rápidas */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Alertas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {mockAlerts.map((alert, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    alert.priority === 'high' ? 'bg-destructive' :
-                    alert.priority === 'medium' ? 'bg-warning' : 'bg-primary'
-                  }`} />
-                  <p className="text-sm text-foreground flex-1">{alert.message}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Ações Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start">
-                <Package className="h-4 w-4 mr-2" />
-                Cadastrar Produto
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="h-4 w-4 mr-2" />
-                Novo Cliente
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Ver Relatórios
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// Dashboard para Operador de Caixa
-function CashierDashboard() {
-  return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Card className="text-center">
-        <CardContent className="pt-6">
-          <ShoppingCart className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            Sistema de Vendas
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Clique no botão abaixo para iniciar uma nova venda
-          </p>
-          <Button variant="hero" size="xl" className="w-full max-w-sm">
-            <ShoppingCart className="h-6 w-6 mr-3" />
-            Iniciar Ponto de Venda
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-2 gap-6">
-        <MetricCard
-          title="Vendas Hoje"
-          value="23"
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Total Vendido"
-          value="R$ 2.840,50"
-          icon={<DollarSign className="h-5 w-5" />}
-        />
-      </div>
-    </div>
-  );
-}
-
-// Dashboard para Estoquista
-function StockDashboard() {
-  return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricCard
-          title="Produtos em Falta"
-          value="3"
-          icon={<AlertTriangle className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Estoque Baixo"
-          value="12"
-          icon={<Package className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Próximos ao Vencimento"
-          value="8"
-          icon={<Calendar className="h-5 w-5" />}
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Tarefas Pendentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Badge variant="destructive">Urgente</Badge>
-                <span className="text-foreground">Repor Açúcar Cristal - Prateleira A3</span>
-              </div>
-              <Button size="sm">Marcar como Feito</Button>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Badge variant="outline">Normal</Badge>
-                <span className="text-foreground">Verificar validade - Seção Laticínios</span>
-              </div>
-              <Button size="sm" variant="outline">Verificar</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </>
-  );
-}
-
-// Componente de Card de Métrica
-interface MetricCardProps {
-  title: string;
-  value: string;
-  change?: string;
-  changeType?: 'positive' | 'negative';
-  icon: React.ReactNode;
-}
-
-function MetricCard({ title, value, change, changeType, icon }: MetricCardProps) {
-  return (
-    <Card className="metric-card">
+    <Card className="transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-border/50">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="metric-label">{title}</p>
-            <p className="metric-value">{value}</p>
-            {change && (
-              <p className={`metric-change ${changeType === 'positive' ? 'positive' : 'negative'}`}>
-                {change} vs. ontem
+          <div className="space-y-2 flex-1">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              {title}
+            </p>
+            <p className="text-3xl font-bold text-foreground">
+              {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
+            </p>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">
+                {subtitle}
               </p>
             )}
+            {change !== undefined && (
+              <div className="flex items-center gap-1">
+                {isPositive ? (
+                  <TrendingUp className="h-4 w-4 text-success" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-destructive" />
+                )}
+                <span className={`text-sm font-medium ${
+                  isPositive ? 'text-success' : 'text-destructive'
+                }`}>
+                  {Math.abs(change)}%
+                </span>
+                <span className="text-xs text-muted-foreground">vs ontem</span>
+              </div>
+            )}
           </div>
-          <div className="text-primary">
-            {icon}
+          <div className={`p-3 rounded-xl ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary}`}>
+            <Icon className="h-6 w-6" />
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+export default function Dashboard() {
+  const { user } = useAuth();
+
+  const revenueChange = ((dashboardKPIs.todayRevenue - dashboardKPIs.yesterdayRevenue) / dashboardKPIs.yesterdayRevenue) * 100;
+  const salesChange = ((dashboardKPIs.todaySales - dashboardKPIs.yesterdaySales) / dashboardKPIs.yesterdaySales) * 100;
+
+  return (
+    <div className="p-6 space-y-6 bg-background min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Bem-vindo, {user?.name || 'Usuário'}!
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Aqui está o resumo das operações de hoje
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" size="sm">
+            <FileText className="h-4 w-4 mr-2" />
+            Relatórios
+          </Button>
+          <Button size="sm" className="bg-primary hover:bg-primary-hover">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Nova Venda
+          </Button>
+        </div>
+      </div>
+
+      {/* KPIs Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard
+          title="Faturamento Hoje"
+          value={`R$ ${dashboardKPIs.todayRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+          change={Math.round(revenueChange * 100) / 100}
+          changeType={revenueChange >= 0 ? 'increase' : 'decrease'}
+          icon={DollarSign}
+          color="success"
+          subtitle="Meta: R$ 20.000,00"
+        />
+        
+        <KPICard
+          title="Ticket Médio"
+          value={`R$ ${dashboardKPIs.averageTicket.toFixed(2)}`}
+          change={dashboardKPIs.avgTicketChange}
+          changeType="increase"
+          icon={CreditCard}
+          color="primary"
+        />
+        
+        <KPICard
+          title="Vendas Hoje"
+          value={dashboardKPIs.todaySales}
+          change={Math.round(salesChange * 100) / 100}
+          changeType={salesChange >= 0 ? 'increase' : 'decrease'}
+          icon={ShoppingCart}
+          color="primary"
+        />
+        
+        <KPICard
+          title="Estoque Baixo"
+          value={dashboardKPIs.lowStockItems}
+          icon={AlertTriangle}
+          color="warning"
+          subtitle={`Total: ${dashboardKPIs.totalProducts} produtos`}
+        />
+      </div>
+
+      {/* Charts and Analytics */}
+      <Tabs defaultValue="revenue" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="revenue" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Faturamento
+          </TabsTrigger>
+          <TabsTrigger value="products" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Produtos
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Atividade
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="revenue" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Gráfico de Faturamento */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Faturamento dos Últimos 30 Dias
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#9333FF" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#9333FF" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
+                    <XAxis dataKey="day" stroke="#888" />
+                    <YAxis stroke="#888" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Faturamento']}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#9333FF" 
+                      strokeWidth={2}
+                      fill="url(#revenueGradient)" 
+                    />
+                    <Line type="monotone" dataKey="target" stroke="#666" strokeDasharray="5 5" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Métricas Adicionais */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Performance do Mês</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Crescimento Semanal</span>
+                      <span className="font-semibold text-success">+{dashboardKPIs.weeklyGrowth}%</span>
+                    </div>
+                    <Progress value={dashboardKPIs.weeklyGrowth} className="h-2" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Retenção de Clientes</span>
+                      <span className="font-semibold text-primary">{dashboardKPIs.customerRetention}%</span>
+                    </div>
+                    <Progress value={dashboardKPIs.customerRetention} className="h-2" />
+                  </div>
+
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Clientes Ativos</span>
+                      <span className="text-xl font-bold">{dashboardKPIs.monthlyCustomers}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Promoções Ativas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold">{dashboardKPIs.activePromotions}</p>
+                      <p className="text-sm text-muted-foreground">campanhas ativas</p>
+                    </div>
+                    <Target className="h-8 w-8 text-secondary" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Produtos Mais Vendidos */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Produtos Mais Vendidos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={topProductsData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={2}
+                      dataKey="sales"
+                    >
+                      {topProductsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {topProductsData.slice(0, 3).map((product, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: product.color }}
+                        />
+                        <span className="truncate">{product.name}</span>
+                      </div>
+                      <span className="font-semibold">{product.sales}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Ranking de Produtos */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ranking Completo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {topProductsData.map((product, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium truncate">{product.name}</p>
+                        <p className="text-sm text-muted-foreground">{product.sales} vendas</p>
+                      </div>
+                      <div 
+                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: product.color }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Vendas por Hora */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Vendas por Hora - Hoje</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={hourlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
+                    <XAxis dataKey="hour" stroke="#888" />
+                    <YAxis stroke="#888" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="sales" fill="#FF33CC" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Alertas e Notificações */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  Alertas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {alerts.map((alert) => {
+                    const Icon = alert.icon;
+                    const priorityColors = {
+                      high: 'text-destructive bg-destructive/10',
+                      medium: 'text-warning bg-warning/10',
+                      low: 'text-primary bg-primary/10'
+                    };
+                    
+                    return (
+                      <div key={alert.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
+                        <div className={`p-2 rounded-lg ${priorityColors[alert.priority as keyof typeof priorityColors]}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <p className="font-medium text-sm">{alert.title}</p>
+                          <p className="text-xs text-muted-foreground">{alert.message}</p>
+                          <p className="text-xs text-muted-foreground">{alert.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ações Rápidas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-16 flex-col gap-2">
+              <ShoppingCart className="h-6 w-6" />
+              <span className="text-sm">Nova Venda</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col gap-2">
+              <Package className="h-6 w-6" />
+              <span className="text-sm">Cadastrar Produto</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col gap-2">
+              <Users className="h-6 w-6" />
+              <span className="text-sm">Novo Cliente</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col gap-2">
+              <FileText className="h-6 w-6" />
+              <span className="text-sm">Relatórios</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
