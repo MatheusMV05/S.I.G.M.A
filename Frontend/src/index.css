@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* S.I.G.M.A. Design System - Professional Supermarket Management Interface
+Paleta escura moderna com acentos roxos/azuis para sistema corporativo */
+
+@layer base {
+  :root {
+    /* Base System Colors - Always Dark Theme */
+    --background: 215 28% 7%;       /* #111827 - Dark background */
+    --foreground: 210 40% 98%;      /* Almost white text */
+    
+    /* Card System */
+    --card: 220 13% 12%;            /* #1F2937 - Slightly lighter cards */
+    --card-foreground: 210 40% 98%;
+    --card-hover: 220 13% 15%;      /* Hover state for cards */
+    
+    /* Primary Brand Colors - Purple/Blue Accent */
+    --primary: 262 83% 58%;         /* #8B5CF6 - Vibrant purple accent */
+    --primary-foreground: 210 40% 98%;
+    --primary-hover: 262 83% 65%;   /* Lighter on hover */
+    --primary-muted: 262 83% 45%;   /* Darker variant */
+    
+    /* Secondary Support Colors */
+    --secondary: 220 13% 18%;       /* Darker secondary */
+    --secondary-foreground: 210 40% 98%;
+    --secondary-hover: 220 13% 22%;
+    
+    /* Status & Feedback Colors */
+    --success: 142 76% 36%;         /* Green for positive actions */
+    --success-foreground: 210 40% 98%;
+    --warning: 48 96% 53%;          /* Yellow for warnings */
+    --warning-foreground: 220 13% 12%;
+    --destructive: 0 84% 60%;       /* Red for destructive actions */
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Interactive Elements */
+    --muted: 215 28% 17%;           /* Muted backgrounds */
+    --muted-foreground: 215 20% 65%;
+    --accent: 262 83% 58%;          /* Same as primary for consistency */
+    --accent-foreground: 210 40% 98%;
+    
+    /* Form Elements */
+    --border: 215 28% 25%;          /* Form borders */
+    --input: 215 28% 25%;           /* Input backgrounds */
+    --input-focus: 262 83% 58%;     /* Focus state */
+    --ring: 262 83% 58%;            /* Focus rings */
+    
+    /* Navigation & Sidebar */
+    --sidebar-background: 215 28% 9%;     /* Slightly darker than main */
+    --sidebar-foreground: 210 40% 95%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 220 13% 15%;
+    --sidebar-accent-foreground: 210 40% 95%;
+    --sidebar-border: 215 28% 20%;
+    --sidebar-ring: 262 83% 58%;
+    
+    /* Data Visualization */
+    --chart-1: 262 83% 58%;         /* Primary purple */
+    --chart-2: 217 91% 60%;         /* Blue complement */
+    --chart-3: 142 76% 36%;         /* Success green */
+    --chart-4: 48 96% 53%;          /* Warning yellow */
+    --chart-5: 0 84% 60%;           /* Destructive red */
+    
+    /* Layout & Spacing */
+    --radius: 0.75rem;              /* Slightly more rounded */
+    --header-height: 4rem;          /* Fixed header height */
+    --sidebar-width: 16rem;         /* Fixed sidebar width */
+    --sidebar-width-collapsed: 4rem;
+    
+    /* Shadows & Effects */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary) / 0.3);
+    
+    /* Typography Scale */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    
+    /* Animation Timings */
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-slow: 350ms;
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+@layer components {
+  /* Professional Form Styles */
+  .form-group {
+    @apply space-y-2;
+  }
+  
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+  
+  .form-error {
+    @apply text-sm text-destructive;
+  }
+  
+  /* Data Table Styles */
+  .data-table {
+    @apply w-full border-collapse;
+  }
+  
+  .data-table th {
+    @apply bg-muted/50 px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border;
+  }
+  
+  .data-table td {
+    @apply px-4 py-3 text-sm border-b border-border;
+  }
+  
+  .data-table tr:hover {
+    @apply bg-muted/30;
+  }
+  
+  /* Metric Cards */
+  .metric-card {
+    @apply bg-card border border-border rounded-lg p-6 transition-all duration-200 hover:shadow-lg hover:border-primary/20;
+  }
+  
+  .metric-value {
+    @apply text-2xl font-bold text-foreground;
+  }
+  
+  .metric-label {
+    @apply text-sm text-muted-foreground;
+  }
+  
+  .metric-change {
+    @apply text-xs font-medium;
+  }
+  
+  .metric-change.positive {
+    @apply text-success;
+  }
+  
+  .metric-change.negative {
+    @apply text-destructive;
+  }
+  
+  /* Loading States */
+  .loading-skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+  
+  /* Focus States */
+  .focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
