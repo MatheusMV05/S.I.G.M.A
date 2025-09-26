@@ -671,16 +671,17 @@ export default function EmployeesManagement() {
                     <div className="space-y-2">
                       <Label htmlFor="state">Estado</Label>
                       <Select 
-                        value={formData.address?.state || ''} 
+                        value={formData.address?.state || 'none'} 
                         onValueChange={(value) => setFormData({
                           ...formData, 
-                          address: {...formData.address, state: value}
+                          address: {...formData.address, state: value === 'none' ? '' : value}
                         })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="UF" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">Selecione um estado</SelectItem>
                           <SelectItem value="SP">SP</SelectItem>
                           <SelectItem value="RJ">RJ</SelectItem>
                           <SelectItem value="MG">MG</SelectItem>
@@ -731,13 +732,14 @@ export default function EmployeesManagement() {
                   <div className="space-y-2">
                     <Label htmlFor="position">Cargo *</Label>
                     <Select 
-                      value={formData.position || ''} 
-                      onValueChange={(value) => setFormData({...formData, position: value})}
+                      value={formData.position || 'none'} 
+                      onValueChange={(value) => setFormData({...formData, position: value === 'none' ? '' : value})}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o cargo" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Selecione um cargo</SelectItem>
                         <SelectItem value="Gerente Geral">Gerente Geral</SelectItem>
                         <SelectItem value="Supervisora de Vendas">Supervisor de Vendas</SelectItem>
                         <SelectItem value="Operador de Caixa">Operador de Caixa</SelectItem>
@@ -752,13 +754,14 @@ export default function EmployeesManagement() {
                   <div className="space-y-2">
                     <Label htmlFor="department">Setor *</Label>
                     <Select 
-                      value={formData.department || ''} 
-                      onValueChange={(value) => setFormData({...formData, department: value})}
+                      value={formData.department || 'none'} 
+                      onValueChange={(value) => setFormData({...formData, department: value === 'none' ? '' : value})}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o setor" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Selecione um setor</SelectItem>
                         <SelectItem value="Administração">Administração</SelectItem>
                         <SelectItem value="Vendas">Vendas</SelectItem>
                         <SelectItem value="Estoque">Estoque</SelectItem>
@@ -791,13 +794,14 @@ export default function EmployeesManagement() {
                   <div className="space-y-2">
                     <Label htmlFor="shift">Turno de Trabalho *</Label>
                     <Select 
-                      value={formData.shift || ''} 
-                      onValueChange={(value) => setFormData({...formData, shift: value})}
+                      value={formData.shift || 'none'} 
+                      onValueChange={(value) => setFormData({...formData, shift: value === 'none' ? '' : value})}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o turno" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Selecione um turno</SelectItem>
                         <SelectItem value="Manhã">Manhã (06:00 - 14:00)</SelectItem>
                         <SelectItem value="Tarde">Tarde (14:00 - 22:00)</SelectItem>
                         <SelectItem value="Noite">Noite (22:00 - 06:00)</SelectItem>
@@ -830,30 +834,16 @@ export default function EmployeesManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="supervisor">Supervisor</Label>
                   <Select 
-                    value={formData.supervisor || ''} 
-                    onValueChange={(value) => {
-                      setFormData(prev => ({
-                        ...prev, 
-                        supervisor: value === '' ? null : value
-                      }));
-                    }}
+                    value={formData.supervisor || 'none'} 
+                    onValueChange={(value) => setFormData({...formData, supervisor: value === 'none' ? null : value})}
                   >
-                    <SelectTrigger id="supervisor">
+                    <SelectTrigger>
                       <SelectValue placeholder="Selecione o supervisor (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sem supervisor</SelectItem>
+                      <SelectItem value="none">Sem supervisor</SelectItem>
                       {mockEmployees
-                        .filter(emp => {
-                          // Filtro simples e seguro
-                          if (!emp || !emp.registration || !emp.name || !emp.position) return false;
-                          
-                          // Não incluir o próprio funcionário
-                          if (formData.registration && emp.registration === formData.registration) return false;
-                          
-                          // Apenas cargos de supervisão
-                          return emp.position.includes('Gerente') || emp.position.includes('Supervisor');
-                        })
+                        .filter(emp => emp.registration !== formData.registration && (emp.position.includes('Gerente') || emp.position.includes('Supervisor')))
                         .map(supervisor => (
                           <SelectItem key={supervisor.registration} value={supervisor.registration}>
                             {supervisor.name} ({supervisor.position})
@@ -902,13 +892,14 @@ export default function EmployeesManagement() {
                     <div className="space-y-2">
                       <Label htmlFor="systemRole">Nível de Acesso</Label>
                       <Select 
-                        value={formData.systemRole || ''} 
-                        onValueChange={(value) => setFormData({...formData, systemRole: value})}
+                        value={formData.systemRole || 'none'} 
+                        onValueChange={(value) => setFormData({...formData, systemRole: value === 'none' ? null : value})}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o nível de acesso" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">Selecione um nível</SelectItem>
                           <SelectItem value="admin">Administrador (Acesso total)</SelectItem>
                           <SelectItem value="supervisor">Supervisor (Vendas e relatórios)</SelectItem>
                           <SelectItem value="cashier">Operador de Caixa (PDV apenas)</SelectItem>
