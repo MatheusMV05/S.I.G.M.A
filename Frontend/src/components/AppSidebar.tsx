@@ -28,6 +28,7 @@ import {
   Tag,
   UserCheck,
   Percent,
+  UserCog,
 } from 'lucide-react';
 
 // Definição dos itens de menu com permissões
@@ -36,25 +37,25 @@ const menuItems = [
     title: 'Dashboard',
     url: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['admin', 'supervisor', 'cashier', 'stock'] as UserRole[],
+    roles: ['admin', 'manager', 'supervisor', 'cashier', 'stock'] as UserRole[],
   },
   {
     title: 'Ponto de Venda',
     url: '/pos',
     icon: ShoppingCart,
-    roles: ['cashier', 'admin'] as UserRole[],
+    roles: ['cashier', 'admin', 'supervisor'] as UserRole[],
   },
   {
     title: 'Produtos',
     url: '/products',
     icon: Package,
-    roles: ['admin', 'stock'] as UserRole[],
+    roles: ['admin', 'manager', 'stock'] as UserRole[],
   },
   {
     title: 'Estoque',
     url: '/inventory',
     icon: Warehouse,
-    roles: ['admin', 'stock'] as UserRole[],
+    roles: ['admin', 'manager', 'supervisor', 'stock'] as UserRole[],
   },
 ];
 
@@ -63,25 +64,25 @@ const managementItems = [
     title: 'Clientes',
     url: '/customers',
     icon: Users,
-    roles: ['admin'] as UserRole[],
+    roles: ['admin', 'manager', 'supervisor'] as UserRole[],
   },
   {
     title: 'Fornecedores',
     url: '/suppliers',
     icon: Building2,
-    roles: ['admin'] as UserRole[],
+    roles: ['admin', 'manager'] as UserRole[],
   },
   {
     title: 'Funcionários',
     url: '/employees',
     icon: UserCheck,
-    roles: ['admin'] as UserRole[],
+    roles: ['admin', 'manager'] as UserRole[],
   },
   {
     title: 'Categorias',
     url: '/categories',
     icon: Tag,
-    roles: ['admin'] as UserRole[],
+    roles: ['admin', 'manager'] as UserRole[],
   },
   {
     title: 'Promoções',
@@ -91,12 +92,21 @@ const managementItems = [
   },
 ];
 
+const systemItems = [
+  {
+    title: 'Usuários',
+    url: '/users',
+    icon: UserCog,
+    roles: ['admin'] as UserRole[],
+  },
+];
+
 const reportItems = [
   {
     title: 'Relatórios',
     url: '/reports',
     icon: BarChart3,
-    roles: ['admin', 'supervisor'] as UserRole[],
+    roles: ['admin', 'manager', 'supervisor'] as UserRole[],
   },
 ];
 
@@ -154,8 +164,8 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Cadastros Gerais - Apenas para Admin */}
-        {hasPermission(['admin']) && (
+        {/* Cadastros Gerais - Admin e Gerente */}
+        {hasPermission(['admin', 'manager']) && (
           <SidebarGroup>
             <SidebarGroupLabel>Cadastros</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -182,13 +192,41 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Relatórios - Admin e Supervisor */}
-        {hasPermission(['admin', 'supervisor']) && (
+        {/* Relatórios - Admin, Gerente e Supervisor */}
+        {hasPermission(['admin', 'manager', 'supervisor']) && (
           <SidebarGroup>
             <SidebarGroupLabel>Análises</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {filterItems(reportItems).map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url}
+                        className={({ isActive }) => 
+                          isActive 
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        }
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Sistema - Apenas Admin */}
+        {hasPermission(['admin']) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filterItems(systemItems).map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 
@@ -218,7 +256,8 @@ export function AppSidebar() {
               {user.name}
             </p>
             <p className="text-xs text-sidebar-accent-foreground/70 capitalize">
-              {user.role === 'admin' ? 'Administrador' : 
+              {user.role === 'admin' ? 'Administrador/Dono' : 
+               user.role === 'manager' ? 'Gerente' :
                user.role === 'supervisor' ? 'Supervisor' :
                user.role === 'cashier' ? 'Operador de Caixa' : 'Estoquista'}
             </p>

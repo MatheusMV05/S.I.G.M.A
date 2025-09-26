@@ -71,12 +71,7 @@ export function SigmaLogo({
       {logoElement}
       {variant === 'default' ? (
         <div className="flex flex-col">
-          <span className={cn(sizes.logoText, 'font-black text-foreground tracking-tight')}>
-            S.I.G.M.A.
-          </span>
-          <span className={cn(sizes.subtitle, 'text-muted-foreground/80 font-medium uppercase tracking-wide')}>
-            Sistema Empresarial
-          </span>
+          
         </div>
       ) : (
         <span className={cn(sizes.logoText, 'font-black text-foreground tracking-tight')}>

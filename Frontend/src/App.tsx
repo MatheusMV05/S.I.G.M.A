@@ -20,6 +20,7 @@ import SuppliersManagement from "@/pages/SuppliersManagement";
 import EmployeesManagement from "@/pages/EmployeesManagement";
 import CategoriesManagement from "@/pages/CategoriesManagement";
 import PromotionsManagement from "@/pages/PromotionsManagement";
+import UserManagement from "@/pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,18 +76,19 @@ function AppRoutes() {
       />
       
       {/* System Routes */}
-      <Route path="/pos" element={<ProtectedRoute requiredRoles={['cashier', 'admin']}><POS /></ProtectedRoute>} />
-      <Route path="/products" element={<ProtectedRoute requiredRoles={['admin', 'stock']}><Products /></ProtectedRoute>} />
-      <Route path="/inventory" element={<ProtectedRoute requiredRoles={['admin', 'stock']}><Inventory /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute requiredRoles={['admin', 'supervisor']}><Reports /></ProtectedRoute>} />
-      <Route path="/customers" element={<ProtectedRoute requiredRoles={['admin']}><Customers /></ProtectedRoute>} />
+      <Route path="/pos" element={<ProtectedRoute requiredRoles={['cashier', 'admin', 'supervisor']}><POS /></ProtectedRoute>} />
+      <Route path="/products" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'stock']}><Products /></ProtectedRoute>} />
+      <Route path="/inventory" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor', 'stock']}><Inventory /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor']}><Reports /></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor']}><Customers /></ProtectedRoute>} />
       <Route path="/registrations" element={<ProtectedRoute requiredRoles={['admin']}><Registrations /></ProtectedRoute>} />
       
       {/* Management Routes */}
-      <Route path="/suppliers" element={<ProtectedRoute requiredRoles={['admin']}><SuppliersManagement /></ProtectedRoute>} />
-      <Route path="/employees" element={<ProtectedRoute requiredRoles={['admin']}><EmployeesManagement /></ProtectedRoute>} />
-      <Route path="/categories" element={<ProtectedRoute requiredRoles={['admin']}><CategoriesManagement /></ProtectedRoute>} />
+      <Route path="/suppliers" element={<ProtectedRoute requiredRoles={['admin', 'manager']}><SuppliersManagement /></ProtectedRoute>} />
+      <Route path="/employees" element={<ProtectedRoute requiredRoles={['admin', 'manager']}><EmployeesManagement /></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute requiredRoles={['admin', 'manager']}><CategoriesManagement /></ProtectedRoute>} />
       <Route path="/promotions" element={<ProtectedRoute requiredRoles={['admin']}><PromotionsManagement /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute requiredRoles={['admin']}><UserManagement /></ProtectedRoute>} />
 
       {/* Páginas de erro */}
       <Route

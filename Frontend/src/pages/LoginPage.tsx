@@ -80,7 +80,7 @@ export default function LoginPage() {
             Sistema Integrado de Gestão
           </p>
           <p className="text-muted-foreground text-sm mt-1">
-            Mercados e Afins
+          
           </p>
         </div>
 
@@ -168,17 +168,39 @@ export default function LoginPage() {
 
             {/* Informações de teste */}
             <div className="pt-4 border-t border-border/50">
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground font-medium">
                   Credenciais para demonstração:
                 </p>
-                <div className="bg-muted/30 rounded-lg p-3 space-y-1">
-                  <p className="font-mono text-xs text-foreground">
-                    <strong>Admin:</strong> admin@comprebem.com
-                  </p>
-                  <p className="font-mono text-xs text-foreground">
-                    <strong>Senha:</strong> 123456
-                  </p>
+                <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-left">
+                  <div className="grid gap-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-xs text-muted-foreground">Admin:</span>
+                      <span className="font-mono text-xs text-foreground">admin@comprebem.com</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-xs text-muted-foreground">Gerente:</span>
+                      <span className="font-mono text-xs text-foreground">gerente@comprebem.com</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-xs text-muted-foreground">Supervisor:</span>
+                      <span className="font-mono text-xs text-foreground">supervisor@comprebem.com</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-xs text-muted-foreground">Caixa:</span>
+                      <span className="font-mono text-xs text-foreground">caixa@comprebem.com</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono text-xs text-muted-foreground">Estoque:</span>
+                      <span className="font-mono text-xs text-foreground">estoque@comprebem.com</span>
+                    </div>
+                    <div className="border-t border-border/30 pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-xs text-muted-foreground">Senha (todos):</span>
+                        <span className="font-mono text-sm font-bold text-primary">123456</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
