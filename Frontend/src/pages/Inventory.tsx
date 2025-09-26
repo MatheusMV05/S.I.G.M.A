@@ -618,25 +618,25 @@ export default function Inventory() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border border-orange-200 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <div className="flex items-center justify-between p-3 border border-orange-300 rounded-lg bg-orange-100 dark:bg-orange-900/30 dark:border-orange-700">
                   <div>
-                    <p className="font-medium">Leite Integral Parmalat 1L</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-orange-900 dark:text-orange-100">Leite Integral Parmalat 1L</p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">
                       Vencimento: 15/12/2024 (7 dias) • Estoque: 15 unidades
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-orange-600">
+                  <Badge variant="outline" className="text-orange-700 border-orange-600 dark:text-orange-300 dark:border-orange-400">
                     Urgente
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 border border-orange-200 rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <div className="flex items-center justify-between p-3 border border-orange-300 rounded-lg bg-orange-100 dark:bg-orange-900/30 dark:border-orange-700">
                   <div>
-                    <p className="font-medium">Iogurte Natural Vigor 170g</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-orange-900 dark:text-orange-100">Iogurte Natural Vigor 170g</p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">
                       Vencimento: 18/12/2024 (10 dias) • Estoque: 8 unidades
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-orange-600">
+                  <Badge variant="outline" className="text-orange-700 border-orange-600 dark:text-orange-300 dark:border-orange-400">
                     Atenção
                   </Badge>
                 </div>
