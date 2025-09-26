@@ -831,21 +831,35 @@ export default function EmployeesManagement() {
                   <Label htmlFor="supervisor">Supervisor</Label>
                   <Select 
                     value={formData.supervisor || ''} 
-                    onValueChange={(value) => setFormData({...formData, supervisor: value || null})}
+                    onValueChange={(value) => {
+                      setFormData(prev => ({
+                        ...prev, 
+                        supervisor: value === '' ? null : value
+                      }));
+                    }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="supervisor">
                       <SelectValue placeholder="Selecione o supervisor (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Sem supervisor</SelectItem>
                       {mockEmployees
-                        .filter(emp => emp.id !== formData.id && 
-                               (emp.position.includes('Gerente') || emp.position.includes('Supervisor')))
-                        .map((supervisor) => (
-                          <SelectItem key={supervisor.id} value={supervisor.registration}>
+                        .filter(emp => {
+                          // Filtro simples e seguro
+                          if (!emp || !emp.registration || !emp.name || !emp.position) return false;
+                          
+                          // Não incluir o próprio funcionário
+                          if (formData.registration && emp.registration === formData.registration) return false;
+                          
+                          // Apenas cargos de supervisão
+                          return emp.position.includes('Gerente') || emp.position.includes('Supervisor');
+                        })
+                        .map(supervisor => (
+                          <SelectItem key={supervisor.registration} value={supervisor.registration}>
                             {supervisor.name} ({supervisor.position})
                           </SelectItem>
-                        ))}
+                        ))
+                      }
                     </SelectContent>
                   </Select>
                 </div>

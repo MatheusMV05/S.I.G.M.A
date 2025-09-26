@@ -21,6 +21,7 @@ import EmployeesManagement from "@/pages/EmployeesManagement";
 import CategoriesManagement from "@/pages/CategoriesManagement";
 import PromotionsManagement from "@/pages/PromotionsManagement";
 import UserManagement from "@/pages/UserManagement";
+import POS from "@/pages/POS";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ function AppRoutes() {
       />
       
       {/* System Routes */}
+      <Route path="/pos" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor', 'cashier']}><POS /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'stock']}><Products /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor', 'stock']}><Inventory /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor']}><Reports /></ProtectedRoute>} />
