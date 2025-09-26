@@ -16,6 +16,10 @@ import Inventory from "@/pages/Inventory";
 import Reports from "@/pages/Reports";
 import Customers from "@/pages/Customers";
 import Registrations from "@/pages/Registrations";
+import SuppliersManagement from "@/pages/SuppliersManagement";
+import EmployeesManagement from "@/pages/EmployeesManagement";
+import CategoriesManagement from "@/pages/CategoriesManagement";
+import PromotionsManagement from "@/pages/PromotionsManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +81,12 @@ function AppRoutes() {
       <Route path="/reports" element={<ProtectedRoute requiredRoles={['admin', 'supervisor']}><Reports /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute requiredRoles={['admin']}><Customers /></ProtectedRoute>} />
       <Route path="/registrations" element={<ProtectedRoute requiredRoles={['admin']}><Registrations /></ProtectedRoute>} />
+      
+      {/* Management Routes */}
+      <Route path="/suppliers" element={<ProtectedRoute requiredRoles={['admin']}><SuppliersManagement /></ProtectedRoute>} />
+      <Route path="/employees" element={<ProtectedRoute requiredRoles={['admin']}><EmployeesManagement /></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute requiredRoles={['admin']}><CategoriesManagement /></ProtectedRoute>} />
+      <Route path="/promotions" element={<ProtectedRoute requiredRoles={['admin']}><PromotionsManagement /></ProtectedRoute>} />
 
       {/* Páginas de erro */}
       <Route
