@@ -67,6 +67,7 @@ export const rolePermissions = {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (requiredRole: UserRole[]) => boolean;
@@ -122,37 +123,62 @@ const mockUsers = [
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se há token armazenado
-    const storedUser = localStorage.getItem('sigma_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
+    const initializeAuth = async () => {
+      try {
+        // Simular verificação de token/sessão
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verificar se há token armazenado
+        const storedUser = localStorage.getItem('sigma_user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Erro ao inicializar autenticação:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulação de autenticação
-    const foundUser = mockUsers.find(u => u.email === email);
-    
-    // Senhas específicas para cada usuário (para demonstração)
-    const validCredentials = {
-      'admin@comprebem.com': '123456',
-      'gerente@comprebem.com': '123456',
-      'supervisor@comprebem.com': '123456',
-      'caixa@comprebem.com': '123456',
-      'estoque@comprebem.com': '123456'
-    };
-    
-    if (foundUser && validCredentials[email as keyof typeof validCredentials] === password) {
-      setUser(foundUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('sigma_user', JSON.stringify(foundUser));
-      return true;
+    try {
+      // Simular delay de autenticação no servidor
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulação de autenticação
+      const foundUser = mockUsers.find(u => u.email === email);
+      
+      // Senhas específicas para cada usuário (para demonstração)
+      const validCredentials = {
+        'admin@comprebem.com': '123456',
+        'gerente@comprebem.com': '123456',
+        'supervisor@comprebem.com': '123456',
+        'caixa@comprebem.com': '123456',
+        'estoque@comprebem.com': '123456'
+      };
+      
+      if (foundUser && validCredentials[email as keyof typeof validCredentials] === password) {
+        // Simular carregamento adicional do perfil do usuário
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        setUser(foundUser);
+        setIsAuthenticated(true);
+        localStorage.setItem('sigma_user', JSON.stringify(foundUser));
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Erro durante o login:', error);
+      return false;
     }
-    
-    return false;
   };
 
   const logout = () => {
@@ -175,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       user,
       isAuthenticated,
+      isLoading,
       login,
       logout,
       hasPermission,

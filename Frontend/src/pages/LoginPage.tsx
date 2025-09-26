@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SigmaLogo } from '@/components/SigmaLogo';
-import { Eye, EyeOff, Loader2, ShoppingCart, BarChart3, Package, Users } from 'lucide-react';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { Eye, EyeOff, Loader2, ShoppingCart, BarChart3, Package, Users, CheckCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const { isAuthenticated, login } = useAuth();
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -28,12 +30,25 @@ export default function LoginPage() {
 
     const success = await login(email, password);
     
-    if (!success) {
+    if (success) {
+      setLoginSuccess(true);
+      // O redirecionamento será feito automaticamente pelo Navigate no topo
+    } else {
       setError('Credenciais inválidas. Tente novamente.');
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
+
+  // Tela de transição pós-login bem-sucedido
+  if (loginSuccess) {
+    return (
+      <LoadingScreen 
+        variant="fullscreen"
+        message="Login realizado com sucesso!"
+        submessage="Redirecionando para seu dashboard..."
+      />
+    );
+  }
 
   // Animação de background com ícones flutuantes
   const floatingIcons = [
@@ -46,13 +61,29 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       {/* Background com gradiente e animações */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5">
+        {/* Efeitos de partículas animadas */}
+        <div className="absolute inset-0 overflow-hidden">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-primary/20 rounded-full animate-float"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 10}s`,
+                animationDuration: `${8 + Math.random() * 4}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
       
       {/* Ícones flutuantes no fundo */}
       {floatingIcons.map(({ Icon, delay, top, left }, index) => (
         <div
           key={index}
-          className="absolute opacity-10 animate-float"
+          className="absolute opacity-10 animate-float hover:opacity-20 transition-opacity duration-1000"
           style={{
             top,
             left,
@@ -60,12 +91,16 @@ export default function LoginPage() {
             animationDuration: '6s'
           }}
         >
-          <Icon className="w-12 h-12 text-primary" />
+          <Icon className="w-12 h-12 text-primary drop-shadow-lg" />
         </div>
       ))}
 
       {/* Efeito de brilho sutil */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-20 animate-shimmer"></div>
+      
+      {/* Círculos decorativos */}
+      <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
 
       <div className="relative z-10 w-full max-w-md space-y-8 p-4">
         {/* Header com logo e título */}
@@ -85,19 +120,22 @@ export default function LoginPage() {
         </div>
 
         {/* Card de login */}
-        <Card className="border-border/50 shadow-2xl backdrop-blur-sm bg-card/95 animate-scale-in">
-          <CardHeader className="space-y-2 pb-6">
-            <CardTitle className="text-2xl text-center font-bold">
+        <Card className="border-border/50 shadow-2xl backdrop-blur-sm bg-card/95 animate-scale-in hover:shadow-3xl transition-all duration-500 relative overflow-hidden">
+          {/* Efeito de borda animada */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-secondary/20 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+          
+          <CardHeader className="space-y-2 pb-6 relative z-10">
+            <CardTitle className="text-2xl text-center font-bold animate-fade-in">
               Acesso ao Sistema
             </CardTitle>
-            <CardDescription className="text-center text-base">
+            <CardDescription className="text-center text-base animate-fade-in" style={{ animationDelay: '0.2s' }}>
               Digite suas credenciais para entrar
             </CardDescription>
           </CardHeader>
           
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 relative z-10">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
                 <Label htmlFor="email" className="text-sm font-semibold">
                   Login / E-mail
                 </Label>
@@ -108,11 +146,11 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
                 />
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.6s' }}>
                 <Label htmlFor="password" className="text-sm font-semibold">
                   Senha
                 </Label>
@@ -124,13 +162,13 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1 h-10 w-10 hover:bg-muted/50 transition-colors"
+                    className="absolute right-1 top-1 h-10 w-10 hover:bg-muted/50 transition-all duration-200 hover:scale-110"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -143,7 +181,7 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <Alert variant="destructive" className="animate-fade-in">
+                <Alert variant="destructive" className="animate-fade-in animate-pulse">
                   <AlertDescription className="text-center">
                     {error}
                   </AlertDescription>
@@ -152,13 +190,14 @@ export default function LoginPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl" 
+                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] animate-fade-in"
+                style={{ animationDelay: '0.8s' }}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Entrando...
+                    <span className="animate-pulse">Entrando...</span>
                   </>
                 ) : (
                   'Entrar no Sistema'

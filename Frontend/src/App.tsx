@@ -7,10 +7,10 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SigmaLogo } from "@/components/SigmaLogo";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
-import POS from "@/pages/POS";
 import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
 import Reports from "@/pages/Reports";
@@ -27,7 +27,18 @@ const queryClient = new QueryClient();
 
 // Layout principal da aplicação
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Tela de carregamento inicial
+  if (isLoading) {
+    return (
+      <LoadingScreen 
+        variant="fullscreen"
+        message="Inicializando S.I.G.M.A."
+        submessage="Carregando seu ambiente de trabalho..."
+      />
+    );
+  }
 
   if (!isAuthenticated) {
     return children;
@@ -76,7 +87,6 @@ function AppRoutes() {
       />
       
       {/* System Routes */}
-      <Route path="/pos" element={<ProtectedRoute requiredRoles={['cashier', 'admin', 'supervisor']}><POS /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'stock']}><Products /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor', 'stock']}><Inventory /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor']}><Reports /></ProtectedRoute>} />

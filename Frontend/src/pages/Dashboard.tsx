@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   TrendingUp,
   TrendingDown,
@@ -21,7 +23,8 @@ import {
   Clock,
   Store,
   CreditCard,
-  Activity
+  Activity,
+  ArrowRight
 } from 'lucide-react';
 import {
   Area,
@@ -176,27 +179,27 @@ const KPICard = ({
   };
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-border/50">
+    <Card className="transition-all duration-300 hover:shadow-xl hover:scale-[1.05] cursor-pointer group animate-fade-in border-border/50">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2 flex-1">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">
               {title}
             </p>
-            <p className="text-3xl font-bold text-foreground">
+            <p className="text-3xl font-bold text-primary">
               {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
             </p>
             {subtitle && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">
                 {subtitle}
               </p>
             )}
             {change !== undefined && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 animate-fade-in">
                 {isPositive ? (
-                  <TrendingUp className="h-4 w-4 text-success" />
+                  <TrendingUp className="h-4 w-4 text-success animate-bounce" />
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-destructive" />
+                  <TrendingDown className="h-4 w-4 text-destructive animate-bounce" />
                 )}
                 <span className={`text-sm font-medium ${
                   isPositive ? 'text-success' : 'text-destructive'
@@ -207,8 +210,8 @@ const KPICard = ({
               </div>
             )}
           </div>
-          <div className={`p-3 rounded-xl ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary}`}>
-            <Icon className="h-6 w-6" />
+          <div className={`p-3 rounded-xl transition-all duration-300 group-hover:scale-110 ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary}`}>
+            <Icon className="h-6 w-6 group-hover:animate-pulse" />
           </div>
         </div>
       </CardContent>
@@ -218,28 +221,65 @@ const KPICard = ({
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [selectedAlert, setSelectedAlert] = useState<typeof alerts[0] | null>(null);
 
   const revenueChange = ((dashboardKPIs.todayRevenue - dashboardKPIs.yesterdayRevenue) / dashboardKPIs.yesterdayRevenue) * 100;
   const salesChange = ((dashboardKPIs.todaySales - dashboardKPIs.yesterdaySales) / dashboardKPIs.yesterdaySales) * 100;
 
+  // Funções de navegação
+  const handleNewSale = () => navigate('/pos');
+  const handleViewReports = () => navigate('/reports');
+  const handleNewProduct = () => navigate('/products');
+  const handleNewCustomer = () => navigate('/customers');
+  const handleViewInventory = () => navigate('/inventory');
+
+  // Função para lidar com alertas
+  const handleAlertAction = (alert: typeof alerts[0]) => {
+    setSelectedAlert(alert);
+    
+    switch (alert.type) {
+      case 'stock':
+        navigate('/inventory');
+        break;
+      case 'expiry':
+        navigate('/products');
+        break;
+      case 'promotion':
+        navigate('/promotions');
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 bg-background min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Bem-vindo, {user?.name || 'Usuário'}!
+          <h1 className="text-4xl font-bold text-foreground animate-fade-in">
+            Bem-vindo, <span className="text-primary">{user?.name || 'Usuário'}</span>!
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-2 text-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Aqui está o resumo das operações de hoje
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm">
+        <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleViewReports}
+            className="hover:scale-105 transition-all duration-200"
+          >
             <FileText className="h-4 w-4 mr-2" />
             Relatórios
           </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary-hover">
+          <Button 
+            size="sm" 
+            onClick={handleNewSale}
+            className="bg-primary hover:bg-primary-hover hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
             <PlusCircle className="h-4 w-4 mr-2" />
             Nova Venda
           </Button>
@@ -517,14 +557,29 @@ export default function Dashboard() {
                     };
                     
                     return (
-                      <div key={alert.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
-                        <div className={`p-2 rounded-lg ${priorityColors[alert.priority as keyof typeof priorityColors]}`}>
-                          <Icon className="h-4 w-4" />
+                      <div 
+                        key={alert.id} 
+                        className="flex gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-all duration-200 hover:scale-[1.02] group"
+                        onClick={() => handleAlertAction(alert)}
+                      >
+                        <div className={`p-2 rounded-lg transition-all duration-200 group-hover:scale-110 ${priorityColors[alert.priority as keyof typeof priorityColors]}`}>
+                          <Icon className="h-4 w-4 group-hover:animate-pulse" />
                         </div>
                         <div className="flex-1 space-y-1">
-                          <p className="font-medium text-sm">{alert.title}</p>
-                          <p className="text-xs text-muted-foreground">{alert.message}</p>
-                          <p className="text-xs text-muted-foreground">{alert.time}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-sm group-hover:text-foreground transition-colors">{alert.title}</p>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                          <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">{alert.message}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">{alert.time}</p>
+                            <Badge 
+                              variant={alert.priority === 'high' ? 'destructive' : alert.priority === 'medium' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {alert.priority === 'high' ? 'Urgente' : alert.priority === 'medium' ? 'Médio' : 'Baixo'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     );
@@ -537,27 +592,46 @@ export default function Dashboard() {
       </Tabs>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
         <CardHeader>
-          <CardTitle>Ações Rápidas</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-primary" />
+            Ações Rápidas
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-16 flex-col gap-2">
-              <ShoppingCart className="h-6 w-6" />
-              <span className="text-sm">Nova Venda</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-3 hover:scale-105 hover:shadow-lg transition-all duration-200 group"
+              onClick={handleNewSale}
+            >
+              <ShoppingCart className="h-6 w-6 group-hover:text-primary transition-colors" />
+              <span className="text-sm font-medium">Nova Venda</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col gap-2">
-              <Package className="h-6 w-6" />
-              <span className="text-sm">Cadastrar Produto</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-3 hover:scale-105 hover:shadow-lg transition-all duration-200 group"
+              onClick={handleNewProduct}
+            >
+              <Package className="h-6 w-6 group-hover:text-primary transition-colors" />
+              <span className="text-sm font-medium">Cadastrar Produto</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col gap-2">
-              <Users className="h-6 w-6" />
-              <span className="text-sm">Novo Cliente</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-3 hover:scale-105 hover:shadow-lg transition-all duration-200 group"
+              onClick={handleNewCustomer}
+            >
+              <Users className="h-6 w-6 group-hover:text-primary transition-colors" />
+              <span className="text-sm font-medium">Novo Cliente</span>
             </Button>
-            <Button variant="outline" className="h-16 flex-col gap-2">
-              <FileText className="h-6 w-6" />
-              <span className="text-sm">Relatórios</span>
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-3 hover:scale-105 hover:shadow-lg transition-all duration-200 group"
+              onClick={handleViewReports}
+            >
+              <FileText className="h-6 w-6 group-hover:text-primary transition-colors" />
+              <span className="text-sm font-medium">Relatórios</span>
             </Button>
           </div>
         </CardContent>

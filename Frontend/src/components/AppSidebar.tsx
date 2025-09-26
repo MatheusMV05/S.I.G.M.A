@@ -40,12 +40,6 @@ const menuItems = [
     roles: ['admin', 'manager', 'supervisor', 'cashier', 'stock'] as UserRole[],
   },
   {
-    title: 'Ponto de Venda',
-    url: '/pos',
-    icon: ShoppingCart,
-    roles: ['cashier', 'admin', 'supervisor'] as UserRole[],
-  },
-  {
     title: 'Produtos',
     url: '/products',
     icon: Package,
