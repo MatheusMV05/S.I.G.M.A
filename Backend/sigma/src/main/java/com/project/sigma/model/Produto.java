@@ -14,19 +14,16 @@ import java.time.LocalDate;
 public class Produto {
 
     //Atributos:
-    private Long id;
-
+    private Integer idProduto;
     private String nome;
-
     private String marca;
-
     private Integer quantEmEstoque;
-
     private BigDecimal valorUnitario;
-
     private LocalDate dataValidade;
-
     private Integer idCategoria;
+    private String descricao;
+    private Integer estoqueMinimo;
+    private Integer estoqueMaximo;
 
 }
 

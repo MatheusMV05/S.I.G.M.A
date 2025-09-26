@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Camada de Serviço para a entidade Produto.
@@ -27,11 +28,12 @@ public class ProdutoService {
     }
 
     /**
-     * Salva um novo produto após validar as regras de negócio.
+     * Salva (cria ou atualiza) um produto após validar as regras de negócio.
      * @param produto O produto a ser salvo.
+     * @return O produto salvo.
      * @throws IllegalArgumentException se os dados do produto forem inválidos.
      */
-    public void criarProduto(Produto produto) {
+    public Produto saveProduto(Produto produto) {
 
         // Regra 1: O nome do produto não pode ser nulo ou vazio.
         if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
@@ -46,61 +48,37 @@ public class ProdutoService {
         // Regra 3: A quantidade em estoque não pode ser negativa.
         if (produto.getQuantEmEstoque() == null || produto.getQuantEmEstoque() < 0) {
             throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
+        }
+
+        // Regra 4 (Nova): Validação do ID para atualização
+        if (produto.getIdProduto() != null) {
+            // Se está atualizando, verifica se o produto realmente existe.
+            produtoRepository.findById(produto.getIdProduto())
+                    .orElseThrow(() -> new IllegalArgumentException("Produto com ID " + produto.getIdProduto() + " não encontrado para atualização."));
         }
 
         // Se todas as validações passarem, chamamos o repositório para salvar.
-        produtoRepository.save(produto);
+        // O método save do repositório já sabe se deve fazer INSERT ou UPDATE.
+        return produtoRepository.save(produto);
     }
 
     /**
-     * Atualiza um produto existente após validar as regras de negócio.
-     * @param produto O produto com as informações atualizadas.
-     * @throws IllegalArgumentException se os dados do produto ou o seu ID forem inválidos.
-     */
-    public void atualizarProduto(Produto produto) {
-
-        // Regra 0: O ID do produto é obrigatório para uma atualização.
-        if (produto.getId() == null) {
-            throw new IllegalArgumentException("O ID do produto é obrigatório para a atualização.");
-        }
-
-        // Regra 1: O nome do produto não pode ser nulo ou vazio.
-        if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
-            throw new IllegalArgumentException("O nome do produto é obrigatório.");
-        }
-
-        // Regra 2: O valor unitário não pode ser nulo ou negativo.
-        if (produto.getValorUnitario() == null || produto.getValorUnitario().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("O valor do produto não pode ser negativo.");
-        }
-
-        // Regra 3: A quantidade em estoque não pode ser negativa.
-        if (produto.getQuantEmEstoque() == null || produto.getQuantEmEstoque() < 0) {
-            throw new IllegalArgumentException("A quantidade em estoque não pode ser negativa.");
-        }
-
-        // Se todas as validações passarem, chamamos o repositório para atualizar.
-        produtoRepository.update(produto);
-    }
-
-    /**
-     * Exclui um produto pelo seu ID após validar a entrada.
+     * Exclui um produto pelo seu ID.
      * @param id O ID do produto a ser excluído.
-     * @throws IllegalArgumentException se o ID fornecido for nulo.
      */
-    public void deletarProduto(Long id) {
-
-        // Regra 1: O ID não pode ser nulo para uma operação de exclusão.
+    public void deleteProduto(Integer id) { // Corrigido de Long para Integer
         if (id == null) {
             throw new IllegalArgumentException("O ID do produto não pode ser nulo para a exclusão.");
         }
-
-        // Se a validação passar, chamamos o repositório para excluir.
         produtoRepository.deleteById(id);
     }
 
     public List<Produto> buscarTodosProdutos() {
         return produtoRepository.findAll();
+    }
+
+    public Optional<Produto> buscarProdutoPorId(Integer id) { // Novo método
+        return produtoRepository.findById(id);
     }
 
     /**

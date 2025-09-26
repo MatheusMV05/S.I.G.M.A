@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 
 @Repository
@@ -29,7 +30,7 @@ public class ProdutoRepository {
 
     private final RowMapper<Produto> produtoRowMapper = (ResultSet rs, int rowNum) -> {
         Produto produto = new Produto();
-        produto.setId(rs.getLong("id_produto"));
+        produto.setIdProduto(rs.getInt("id_produto"));
         produto.setNome(rs.getString("nome"));
         produto.setMarca(rs.getString("marca"));
         produto.setQuantEmEstoque(rs.getInt("quant_em_estoque"));
@@ -41,8 +42,16 @@ public class ProdutoRepository {
             produto.setDataValidade(rs.getDate("data_validade").toLocalDate());
         }
         produto.setIdCategoria(rs.getInt("id_categoria"));
+        //Novos campos:
+        produto.setDescricao(rs.getString("descricao"));
+        produto.setEstoqueMinimo(rs.getInt("estoque_minimo"));
+        produto.setEstoqueMaximo(rs.getInt("estoque_maximo"));
+
         return produto;
     };
+
+    private static final String COLUNAS_PRODUTO = "id_produto, nome, marca, quant_em_estoque, valor_unitario, data_validade, id_categoria, descricao, estoque_minimo, estoque_maximo";
+
 
     /**
      * Busca todos os produtos cadastrados no banco de dados.
@@ -50,9 +59,19 @@ public class ProdutoRepository {
      */
     public List<Produto> findAll() {
         // SQL explícito para selecionar todos os produtos
-        String sql = "SELECT id_produto, nome, marca, quant_em_estoque, valor_unitario, data_validade, id_categoria FROM Produto";
-        // O jdbcTemplate executa a consulta e usa o nosso rowMapper para transformar cada linha em um objeto Produto
+        String sql = "SELECT " + COLUNAS_PRODUTO + " FROM Produto";        // O jdbcTemplate executa a consulta e usa o nosso rowMapper para transformar cada linha em um objeto Produto
         return jdbcTemplate.query(sql, produtoRowMapper);
+    }
+
+    //Método para retornar um unico produto pelo id:
+    public Optional<Produto> findById(Integer id) {
+        String sql = "SELECT " + COLUNAS_PRODUTO + " FROM Produto WHERE id_produto = ?";
+        try {
+            Produto produto = jdbcTemplate.queryForObject(sql, new Object[]{id}, produtoRowMapper);
+            return Optional.ofNullable(produto);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     /**
@@ -186,67 +205,42 @@ public class ProdutoRepository {
 
     /**
      * Busca produtos que estão com estoque baixo ou esgotado.
-     * A regra de negócio considera "estoque baixo" como 15 unidades ou menos.
+     * A regra de negócio considera "estoque baixo". Este estoque baixo depende do valor MINIMO!
      * @return Uma lista de objetos Produto que precisam de atenção.
      */
     public List<Produto> findProdutosComEstoqueBaixo() {
-        String sql = """
-            SELECT
-                id_produto, nome, marca, quant_em_estoque, valor_unitario, data_validade, id_categoria
-            FROM
-                Produto
-            WHERE
-                quant_em_estoque <= 15
-            ORDER BY
-                quant_em_estoque ASC
+        String sql = "SELECT " + COLUNAS_PRODUTO + """
+             FROM Produto
+             WHERE quant_em_estoque <= estoque_minimo
+             ORDER BY quant_em_estoque ASC
         """;
-
-        // Reutilizamos o nosso produtoRowMapper e não precisamos de parâmetros.
         return jdbcTemplate.query(sql, produtoRowMapper);
     }
 
-    //Método para adição de novos produtos:
-    /**
-     * Salva um novo produto no banco de dados (operação de Inserção).
-     * @param produto O objeto Produto a ser inserido.
-     * @return O número de linhas afetadas (deve ser 1 em caso de sucesso).
-     */
-    public int save(Produto produto) {
-        String sql = """
-            INSERT INTO Produto (nome, marca, quant_em_estoque, valor_unitario, data_validade, id_categoria)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """;
-        return jdbcTemplate.update(sql,
-                produto.getNome(),
-                produto.getMarca(),
-                produto.getQuantEmEstoque(),
-                produto.getValorUnitario(),
-                produto.getDataValidade(),
-                produto.getIdCategoria()
-        );
-    }
-
-    //Método para atualização de dados em relação a um produto:
-    /**
-     * Atualiza um produto existente no banco de dados.
-     * @param produto O objeto Produto com os dados atualizados. O ID do produto deve estar preenchido.
-     * @return O número de linhas afetadas.
-     */
-    public int update(Produto produto) {
-        String sql = """
-            UPDATE Produto
-            SET nome = ?, marca = ?, quant_em_estoque = ?, valor_unitario = ?, data_validade = ?, id_categoria = ?
-            WHERE id_produto = ?
-        """;
-        return jdbcTemplate.update(sql,
-                produto.getNome(),
-                produto.getMarca(),
-                produto.getQuantEmEstoque(),
-                produto.getValorUnitario(),
-                produto.getDataValidade(),
-                produto.getIdCategoria(),
-                produto.getId()
-        );
+    //Método para adição de novos produtos ou alteração (update):
+    public Produto save(Produto produto) {
+        if (produto.getIdProduto() == null) {
+            // Inserir novo produto
+            String sql = """
+                INSERT INTO Produto (nome, marca, quant_em_estoque, valor_unitario, data_validade, id_categoria, descricao, estoque_minimo, estoque_maximo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
+            jdbcTemplate.update(sql, produto.getNome(), produto.getMarca(), produto.getQuantEmEstoque(),
+                    produto.getValorUnitario(), produto.getDataValidade(), produto.getIdCategoria(),
+                    produto.getDescricao(), produto.getEstoqueMinimo(), produto.getEstoqueMaximo());
+        } else {
+            // Atualizar produto existente
+            String sql = """
+                UPDATE Produto
+                SET nome = ?, marca = ?, quant_em_estoque = ?, valor_unitario = ?, data_validade = ?, id_categoria = ?, descricao = ?, estoque_minimo = ?, estoque_maximo = ?
+                WHERE id_produto = ?
+            """;
+            jdbcTemplate.update(sql, produto.getNome(), produto.getMarca(), produto.getQuantEmEstoque(),
+                    produto.getValorUnitario(), produto.getDataValidade(), produto.getIdCategoria(),
+                    produto.getDescricao(), produto.getEstoqueMinimo(), produto.getEstoqueMaximo(),
+                    produto.getIdProduto()); // Erro do getId() corrigido aqui!
+        }
+        return produto;
     }
 
     //Método para remover um produto do banco de dados:
@@ -255,8 +249,8 @@ public class ProdutoRepository {
      * @param id O ID do produto a ser excluído.
      * @return O número de linhas afetadas.
      */
-    public int deleteById(Long id) {
+    public void deleteById(Integer id) { // Alterado para Integer para manter padrão
         String sql = "DELETE FROM Produto WHERE id_produto = ?";
-        return jdbcTemplate.update(sql, id);
+        jdbcTemplate.update(sql, id);
     }
 }
