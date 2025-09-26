@@ -7,9 +7,13 @@ O objetivo principal é oferecer uma plataforma que organize, gerencie e rastrei
 🎯 Objetivos do Projeto
 
 📦 Gestão de Estoque – monitoramento em tempo real da entrada e saída de produtos
+
 🛒 Mapeamento de Vendas – rastreamento completo das movimentações comerciais
+
 📋 Organização de Processos – centralização das rotinas administrativas
+
 👥 Acompanhamento de Funcionários – supervisão de atividades e desempenho
+
 📊 Análise de Dados – apoio à tomada de decisão com relatórios precisos
 
 ## 🛠️ Tecnologias Utilizadas
