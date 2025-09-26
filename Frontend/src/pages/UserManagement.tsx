@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -266,12 +267,26 @@ export default function UserManagement() {
   const stats = getUserStats();
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Gestão de Usuários"
+      description="Sistema de gerenciamento de usuários, permissões e controle de acesso."
+      features={[
+        "Cadastro e edição de usuários do sistema",
+        "Controle de permissões por função",
+        "Gerenciamento de status (ativo/inativo)",
+        "Histórico de acessos e atividades",
+        "Relatórios de usuários e departamentos",
+        "Configurações avançadas de segurança",
+        "Auditoria de ações administrativas"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Gestão de Usuários</h1>
           <p className="text-muted-foreground mt-1">
+            Sistema de gerenciamento de usuários, permissões e controle de acesso.
             Gerencie contas de usuário e permissões do sistema
           </p>
         </div>
@@ -804,5 +819,6 @@ export default function UserManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </DesktopOnlyPage>
   );
 }

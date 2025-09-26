@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import {
   Table,
   TableBody,
@@ -250,7 +251,20 @@ const POS: React.FC = () => {
   };
 
   return (
-    <div className="h-full p-6 bg-background">
+    <DesktopOnlyPage
+      title="Ponto de Venda (POS)"
+      description="Sistema completo de vendas com carrinho, busca de produtos e finalização de compras."
+      features={[
+        "Interface otimizada para caixas registradoras",
+        "Busca rápida de produtos por nome ou código de barras",
+        "Carrinho de compras com controle de estoque",
+        "Cálculo automático de totais e impostos",
+        "Finalização de vendas com múltiplas formas de pagamento",
+        "Impressão de cupons fiscais",
+        "Controle de estoque em tempo real"
+      ]}
+    >
+      <div className="h-full p-6 bg-background">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground">Ponto de Venda</h1>
         <p className="text-muted-foreground">Sistema de vendas do S.I.G.M.A</p>
@@ -412,6 +426,7 @@ const POS: React.FC = () => {
         </div>
       </div>
     </div>
+    </DesktopOnlyPage>
   );
 };
 

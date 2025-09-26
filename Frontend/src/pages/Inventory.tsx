@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -231,12 +232,26 @@ export default function Inventory() {
   const totalValue = inventoryProducts.reduce((sum, p) => sum + (p.currentStock * p.costPrice), 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Controle de Estoque"
+      description="Sistema completo de controle e gestão de estoque com alertas automáticos e relatórios detalhados."
+      features={[
+        "Controle de estoque em tempo real",
+        "Alertas de estoque baixo e produtos vencidos",
+        "Movimentações de entrada e saída",
+        "Relatórios de giro de estoque",
+        "Análise de investimento por produto",
+        "Previsão de reposição automática",
+        "Controle de lotes e validades"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Gestão de Inventário</h1>
           <p className="text-muted-foreground mt-1">
+            Controle de estoque em tempo real com alertas automáticos e relatórios detalhados.
             Controle completo do estoque e movimentações
           </p>
         </div>
@@ -767,5 +782,6 @@ export default function Inventory() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  </DesktopOnlyPage>
+);
 }

@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import {
   LineChart,
   Line,
@@ -102,7 +103,20 @@ export default function Reports() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Relatórios e Analytics"
+      description="Sistema completo de relatórios com gráficos, tabelas e análises detalhadas de performance."
+      features={[
+        "Gráficos interativos e dashboards avançados",
+        "Relatórios de vendas, estoque e clientes",
+        "Análises financeiras e de performance",
+        "Exportação para PDF e Excel",
+        "Filtros avançados por período e categoria",
+        "Métricas de KPI em tempo real",
+        "Comparativos históricos e tendências"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -587,5 +601,6 @@ export default function Reports() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  </DesktopOnlyPage>
+);
 }

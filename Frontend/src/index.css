@@ -71,6 +71,12 @@ Paleta baseada no logo Sigma: Preto profundo, branco puro, roxo vibrante e magen
     --sidebar-width: 18rem;         /* Wider sidebar for better readability */
     --sidebar-width-collapsed: 4.5rem;
     
+    /* Mobile Layout Variables */
+    --mobile-header-height: 3.5rem;
+    --mobile-sidebar-width: 16rem;
+    --mobile-padding: 1rem;
+    --desktop-padding: 1.5rem;
+    
     /* Shadows & Effects - Enhanced for professional look */
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
@@ -189,5 +195,60 @@ Paleta baseada no logo Sigma: Preto profundo, branco puro, roxo vibrante e magen
   /* Focus States */
   .focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  
+  /* Mobile-specific utilities */
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .mobile-header {
+    @apply h-14 sm:h-16;
+  }
+  
+  .mobile-sidebar {
+    @apply w-64 sm:w-72;
+  }
+  
+  .mobile-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+  
+  .mobile-card {
+    @apply p-4 sm:p-6;
+  }
+  
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+  
+  .mobile-button {
+    @apply px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base;
+  }
+  
+  /* Responsive table utilities */
+  .mobile-table {
+    @apply block sm:table w-full;
+  }
+  
+  .mobile-table-row {
+    @apply block sm:table-row border-b sm:border-b-0;
+  }
+  
+  .mobile-table-cell {
+    @apply block sm:table-cell px-2 py-1 sm:px-4 sm:py-3;
+  }
+  
+  /* Hide/show utilities for different screen sizes */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden sm:block;
+  }
+  
+  .tablet-up {
+    @apply hidden md:block;
   }
 }

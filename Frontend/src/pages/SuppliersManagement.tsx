@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -277,12 +278,26 @@ export default function SuppliersManagement() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Gestão de Fornecedores"
+      description="Sistema de gerenciamento de fornecedores com contratos e histórico de compras."
+      features={[
+        "Cadastro completo de fornecedores (PF e PJ)",
+        "Gestão de contratos e condições comerciais",
+        "Histórico de compras e entregas",
+        "Avaliação de performance dos fornecedores",
+        "Controle de documentação e certificações",
+        "Relatórios de compras por fornecedor",
+        "Gestão de prazos de pagamento"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Gestão de Fornecedores</h1>
           <p className="text-muted-foreground mt-1">
+            Sistema de gerenciamento de fornecedores com contratos e histórico de compras.
             Gerencie todos os fornecedores e acompanhe histórico de pedidos
           </p>
         </div>
@@ -848,5 +863,6 @@ export default function SuppliersManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </DesktopOnlyPage>
   );
 }

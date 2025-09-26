@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -217,6 +218,19 @@ export default function CategoriesManagement() {
   };
 
   return (
+    <DesktopOnlyPage
+      title="Gestão de Categorias"
+      description="Sistema de organização e gerenciamento de categorias de produtos com hierarquia e configurações avançadas."
+      features={[
+        "Organização hierárquica de categorias",
+        "Configuração de margens por categoria",
+        "Relatórios de performance por categoria",
+        "Gestão de subcategorias e grupos",
+        "Análise de vendas por segmento",
+        "Configurações de impostos por categoria",
+        "Controle de comissões e descontos"
+      ]}
+    >
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -742,5 +756,6 @@ export default function CategoriesManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </DesktopOnlyPage>
   );
 }

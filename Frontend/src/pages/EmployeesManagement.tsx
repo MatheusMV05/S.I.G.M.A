@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -321,7 +322,20 @@ export default function EmployeesManagement() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Gestão de Funcionários"
+      description="Sistema completo de recursos humanos com controle de funcionários, escalas e folha de pagamento."
+      features={[
+        "Cadastro completo de funcionários",
+        "Controle de escalas e horários",
+        "Gestão de folha de pagamento",
+        "Histórico de férias e faltas",
+        "Avaliações de desempenho",
+        "Controle de documentos trabalhistas",
+        "Relatórios de RH e produtividade"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1105,5 +1119,6 @@ export default function EmployeesManagement() {
         </DialogContent>
       </Dialog>
     </div>
+    </DesktopOnlyPage>
   );
 }

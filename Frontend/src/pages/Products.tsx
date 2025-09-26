@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -261,18 +262,31 @@ export default function Products() {
       currency: 'BRL'
     }).format(value);
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Gestão de Produtos"
+      description="Sistema completo de cadastro e gerenciamento de produtos com controle de estoque e preços."
+      features={[
+        "Cadastro completo de produtos com códigos de barras",
+        "Controle de estoque e movimentações",
+        "Gestão de preços e margens de lucro",
+        "Categorização e organização por departamentos",
+        "Controle de validade e produtos vencidos",
+        "Relatórios de produtos mais vendidos",
+        "Importação e exportação de dados"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Gestão de Produtos</h1>
           <p className="text-muted-foreground mt-1">
+            Sistema completo de cadastro e gerenciamento de produtos com controle de estoque e preços.
             Gerencie seu catálogo de produtos, estoque e preços
           </p>
         </div>
@@ -586,11 +600,14 @@ export default function Products() {
             <DialogHeader>
               <DialogTitle>Detalhes do Produto</DialogTitle>
             </DialogHeader>
-            <ProductDetails product={selectedProduct} />
+            <div className="space-y-4">
+              <p>Detalhes do produto: {selectedProduct.name}</p>
+            </div>
           </DialogContent>
         </Dialog>
       )}
     </div>
+    </DesktopOnlyPage>
   );
 }
 

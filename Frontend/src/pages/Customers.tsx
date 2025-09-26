@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -288,12 +289,26 @@ export default function Customers() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <DesktopOnlyPage
+      title="Gestão de Clientes"
+      description="Sistema de gerenciamento de clientes com histórico de compras e análises."
+      features={[
+        "Cadastro completo de clientes (PF e PJ)",
+        "Histórico detalhado de compras",
+        "Segmentação por tipo e status",
+        "Análise de comportamento de compra",
+        "Relatórios de fidelidade e retenção",
+        "Gestão de dados de contato e endereço",
+        "Notas e observações personalizadas"
+      ]}
+    >
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Gestão de Clientes</h1>
           <p className="text-muted-foreground mt-1">
+            Sistema de gerenciamento de clientes com histórico de compras e análises.
             Gerencie sua base de clientes e histórico de compras
           </p>
         </div>
@@ -624,12 +639,16 @@ export default function Customers() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalhes do Cliente</DialogTitle>
+              <DialogDescription>
+                Visualize as informações do cliente abaixo
+              </DialogDescription>
             </DialogHeader>
             <CustomerDetails customer={selectedCustomer} />
           </DialogContent>
         </Dialog>
       )}
     </div>
+    </DesktopOnlyPage>
   );
 }
 

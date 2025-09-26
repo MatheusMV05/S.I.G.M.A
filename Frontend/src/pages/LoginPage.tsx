@@ -59,7 +59,7 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden mobile-container">
       {/* Background com gradiente e animações */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5">
         {/* Efeitos de partículas animadas */}
@@ -102,20 +102,17 @@ export default function LoginPage() {
       <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
 
-      <div className="relative z-10 w-full max-w-md space-y-8 p-4">
+      <div className="relative z-10 w-full max-w-md space-y-6 sm:space-y-8 p-4 sm:p-6">
         {/* Header com logo e título */}
         <div className="text-center animate-fade-in">
           <div className="mb-8">
             <SigmaLogo size="xl" showText className="mx-auto mb-6 drop-shadow-lg" />
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-2 tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2 tracking-tight">
             S.I.G.M.A.
           </h1>
-          <p className="text-muted-foreground text-lg font-medium">
+          <p className="text-muted-foreground text-base sm:text-lg font-medium">
             Sistema Integrado de Gestão
-          </p>
-          <p className="text-muted-foreground text-sm mt-1">
-          
           </p>
         </div>
 
@@ -125,10 +122,10 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-secondary/20 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
           
           <CardHeader className="space-y-2 pb-6 relative z-10">
-            <CardTitle className="text-2xl text-center font-bold animate-fade-in">
+            <CardTitle className="text-xl sm:text-2xl text-center font-bold animate-fade-in">
               Acesso ao Sistema
             </CardTitle>
-            <CardDescription className="text-center text-base animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <CardDescription className="text-center text-sm sm:text-base animate-fade-in" style={{ animationDelay: '0.2s' }}>
               Digite suas credenciais para entrar
             </CardDescription>
           </CardHeader>
@@ -146,7 +143,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
+                  className="h-10 sm:h-12 text-sm sm:text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
                 />
               </div>
               
@@ -162,13 +159,13 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-12 text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
+                    className="h-10 sm:h-12 text-sm sm:text-base pr-12 transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1 h-10 w-10 hover:bg-muted/50 transition-all duration-200 hover:scale-110"
+                    className="absolute right-1 top-1 h-8 w-8 sm:h-10 sm:w-10 hover:bg-muted/50 transition-all duration-200 hover:scale-110"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -190,7 +187,7 @@ export default function LoginPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] animate-fade-in"
+                className="w-full h-10 sm:h-12 text-sm sm:text-base font-semibold bg-primary hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] animate-fade-in"
                 style={{ animationDelay: '0.8s' }}
                 disabled={isLoading}
               >
@@ -211,27 +208,27 @@ export default function LoginPage() {
                 <p className="text-sm text-muted-foreground font-medium">
                   Credenciais para demonstração:
                 </p>
-                <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-left">
-                  <div className="grid gap-2">
+                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 space-y-2 text-left">
+                  <div className="grid gap-1 sm:gap-2">
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-xs text-muted-foreground">Admin:</span>
-                      <span className="font-mono text-xs text-foreground">admin@comprebem.com</span>
+                      <span className="font-mono text-xs text-foreground truncate">admin@comprebem.com</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-xs text-muted-foreground">Gerente:</span>
-                      <span className="font-mono text-xs text-foreground">gerente@comprebem.com</span>
+                      <span className="font-mono text-xs text-foreground truncate">gerente@comprebem.com</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-xs text-muted-foreground">Supervisor:</span>
-                      <span className="font-mono text-xs text-foreground">supervisor@comprebem.com</span>
+                      <span className="font-mono text-xs text-foreground truncate">supervisor@comprebem.com</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-xs text-muted-foreground">Caixa:</span>
-                      <span className="font-mono text-xs text-foreground">caixa@comprebem.com</span>
+                      <span className="font-mono text-xs text-foreground truncate">caixa@comprebem.com</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-xs text-muted-foreground">Estoque:</span>
-                      <span className="font-mono text-xs text-foreground">estoque@comprebem.com</span>
+                      <span className="font-mono text-xs text-foreground truncate">estoque@comprebem.com</span>
                     </div>
                     <div className="border-t border-border/30 pt-2 mt-2">
                       <div className="flex justify-between items-center">
@@ -247,9 +244,9 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <div className="text-center text-xs text-muted-foreground space-y-1 animate-fade-in">
+        <div className="text-center text-xs sm:text-sm text-muted-foreground space-y-1 animate-fade-in">
           <p className="font-semibold">© 2024 Compre Bem Supermercado</p>
-          <p>Sistema desenvolvido para gestão completa</p>
+          <p className="hidden sm:block">Sistema desenvolvido para gestão completa</p>
         </div>
       </div>
     </div>

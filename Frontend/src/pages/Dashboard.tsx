@@ -254,23 +254,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-background min-h-screen">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-background min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-in">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
         <div>
-          <h1 className="text-4xl font-bold text-foreground animate-fade-in">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground animate-fade-in">
             Bem-vindo, <span className="text-primary">{user?.name || 'Usuário'}</span>!
           </h1>
-          <p className="text-muted-foreground mt-2 text-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <p className="text-muted-foreground mt-2 text-base sm:text-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Aqui está o resumo das operações de hoje
           </p>
         </div>
-        <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+        <div className="flex gap-2 sm:gap-3 animate-fade-in w-full sm:w-auto" style={{ animationDelay: '0.4s' }}>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleViewReports}
-            className="hover:scale-105 transition-all duration-200"
+            className="hover:scale-105 transition-all duration-200 flex-1 sm:flex-none"
           >
             <FileText className="h-4 w-4 mr-2" />
             Relatórios
@@ -278,7 +278,7 @@ export default function Dashboard() {
           <Button 
             size="sm" 
             onClick={handleNewSale}
-            className="bg-primary hover:bg-primary-hover hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="bg-primary hover:bg-primary-hover hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex-1 sm:flex-none"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Nova Venda
@@ -287,7 +287,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPIs Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <KPICard
           title="Faturamento Hoje"
           value={`R$ ${dashboardKPIs.todayRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -343,7 +343,7 @@ export default function Dashboard() {
         </TabsList>
 
         <TabsContent value="revenue" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Gráfico de Faturamento */}
             <Card className="lg:col-span-2">
               <CardHeader>
@@ -353,7 +353,7 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <AreaChart data={revenueData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -436,14 +436,14 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Produtos Mais Vendidos */}
             <Card>
               <CardHeader>
                 <CardTitle>Produtos Mais Vendidos</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
                       data={topProductsData}
@@ -513,14 +513,14 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Vendas por Hora */}
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Vendas por Hora - Hoje</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={hourlyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
                     <XAxis dataKey="hour" stroke="#888" />

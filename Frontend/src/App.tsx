@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SigmaLogo } from "@/components/SigmaLogo";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { MobileHeader } from "@/components/MobileHeader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
@@ -50,7 +51,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-header border-b border-border bg-card/50 backdrop-blur-sm px-6 flex items-center justify-between">
+          {/* Mobile Header - visible only on mobile */}
+          <MobileHeader />
+          
+          {/* Desktop Header - hidden on mobile */}
+          <header className="hidden md:flex h-header border-b border-border bg-card/50 backdrop-blur-sm px-6 items-center justify-between">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <div className="h-6 w-px bg-border" />
@@ -63,7 +68,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
+          
+          <main className="flex-1 overflow-auto mobile-container">
             {children}
           </main>
         </div>

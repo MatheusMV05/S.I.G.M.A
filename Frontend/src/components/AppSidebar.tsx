@@ -112,17 +112,15 @@ const reportItems = [
 
 export function AppSidebar() {
   const { user, logout, hasPermission } = useAuth();
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
-  const isCollapsed = state === 'collapsed';
+  const isCollapsed = state === 'collapsed' && !isMobile;
 
   const handleLogout = () => {
     logout();
   };
-
-  // Filtrar itens baseado nas permissões do usuário
   const filterItems = (items: typeof menuItems) => {
     return items.filter(item => hasPermission(item.roles));
   };
