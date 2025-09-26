@@ -4,7 +4,7 @@ O S.I.G.M.A. (Sistema Integrado de Gestão da Movimentação de Ativos) é um si
 
 O objetivo principal é oferecer uma plataforma que organize, gerencie e rastreie processos internos, desde o controle de estoque até o acompanhamento da produtividade dos colaboradores, garantindo eficiência operacional e decisões mais estratégicas.
 
-🎯 Objetivos do Projeto
+###🎯 Objetivos do Projeto:
 
 📦 Gestão de Estoque – monitoramento em tempo real da entrada e saída de produtos
 
