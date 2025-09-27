@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { SigmaLogo } from '@/components/SigmaLogo';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell, User } from 'lucide-react';
@@ -18,7 +17,6 @@ export function MobileHeader({ showMenuButton = true }: MobileHeaderProps) {
         {showMenuButton && (
           <SidebarTrigger className="p-2" />
         )}
-        <SigmaLogo size="sm" showText variant="compact" />
       </div>
       
       <div className="flex items-center gap-2">

@@ -132,6 +132,7 @@ export function AppSidebar() {
           size="lg" 
           showText={!isCollapsed}
           variant="default"
+          hideTextCompletely={isCollapsed}
         />
       </SidebarHeader>
 

@@ -106,13 +106,13 @@ export default function LoginPage() {
         {/* Header com logo e título */}
         <div className="text-center animate-fade-in">
           <div className="mb-8">
-            <SigmaLogo size="xl" showText className="mx-auto mb-6 drop-shadow-lg" />
+            <SigmaLogo size="2xl" showText className="mx-auto mb-6 drop-shadow-lg" />
           </div>
           <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2 tracking-tight">
-            S.I.G.M.A.
+            Bem-vindo ao S.I.G.M.A. 
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg font-medium">
-            Sistema Integrado de Gestão
+            Sistema Integrado de Gestão e Movimentação de Ativos
           </p>
         </div>
 
