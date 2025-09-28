@@ -31,7 +31,8 @@ import {
   Layers,
   Eye,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  MapPin
 } from 'lucide-react';
 
 // Mock data para produtos
@@ -436,6 +437,7 @@ export default function Products() {
               <TableRow>
                 <TableHead>Produto</TableHead>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Prateleira</TableHead>
                 <TableHead>Estoque</TableHead>
                 <TableHead>Preços</TableHead>
                 <TableHead>Validade</TableHead>
@@ -464,6 +466,14 @@ export default function Products() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{product.category}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className={`font-medium text-sm ${product.shelfLocation ? 'text-foreground' : 'text-muted-foreground italic'}`}>
+                          {product.shelfLocation || 'Não definida'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">

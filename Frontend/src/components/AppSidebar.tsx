@@ -235,9 +235,9 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
-                      className={({ isActive }) => 
-                        isActive 
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                      className={
+                        isActive(item.url) 
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       }
                     >
@@ -262,9 +262,9 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url}
-                        className={({ isActive }) => 
-                          isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                        className={
+                          isActive(item.url) 
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary"
                             : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }
                       >
@@ -290,9 +290,9 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url}
-                        className={({ isActive }) => 
-                          isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                        className={
+                          isActive(item.url) 
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary"
                             : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }
                       >
@@ -318,9 +318,9 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url}
-                        className={({ isActive }) => 
-                          isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+                        className={
+                          isActive(item.url) 
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary"
                             : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }
                       >

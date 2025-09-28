@@ -178,6 +178,14 @@ export default function Inventory() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<typeof inventoryProducts[0] | null>(null);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [isNewMovementOpen, setIsNewMovementOpen] = useState(false);
+  const [newMovement, setNewMovement] = useState({
+    productId: '',
+    type: '',
+    quantity: '',
+    reason: '',
+    reference: ''
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -209,6 +217,44 @@ export default function Inventory() {
 
   const getStockPercentage = (current: number, min: number, max: number) => {
     return ((current - min) / (max - min)) * 100;
+  };
+
+  const handleSaveMovement = () => {
+    if (!newMovement.productId || !newMovement.type || !newMovement.quantity) {
+      alert('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    const product = inventoryProducts.find(p => p.id === newMovement.productId);
+    if (!product) {
+      alert('Produto não encontrado.');
+      return;
+    }
+
+    const movement = {
+      id: (movements.length + 1).toString(),
+      productId: newMovement.productId,
+      productName: product.name,
+      type: newMovement.type as 'entrada' | 'saida',
+      quantity: parseInt(newMovement.quantity),
+      date: new Date().toISOString(),
+      user: user?.name || 'Usuário',
+      reason: newMovement.reason || 'Movimentação manual',
+      reference: newMovement.reference || 'REF-' + Date.now()
+    };
+
+    console.log('Nova movimentação criada:', movement);
+    
+    setIsNewMovementOpen(false);
+    setNewMovement({
+      productId: '',
+      type: '',
+      quantity: '',
+      reason: '',
+      reference: ''
+    });
+    
+    alert('Movimentação registrada com sucesso!');
   };
 
   const getDaysToStockOut = (currentStock: number, avgConsumption: number) => {
@@ -283,7 +329,10 @@ export default function Inventory() {
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
-          <Button className="bg-primary hover:bg-primary-hover">
+          <Button 
+            className="bg-primary hover:bg-primary-hover"
+            onClick={() => setIsNewMovementOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nova Movimentação
           </Button>
@@ -1040,6 +1089,114 @@ export default function Inventory() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Nova Movimentação */}
+      <Dialog open={isNewMovementOpen} onOpenChange={setIsNewMovementOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Movimentação</DialogTitle>
+            <DialogDescription>
+              Registre uma nova movimentação de entrada ou saída no estoque.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="product">Produto *</Label>
+              <Select
+                value={newMovement.productId}
+                onValueChange={(value) => setNewMovement(prev => ({ ...prev, productId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {inventoryProducts.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Tipo de Movimentação *</Label>
+              <Select
+                value={newMovement.type}
+                onValueChange={(value) => setNewMovement(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="saida">Saída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantidade *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={newMovement.quantity}
+                onChange={(e) => setNewMovement(prev => ({ ...prev, quantity: e.target.value }))}
+                placeholder="Digite a quantidade"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reason">Motivo</Label>
+              <Select
+                value={newMovement.reason}
+                onValueChange={(value) => setNewMovement(prev => ({ ...prev, reason: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Recebimento de fornecedor">Recebimento de fornecedor</SelectItem>
+                  <SelectItem value="Venda no PDV">Venda no PDV</SelectItem>
+                  <SelectItem value="Devolução de cliente">Devolução de cliente</SelectItem>
+                  <SelectItem value="Transferência">Transferência</SelectItem>
+                  <SelectItem value="Ajuste de inventário">Ajuste de inventário</SelectItem>
+                  <SelectItem value="Perda/Avaria">Perda/Avaria</SelectItem>
+                  <SelectItem value="Outros">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reference">Referência</Label>
+              <Input
+                id="reference"
+                value={newMovement.reference}
+                onChange={(e) => setNewMovement(prev => ({ ...prev, reference: e.target.value }))}
+                placeholder="Ex: NF-001234, VENDA-5678"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsNewMovementOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveMovement}
+              className="bg-primary hover:bg-primary-hover"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Registrar Movimentação
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
