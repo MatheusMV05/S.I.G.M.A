@@ -16,35 +16,35 @@ export interface User {
 // Definição de permissões por perfil
 export const rolePermissions = {
   admin: [
-    'full_access',
-    'user_management',
-    'financial_reports',
-    'sales_reports',
-    'inventory_reports',
-    'price_adjustments',
-    'promotions_management',
-    'system_settings',
-    'backup_restore'
+    'Acesso Completo',
+    'Gerenciamento de Usuários',
+    'Relatórios Financeiros',
+    'Relatórios de Vendas',
+    'Relatórios de Estoque',
+    'Ajustes de Preços',
+    'Gerenciamento de Promoções',
+    'Configurações do Sistema',
+    'Backup e Restauração'
   ],
   manager: [
-    'inventory_management',
-    'product_registration',
-    'stock_control',
-    'employee_schedules',
-    'vacation_approval',
-    'basic_permissions',
-    'sales_reports',
-    'performance_reports',
-    'loss_reports'
+    'Gerenciamento de Estoque',
+    'Cadastro de Produtos',
+    'Controle de Estoque',
+    'Escalas de Funcionários',
+    'Aprovação de Férias',
+    'Permissões Básicas',
+    'Relatórios de Vendas',
+    'Relatórios de Desempenho',
+    'Relatórios de Perdas'
   ],
   supervisor: [
-    'inventory_reports',
-    'sales_reports',
-    'cancellation_approval',
-    'return_approval',
-    'cash_closing',
-    'product_consultation',
-    'customer_service'
+    'Relatórios de Estoque',
+    'Relatórios de Vendas',
+    'Aprovação de Cancelamentos',
+    'Aprovação de Devoluções',
+    'Fechamento de Caixa',
+    'Consulta de Produtos',
+    'Atendimento ao Cliente'
   ],
   cashier: [
     'Registro de Vendas',
@@ -55,12 +55,12 @@ export const rolePermissions = {
     'Processamento de Pagamentos'
   ],
   stock: [
-    'stock_entry',
-    'stock_exit',
-    'inventory_consultation',
-    'loss_reporting',
-    'product_receiving',
-    'stock_counting'
+    'Entrada de Estoque',
+    'Saída de Estoque',
+    'Consulta de Inventário',
+    'Relatório de Perdas',
+    'Recebimento de Produtos',
+    'Contagem de Estoque'
   ]
 };
 

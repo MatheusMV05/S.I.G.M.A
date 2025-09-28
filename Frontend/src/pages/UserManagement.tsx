@@ -730,7 +730,7 @@ export default function UserManagement() {
           </DialogHeader>
           
           {selectedUser && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {/* Informações Básicas */}
               <Card>
                 <CardHeader>
@@ -742,21 +742,24 @@ export default function UserManagement() {
                     {selectedUser.name}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <Label className="text-sm text-muted-foreground">E-mail</Label>
-                      <p className="font-medium">{selectedUser.email}</p>
-                    </div>
-                    <div>
+                <CardContent className="space-y-6">
+                  {/* Email em linha separada para acomodar tamanhos variáveis */}
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">E-mail</Label>
+                    <p className="font-medium text-sm break-all bg-muted/20 px-3 py-2 rounded-md border">{selectedUser.email}</p>
+                  </div>
+                  
+                  {/* Outros campos em grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Telefone</Label>
                       <p className="font-medium">{selectedUser.phone}</p>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Departamento</Label>
                       <p className="font-medium">{selectedUser.department}</p>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Status</Label>
                       <Badge variant={getStatusBadge(selectedUser.status).variant}>
                         {getStatusBadge(selectedUser.status).label}
@@ -766,16 +769,16 @@ export default function UserManagement() {
 
                   <Separator />
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Data de Contratação</Label>
                       <p className="font-medium">{formatDate(selectedUser.hireDate)}</p>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Salário</Label>
                       <p className="font-medium text-success">{formatCurrency(selectedUser.salary)}</p>
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Último Acesso</Label>
                       <p className="font-medium">{formatDateTime(selectedUser.lastLogin)}</p>
                     </div>
@@ -792,19 +795,19 @@ export default function UserManagement() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
                       <Label className="text-sm text-muted-foreground">Perfil de Acesso</Label>
                       <Badge variant={getRoleBadge(selectedUser.role).variant} className="ml-2">
                         {getRoleBadge(selectedUser.role).label}
                       </Badge>
                     </div>
                     
-                    <div>
-                      <Label className="text-sm text-muted-foreground mb-2 block">Permissões Ativas</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="space-y-4">
+                      <Label className="text-sm text-muted-foreground block">Permissões Ativas</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {selectedUser.permissions.map((permission) => (
-                          <div key={permission} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
+                          <div key={permission} className="flex items-center gap-3 p-3 bg-muted/30 rounded-md border border-muted/20">
                             <ShieldCheck className="h-4 w-4 text-success" />
                             <span className="text-sm">{permission}</span>
                           </div>
