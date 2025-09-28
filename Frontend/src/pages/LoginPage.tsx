@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SigmaLogo } from '@/components/SigmaLogo';
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { Eye, EyeOff, Loader2, ShoppingCart, BarChart3, Package, Users, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ShoppingCart, BarChart3, Package, Users, CheckCircle, Mail, ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export default function LoginPage() {
   const { isAuthenticated, login } = useAuth();
@@ -18,6 +19,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
+  
+  // Estados para recuperação de senha
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -37,6 +45,49 @@ export default function LoginPage() {
       setError('Credenciais inválidas. Tente novamente.');
       setIsLoading(false);
     }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsResetLoading(true);
+    setResetError('');
+
+    // Validação básica de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      setResetError('Por favor, digite um email válido.');
+      setIsResetLoading(false);
+      return;
+    }
+
+    try {
+      // Simular envio de email (aqui você implementaria a lógica real)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Aqui você implementaria a chamada para a API de reset de senha
+      console.log('Enviando email de reset para:', resetEmail);
+      
+      setResetSuccess(true);
+      setIsResetLoading(false);
+      
+      // Fechar o diálogo após 3 segundos
+      setTimeout(() => {
+        setIsForgotPasswordOpen(false);
+        setResetSuccess(false);
+        setResetEmail('');
+      }, 3000);
+      
+    } catch (error) {
+      setResetError('Erro ao enviar email. Tente novamente.');
+      setIsResetLoading(false);
+    }
+  };
+
+  const openForgotPassword = () => {
+    setIsForgotPasswordOpen(true);
+    setResetEmail(email); // Pre-preencher com o email do login se existir
+    setResetError('');
+    setResetSuccess(false);
   };
 
   // Tela de transição pós-login bem-sucedido
@@ -202,6 +253,18 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* Link Esqueci minha senha */}
+            <div className="text-center animate-fade-in" style={{ animationDelay: '1s' }}>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={openForgotPassword}
+                className="text-primary hover:text-primary-hover text-sm font-medium hover:underline transition-all duration-200"
+              >
+                Esqueci minha senha
+              </Button>
+            </div>
+
             {/* Informações de teste */}
             <div className="pt-4 border-t border-border/50">
               <div className="text-center space-y-3">
@@ -249,6 +312,112 @@ export default function LoginPage() {
           <p className="hidden sm:block">Sistema desenvolvido para gestão completa</p>
         </div>
       </div>
+
+      {/* Dialog de Esqueci minha senha */}
+      <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Recuperar Senha
+            </DialogTitle>
+            <DialogDescription>
+              Digite seu email para receber instruções de recuperação de senha
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {!resetSuccess ? (
+              <>
+                {/* Informações sobre o processo */}
+                <div className="bg-muted/20 p-4 rounded-lg border border-muted/40">
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Como funciona
+                  </h4>
+                  <ul className="text-xs text-muted-foreground space-y-1">
+                    <li>• Digite o email da sua conta</li>
+                    <li>• Receba um link seguro por email</li>
+                    <li>• Clique no link para criar nova senha</li>
+                    <li>• O link expira em 30 minutos</li>
+                  </ul>
+                </div>
+
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email">Email da conta</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      required
+                      className="h-10 text-sm transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  {resetError && (
+                    <Alert variant="destructive">
+                      <AlertDescription className="text-sm">
+                        {resetError}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="flex justify-end gap-3">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => setIsForgotPasswordOpen(false)}
+                      disabled={isResetLoading}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Voltar
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={isResetLoading}
+                      className="bg-primary hover:bg-primary-hover"
+                    >
+                      {isResetLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Enviar Email
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              /* Tela de sucesso */
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle className="h-8 w-8 text-success" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-success">Email enviado com sucesso!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enviamos instruções de recuperação para:
+                  </p>
+                  <p className="text-sm font-medium text-foreground bg-muted/30 px-3 py-2 rounded-md">
+                    {resetEmail}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Verifique sua caixa de entrada e spam. Este diálogo fechará automaticamente.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

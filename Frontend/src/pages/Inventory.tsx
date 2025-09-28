@@ -176,6 +176,8 @@ export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedProduct, setSelectedProduct] = useState<typeof inventoryProducts[0] | null>(null);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -230,6 +232,23 @@ export default function Inventory() {
   const lowStockProducts = inventoryProducts.filter(p => p.status === 'low').length;
   const outOfStockProducts = inventoryProducts.filter(p => p.status === 'out').length;
   const totalValue = inventoryProducts.reduce((sum, p) => sum + (p.currentStock * p.costPrice), 0);
+
+  // Função para abrir inspeção do produto
+  const openProductInspection = (product: typeof inventoryProducts[0]) => {
+    setSelectedProduct(product);
+    setIsInspectionOpen(true);
+  };
+
+  // Função para fechar inspeção
+  const closeProductInspection = () => {
+    setIsInspectionOpen(false);
+    setSelectedProduct(null);
+  };
+
+  // Calcular histórico de movimentações do produto selecionado
+  const getProductMovements = (productId: string) => {
+    return movements.filter(m => m.productId === productId);
+  };
 
   return (
     <DesktopOnlyPage
@@ -466,7 +485,11 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => openProductInspection(product)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="sm">
@@ -781,6 +804,244 @@ export default function Inventory() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de Inspeção de Produto */}
+      <Dialog open={isInspectionOpen} onOpenChange={setIsInspectionOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <Package className="h-6 w-6 text-primary" />
+                  Inspeção de Produto
+                </DialogTitle>
+                <DialogDescription>
+                  Informações detalhadas e histórico completo do produto selecionado.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Informações Básicas */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Informações do Produto</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Nome</Label>
+                          <p className="font-semibold">{selectedProduct.name}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Código</Label>
+                          <p className="font-mono text-sm">{selectedProduct.id}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Categoria</Label>
+                          <Badge variant="outline" className="mt-1">{selectedProduct.category}</Badge>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                          <Badge 
+                            variant={getStatusBadge(selectedProduct.status).variant}
+                            className="mt-1"
+                          >
+                            {getStatusBadge(selectedProduct.status).label}
+                          </Badge>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Localização</Label>
+                          <p className="font-mono">{selectedProduct.location}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Fornecedor</Label>
+                          <p>{selectedProduct.supplier}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Controle de Estoque</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="p-3 border rounded-lg">
+                          <p className="text-sm text-muted-foreground">Estoque Atual</p>
+                          <p className="text-2xl font-bold text-primary">{selectedProduct.currentStock}</p>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <p className="text-sm text-muted-foreground">Estoque Mínimo</p>
+                          <p className="text-xl font-semibold text-warning">{selectedProduct.minStock}</p>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <p className="text-sm text-muted-foreground">Estoque Máximo</p>
+                          <p className="text-xl font-semibold text-success">{selectedProduct.maxStock}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Nível de Estoque</span>
+                          <span className="text-sm text-muted-foreground">
+                            {Math.round(getStockPercentage(selectedProduct.currentStock, selectedProduct.minStock, selectedProduct.maxStock))}%
+                          </span>
+                        </div>
+                        <Progress 
+                          value={Math.max(0, Math.min(100, getStockPercentage(selectedProduct.currentStock, selectedProduct.minStock, selectedProduct.maxStock)))} 
+                          className="h-3" 
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Consumo Médio</Label>
+                          <p className="text-lg font-semibold">{selectedProduct.avgConsumption}/dia</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Previsão de Estoque</Label>
+                          <p className="text-lg font-semibold">
+                            {getDaysToStockOut(selectedProduct.currentStock, selectedProduct.avgConsumption)} dias
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Informações Financeiras */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-success" />
+                      Informações Financeiras
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="p-4 border rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Preço de Custo</p>
+                        <p className="text-xl font-bold text-destructive">
+                          {formatCurrency(selectedProduct.costPrice)}
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Preço de Venda</p>
+                        <p className="text-xl font-bold text-success">
+                          {formatCurrency(selectedProduct.sellPrice)}
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Margem de Lucro</p>
+                        <p className="text-xl font-bold text-primary">
+                          {(((selectedProduct.sellPrice - selectedProduct.costPrice) / selectedProduct.costPrice) * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Valor Investido</p>
+                        <p className="text-xl font-bold text-warning">
+                          {formatCurrency(selectedProduct.currentStock * selectedProduct.costPrice)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Histórico de Movimentações */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <RefreshCw className="h-5 w-5 text-primary" />
+                      Histórico de Movimentações
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {getProductMovements(selectedProduct.id).length > 0 ? (
+                      <div className="space-y-3">
+                        {getProductMovements(selectedProduct.id)
+                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                          .map((movement) => (
+                            <div 
+                              key={movement.id} 
+                              className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
+                            >
+                              <div className="flex items-center gap-3">
+                                {movement.type === 'entrada' ? (
+                                  <TrendingUp className="h-5 w-5 text-success" />
+                                ) : (
+                                  <TrendingDown className="h-5 w-5 text-warning" />
+                                )}
+                                <div>
+                                  <p className="font-medium">
+                                    {movement.type === 'entrada' ? 'Entrada' : 'Saída'} de {movement.quantity} unidades
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatDate(movement.date)} • {movement.user}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {movement.reason} • Ref: {movement.reference}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant={movement.type === 'entrada' ? 'default' : 'secondary'}>
+                                {movement.type === 'entrada' ? '+' : '-'}{movement.quantity}
+                              </Badge>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <RefreshCw className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">
+                          Nenhuma movimentação encontrada para este produto
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Ações Rápidas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Ações Rápidas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-3">
+                      <Button className="bg-primary hover:bg-primary-hover">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Estoque
+                      </Button>
+                      <Button variant="outline">
+                        <Minus className="h-4 w-4 mr-2" />
+                        Remover Estoque
+                      </Button>
+                      <Button variant="outline">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar Produto
+                      </Button>
+                      <Button variant="outline">
+                        <Truck className="h-4 w-4 mr-2" />
+                        Solicitar Reposição
+                      </Button>
+                      <Button variant="outline">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Ver Relatórios
+                      </Button>
+                      <Button variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar Dados
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   </DesktopOnlyPage>
 );
