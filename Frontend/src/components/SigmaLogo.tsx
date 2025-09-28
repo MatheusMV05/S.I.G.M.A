@@ -66,12 +66,12 @@ export function SigmaLogo({
         src={sigmaLogoImg} 
         alt="Sigma Logo" 
         className={cn(
-          'relative z-10 object-contain mt-3',
-          size === 'sm' && 'w-6 h-6',
-          size === 'md' && 'w-9 h-9', 
-          size === 'lg' && 'w-16 h-16',
-          size === 'xl' && 'w-20 h-20',
-          size === '2xl' && 'w-24 h-24'
+          'relative z-10 object-contain',
+          size === 'sm' && 'w-6 h-6 mt-0.5',
+          size === 'md' && 'w-9 h-9 mt-1', 
+          size === 'lg' && 'w-16 h-16 mt-2',
+          size === 'xl' && 'w-20 h-20 mt-2',
+          size === '2xl' && 'w-24 h-24 mt-3'
         )}
       />
     </div>
