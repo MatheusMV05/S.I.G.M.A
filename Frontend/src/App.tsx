@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AppSidebar } from "@/components/AppSidebar";
+import { NotificationBell } from "@/components/NotificationSystem";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { MobileHeader } from "@/components/MobileHeader";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -59,6 +61,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger />
             </div>
             <div className="flex items-center gap-4">
+              <NotificationBell />
               <div className="text-right">
                 <div className="text-sm font-semibold text-foreground">Compre Bem Supermercado</div>
                 <div className="text-xs text-muted-foreground">Sistema Integrado de Gestão</div>
@@ -130,9 +133,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppLayout>
-            <AppRoutes />
-          </AppLayout>
+          <NotificationProvider>
+            <AppLayout>
+              <AppRoutes />
+            </AppLayout>
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

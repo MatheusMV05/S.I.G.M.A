@@ -4,6 +4,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell, User, LogOut, UserCircle, Shield, Key, Eye, EyeOff } from 'lucide-react';
 import { SigmaLogo } from '@/components/SigmaLogo';
+import { NotificationBell } from '@/components/NotificationSystem';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -106,9 +107,7 @@ export function MobileHeader({ showMenuButton = true }: MobileHeaderProps) {
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="p-2">
-          <Bell className="h-5 w-5" />
-        </Button>
+        <NotificationBell />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

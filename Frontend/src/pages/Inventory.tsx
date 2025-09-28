@@ -186,6 +186,10 @@ export default function Inventory() {
     reason: '',
     reference: ''
   });
+  const [quickActionProduct, setQuickActionProduct] = useState<typeof inventoryProducts[0] | null>(null);
+  const [quickActionType, setQuickActionType] = useState<'add' | 'remove' | 'restock'>('add');
+  const [quickActionQuantity, setQuickActionQuantity] = useState('');
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -255,6 +259,85 @@ export default function Inventory() {
     });
     
     alert('Movimentação registrada com sucesso!');
+  };
+
+  const handleQuickAddStock = (product: typeof inventoryProducts[0]) => {
+    setQuickActionProduct(product);
+    setQuickActionType('add');
+    setQuickActionQuantity('');
+    setIsQuickActionOpen(true);
+  };
+
+  const handleQuickRemoveStock = (product: typeof inventoryProducts[0]) => {
+    setQuickActionProduct(product);
+    setQuickActionType('remove');
+    setQuickActionQuantity('');
+    setIsQuickActionOpen(true);
+  };
+
+  const handleQuickRestock = (product: typeof inventoryProducts[0]) => {
+    setQuickActionProduct(product);
+    setQuickActionType('restock');
+    const suggestedQuantity = Math.max(0, product.maxStock - product.currentStock);
+    setQuickActionQuantity(suggestedQuantity.toString());
+    setIsQuickActionOpen(true);
+  };
+
+  const handleConfirmQuickAction = () => {
+    if (!quickActionProduct || !quickActionQuantity) {
+      alert('Por favor, informe a quantidade.');
+      return;
+    }
+
+    const quantity = parseInt(quickActionQuantity);
+    if (quantity <= 0) {
+      alert('A quantidade deve ser maior que zero.');
+      return;
+    }
+
+    let type: 'entrada' | 'saida' = 'entrada';
+    let reason = '';
+
+    switch (quickActionType) {
+      case 'add':
+        type = 'entrada';
+        reason = 'Entrada manual de estoque';
+        break;
+      case 'remove':
+        type = 'saida';
+        reason = 'Saída manual de estoque';
+        if (quantity > quickActionProduct.currentStock) {
+          alert(`Quantidade indisponível. Estoque atual: ${quickActionProduct.currentStock}`);
+          return;
+        }
+        break;
+      case 'restock':
+        type = 'entrada';
+        reason = 'Reposição de estoque';
+        break;
+    }
+
+    const movement = {
+      id: (movements.length + 1).toString(),
+      productId: quickActionProduct.id,
+      productName: quickActionProduct.name,
+      type: type,
+      quantity: quantity,
+      date: new Date().toISOString(),
+      user: user?.name || 'Usuário',
+      reason: reason,
+      reference: 'REF-' + Date.now()
+    };
+
+    console.log('Ação rápida executada:', movement);
+
+    setIsQuickActionOpen(false);
+    setQuickActionProduct(null);
+    setQuickActionQuantity('');
+
+    const actionText = quickActionType === 'add' ? 'Adição' : 
+                      quickActionType === 'remove' ? 'Remoção' : 'Reposição';
+    alert(`${actionText} de estoque registrada com sucesso!`);
   };
 
   const getDaysToStockOut = (currentStock: number, avgConsumption: number) => {
@@ -505,11 +588,11 @@ export default function Inventory() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="space-y-1">
-                            <p className="font-mono text-sm">{product.location}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {product.supplier}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono text-sm font-medium">
+                              {product.location}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -541,10 +624,20 @@ export default function Inventory() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleQuickAddStock(product)}
+                              title="Adicionar ao estoque"
+                            >
                               <Plus className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleQuickRemoveStock(product)}
+                              title="Remover do estoque"
+                            >
                               <Minus className="h-4 w-4" />
                             </Button>
                           </div>
@@ -647,7 +740,11 @@ export default function Inventory() {
                           Última movimentação: {new Date(product.lastMovement).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
-                      <Button size="sm" className="bg-primary hover:bg-primary-hover">
+                      <Button 
+                        size="sm" 
+                        className="bg-primary hover:bg-primary-hover"
+                        onClick={() => handleQuickRestock(product)}
+                      >
                         <Plus className="h-4 w-4 mr-1" />
                         Repor
                       </Button>
@@ -684,7 +781,11 @@ export default function Inventory() {
                           className="mt-2 h-1.5" 
                         />
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleQuickRestock(product)}
+                      >
                         <Plus className="h-4 w-4 mr-1" />
                         Repor
                       </Button>
@@ -1195,6 +1296,92 @@ export default function Inventory() {
             >
               <Plus className="h-4 w-4 mr-2" />
               Registrar Movimentação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Ação Rápida */}
+      <Dialog open={isQuickActionOpen} onOpenChange={setIsQuickActionOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {quickActionType === 'add' ? 'Adicionar Estoque' : 
+               quickActionType === 'remove' ? 'Remover Estoque' : 
+               'Repor Estoque'}
+            </DialogTitle>
+            <DialogDescription>
+              {quickActionProduct && (
+                <>
+                  <span className="font-medium">{quickActionProduct.name}</span>
+                  <br />
+                  <span className="text-sm">Estoque atual: {quickActionProduct.currentStock}</span>
+                  {quickActionType === 'restock' && (
+                    <span className="text-sm block">Estoque máximo: {quickActionProduct.maxStock}</span>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quick-quantity">
+                Quantidade {quickActionType === 'remove' ? 'a remover' : 'a adicionar'} *
+              </Label>
+              <Input
+                id="quick-quantity"
+                type="number"
+                min="1"
+                max={quickActionType === 'remove' ? quickActionProduct?.currentStock : undefined}
+                value={quickActionQuantity}
+                onChange={(e) => setQuickActionQuantity(e.target.value)}
+                placeholder="Digite a quantidade"
+              />
+              {quickActionType === 'remove' && quickActionProduct && (
+                <p className="text-sm text-muted-foreground">
+                  Máximo disponível: {quickActionProduct.currentStock}
+                </p>
+              )}
+              {quickActionType === 'restock' && quickActionProduct && (
+                <p className="text-sm text-muted-foreground">
+                  Sugerido para atingir estoque máximo: {Math.max(0, quickActionProduct.maxStock - quickActionProduct.currentStock)}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsQuickActionOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmQuickAction}
+              className={
+                quickActionType === 'remove' 
+                  ? "bg-destructive hover:bg-destructive/90" 
+                  : "bg-primary hover:bg-primary-hover"
+              }
+            >
+              {quickActionType === 'add' ? (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
+                </>
+              ) : quickActionType === 'remove' ? (
+                <>
+                  <Minus className="h-4 w-4 mr-2" />
+                  Remover
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Repor
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>

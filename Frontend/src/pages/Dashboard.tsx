@@ -179,27 +179,27 @@ const KPICard = ({
   };
 
   return (
-    <Card className="transition-all duration-300 hover:shadow-xl hover:scale-[1.05] cursor-pointer group animate-fade-in border-border/50">
+    <Card className="transition-all duration-300 hover:shadow-xl hover:scale-[1.05] cursor-pointer group animate-fade-in border-border/50 overflow-hidden">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2 flex-1">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-2 flex-1 min-w-0">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide group-hover:text-foreground transition-colors">
               {title}
             </p>
-            <p className="text-3xl font-bold text-primary">
+            <p className="text-2xl sm:text-3xl font-bold text-primary truncate">
               {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
             </p>
             {subtitle && (
-              <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">
+              <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors truncate">
                 {subtitle}
               </p>
             )}
             {change !== undefined && (
               <div className="flex items-center gap-1 animate-fade-in">
                 {isPositive ? (
-                  <TrendingUp className="h-4 w-4 text-success animate-bounce" />
+                  <TrendingUp className="h-4 w-4 text-success animate-bounce flex-shrink-0" />
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-destructive animate-bounce" />
+                  <TrendingDown className="h-4 w-4 text-destructive animate-bounce flex-shrink-0" />
                 )}
                 <span className={`text-sm font-medium ${
                   isPositive ? 'text-success' : 'text-destructive'
@@ -210,8 +210,8 @@ const KPICard = ({
               </div>
             )}
           </div>
-          <div className={`p-3 rounded-xl transition-all duration-300 group-hover:scale-110 ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary}`}>
-            <Icon className="h-6 w-6 group-hover:animate-pulse" />
+          <div className={`flex-shrink-0 p-2 sm:p-3 rounded-xl transition-all duration-300 group-hover:scale-110 ${colorClasses[color as keyof typeof colorClasses] || colorClasses.primary}`}>
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6 group-hover:animate-pulse" />
           </div>
         </div>
       </CardContent>
@@ -287,7 +287,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPIs Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         <KPICard
           title="Faturamento Hoje"
           value={`R$ ${dashboardKPIs.todayRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
