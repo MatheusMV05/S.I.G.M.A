@@ -1,21 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '@/services';
+import type { User, UserRole } from '@/services/types';
 
-// Tipos de usuário do sistema
-export type UserRole = 'admin' | 'manager' | 'supervisor' | 'cashier' | 'stock';
+// Re-exportar tipos para manter compatibilidade
+export type { User, UserRole } from '@/services/types';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  avatar?: string;
-  department?: string;
-  permissions?: string[];
-}
-
-// Definição de permissões por perfil
+// Definição de permissões por perfil (mantido para compatibilidade com sistema legado)
 export const rolePermissions = {
-  admin: [
+  ADMIN: [
     'Acesso Completo',
     'Gerenciamento de Usuários',
     'Relatórios Financeiros',
@@ -26,7 +18,7 @@ export const rolePermissions = {
     'Configurações do Sistema',
     'Backup e Restauração'
   ],
-  manager: [
+  MANAGER: [
     'Gerenciamento de Estoque',
     'Cadastro de Produtos',
     'Controle de Estoque',
@@ -37,7 +29,7 @@ export const rolePermissions = {
     'Relatórios de Desempenho',
     'Relatórios de Perdas'
   ],
-  supervisor: [
+  SUPERVISOR: [
     'Relatórios de Estoque',
     'Relatórios de Vendas',
     'Aprovação de Cancelamentos',
@@ -46,7 +38,7 @@ export const rolePermissions = {
     'Consulta de Produtos',
     'Atendimento ao Cliente'
   ],
-  cashier: [
+  CASHIER: [
     'Registro de Vendas',
     'Cancelamento Simples',
     'Consulta de Preços',
@@ -54,7 +46,7 @@ export const rolePermissions = {
     'Atendimento ao Cliente',
     'Processamento de Pagamentos'
   ],
-  stock: [
+  STOCK: [
     'Entrada de Estoque',
     'Saída de Estoque',
     'Consulta de Inventário',
@@ -69,56 +61,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  hasPermission: (requiredRole: UserRole[]) => boolean;
+  logout: () => Promise<void>;
+  hasPermission: (requiredRoles: UserRole[]) => boolean;
   hasSpecificPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock de usuários para desenvolvimento
-const mockUsers = [
-  { 
-    id: '1', 
-    name: 'Carlos Oliveira', 
-    email: 'admin@comprebem.com', 
-    role: 'admin' as UserRole,
-    department: 'Administração',
-    permissions: rolePermissions.admin
-  },
-  { 
-    id: '2', 
-    name: 'Amanda Silva', 
-    email: 'gerente@comprebem.com', 
-    role: 'manager' as UserRole,
-    department: 'Gerência',
-    permissions: rolePermissions.manager
-  },
-  { 
-    id: '3', 
-    name: 'João Santos', 
-    email: 'supervisor@comprebem.com', 
-    role: 'supervisor' as UserRole,
-    department: 'Supervisão',
-    permissions: rolePermissions.supervisor
-  },
-  { 
-    id: '4', 
-    name: 'Maria Costa', 
-    email: 'caixa@comprebem.com', 
-    role: 'cashier' as UserRole,
-    department: 'Caixa',
-    permissions: rolePermissions.cashier
-  },
-  { 
-    id: '5', 
-    name: 'Pedro Lima', 
-    email: 'estoque@comprebem.com', 
-    role: 'stock' as UserRole,
-    department: 'Estoque',
-    permissions: rolePermissions.stock
-  },
-];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -128,17 +76,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Simular verificação de token/sessão
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoading(true);
         
-        // Verificar se há token armazenado
-        const storedUser = localStorage.getItem('sigma_user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
+        // Verificar se há usuário logado
+        if (authService.isAuthenticated()) {
+          const currentUser = authService.getCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
+            setIsAuthenticated(true);
+          } else {
+            // Token existe mas usuário não, fazer logout
+            await authService.logout();
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         }
       } catch (error) {
         console.error('Erro ao inicializar autenticação:', error);
+        // Em caso de erro, fazer logout para garantir estado limpo
+        await authService.logout();
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
@@ -149,52 +107,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Simular delay de autenticação no servidor
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(true);
       
-      // Simulação de autenticação
-      const foundUser = mockUsers.find(u => u.email === email);
+      const response = await authService.login({ email, password });
       
-      // Senhas específicas para cada usuário (para demonstração)
-      const validCredentials = {
-        'admin@comprebem.com': '123456',
-        'gerente@comprebem.com': '123456',
-        'supervisor@comprebem.com': '123456',
-        'caixa@comprebem.com': '123456',
-        'estoque@comprebem.com': '123456'
-      };
+      setUser(response.user);
+      setIsAuthenticated(true);
       
-      if (foundUser && validCredentials[email as keyof typeof validCredentials] === password) {
-        // Simular carregamento adicional do perfil do usuário
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        setUser(foundUser);
-        setIsAuthenticated(true);
-        localStorage.setItem('sigma_user', JSON.stringify(foundUser));
-        return true;
-      }
-      
-      return false;
+      return true;
     } catch (error) {
       console.error('Erro durante o login:', error);
+      setUser(null);
+      setIsAuthenticated(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('sigma_user');
+  const logout = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      await authService.logout();
+    } catch (error) {
+      console.error('Erro durante o logout:', error);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
+    }
   };
 
   const hasPermission = (requiredRoles: UserRole[]): boolean => {
-    if (!user) return false;
-    return requiredRoles.includes(user.role);
+    return authService.hasPermission(requiredRoles);
   };
 
   const hasSpecificPermission = (permission: string): boolean => {
-    if (!user || !user.permissions) return false;
-    return user.permissions.includes(permission) || user.permissions.includes('full_access');
+    return authService.hasSpecificPermission(permission);
   };
 
   return (

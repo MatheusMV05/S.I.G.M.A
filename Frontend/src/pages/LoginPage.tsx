@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRequestPasswordReset } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 export default function LoginPage() {
   const { isAuthenticated, login } = useAuth();
+  const requestPasswordReset = useRequestPasswordReset();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -61,14 +64,9 @@ export default function LoginPage() {
     }
 
     try {
-      // Simular envio de email (aqui você implementaria a lógica real)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Aqui você implementaria a chamada para a API de reset de senha
-      console.log('Enviando email de reset para:', resetEmail);
+      await requestPasswordReset.mutateAsync(resetEmail);
       
       setResetSuccess(true);
-      setIsResetLoading(false);
       
       // Fechar o diálogo após 3 segundos
       setTimeout(() => {
@@ -78,7 +76,8 @@ export default function LoginPage() {
       }, 3000);
       
     } catch (error) {
-      setResetError('Erro ao enviar email. Tente novamente.');
+      setResetError('Erro ao enviar email. Verifique o endereço e tente novamente.');
+    } finally {
       setIsResetLoading(false);
     }
   };

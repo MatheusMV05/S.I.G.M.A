@@ -109,7 +109,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       checkLowStockProducts();
       
       // Simular ações de outros usuários (apenas para admins)
-      if (user?.role === 'admin') {
+      if (user?.role === 'ADMIN') {
         simulateUserActions();
       }
     }, 30000); // Verifica a cada 30 segundos

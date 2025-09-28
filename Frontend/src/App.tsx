@@ -94,19 +94,19 @@ function AppRoutes() {
       />
       
       {/* System Routes */}
-      <Route path="/pos" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor', 'cashier']}><POS /></ProtectedRoute>} />
-      <Route path="/products" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'stock']}><Products /></ProtectedRoute>} />
-      <Route path="/inventory" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor', 'stock']}><Inventory /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor']}><Reports /></ProtectedRoute>} />
-      <Route path="/customers" element={<ProtectedRoute requiredRoles={['admin', 'manager', 'supervisor']}><Customers /></ProtectedRoute>} />
-      <Route path="/registrations" element={<ProtectedRoute requiredRoles={['admin']}><Registrations /></ProtectedRoute>} />
+      <Route path="/pos" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR', 'CASHIER']}><POS /></ProtectedRoute>} />
+      <Route path="/products" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'STOCK']}><Products /></ProtectedRoute>} />
+      <Route path="/inventory" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR', 'STOCK']}><Inventory /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Reports /></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Customers /></ProtectedRoute>} />
+      <Route path="/registrations" element={<ProtectedRoute requiredRoles={['ADMIN']}><Registrations /></ProtectedRoute>} />
       
       {/* Management Routes */}
-      <Route path="/suppliers" element={<ProtectedRoute requiredRoles={['admin', 'manager']}><SuppliersManagement /></ProtectedRoute>} />
-      <Route path="/employees" element={<ProtectedRoute requiredRoles={['admin', 'manager']}><EmployeesManagement /></ProtectedRoute>} />
-      <Route path="/categories" element={<ProtectedRoute requiredRoles={['admin', 'manager']}><CategoriesManagement /></ProtectedRoute>} />
-      <Route path="/promotions" element={<ProtectedRoute requiredRoles={['admin']}><PromotionsManagement /></ProtectedRoute>} />
-      <Route path="/users" element={<ProtectedRoute requiredRoles={['admin']}><UserManagement /></ProtectedRoute>} />
+      <Route path="/suppliers" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><SuppliersManagement /></ProtectedRoute>} />
+      <Route path="/employees" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><EmployeesManagement /></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><CategoriesManagement /></ProtectedRoute>} />
+      <Route path="/promotions" element={<ProtectedRoute requiredRoles={['ADMIN']}><PromotionsManagement /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute requiredRoles={['ADMIN']}><UserManagement /></ProtectedRoute>} />
 
       {/* Páginas de erro */}
       <Route
