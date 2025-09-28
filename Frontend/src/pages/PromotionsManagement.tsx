@@ -32,7 +32,8 @@ import {
   Filter,
   BarChart3,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -157,6 +158,7 @@ export default function PromotionsManagement() {
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Promotion>>({});
   const [editMode, setEditMode] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -276,6 +278,69 @@ export default function PromotionsManagement() {
     return discountType === 'percentage' 
       ? originalPrice * (1 - discount / 100)
       : originalPrice - discount;
+  };
+
+  const handleAnalytics = (promotion: Promotion) => {
+    setSelectedPromotion(promotion);
+    setIsAnalyticsOpen(true);
+  };
+
+  // Função para calcular barras com superávit
+  const calculateProgressBar = (current: number, target: number) => {
+    const percentage = (current / target) * 100;
+    const baseWidth = Math.min(100, percentage);
+    const hasExcess = percentage > 100;
+    const excessWidth = hasExcess ? Math.min(30, (percentage - 100) / 2) : 0; // Limita o excesso visual a 30%
+    
+    return {
+      baseWidth,
+      excessWidth,
+      hasExcess,
+      percentage: percentage.toFixed(1)
+    };
+  };
+
+  // Função para calcular barras de vendas diárias
+  const calculateDailySalesBar = (currentSales: number, maxSales: number) => {
+    const percentage = (currentSales / maxSales) * 100;
+    return Math.min(100, percentage); // Sempre limitado a 100% para vendas diárias
+  };
+
+  // Mock data para analytics
+  const getPromotionAnalytics = (promotion: Promotion) => {
+    const dailySales = [
+      { date: '2024-11-20', sales: 1200, applications: 15 },
+      { date: '2024-11-21', sales: 2800, applications: 28 },
+      { date: '2024-11-22', sales: 3200, applications: 32 },
+      { date: '2024-11-23', sales: 2100, applications: 21 },
+      { date: '2024-11-24', sales: 4500, applications: 45 },
+      { date: '2024-11-25', sales: 1800, applications: 15 }
+    ];
+
+    const productPerformance = promotion.products.map(product => ({
+      ...product,
+      salesCount: Math.floor(Math.random() * 50) + 10,
+      revenue: (Math.floor(Math.random() * 50) + 10) * product.discountedPrice,
+      conversionRate: Math.floor(Math.random() * 30) + 15
+    }));
+
+    const categoryPerformance = [
+      { category: 'Grãos e Cereais', sales: 5600, applications: 45, avgTicket: 124.44 },
+      { category: 'Bebidas', sales: 3200, applications: 32, avgTicket: 100.00 },
+      { category: 'Laticínios', sales: 4500, applications: 38, avgTicket: 118.42 },
+      { category: 'Limpeza', sales: 2300, applications: 41, avgTicket: 56.10 }
+    ];
+
+    return {
+      dailySales,
+      productPerformance,
+      categoryPerformance,
+      totalRevenue: promotion.totalSales,
+      totalApplications: promotion.applicationsCount,
+      avgTicket: promotion.totalSales / promotion.applicationsCount,
+      conversionRate: (promotion.applicationsCount / 1000) * 100, // Mock base de 1000 visualizações
+      roi: ((promotion.totalSales - (promotion.totalSales * 0.7)) / (promotion.totalSales * 0.3)) * 100
+    };
   };
 
   return (
@@ -440,18 +505,37 @@ export default function PromotionsManagement() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Progresso da Meta</span>
-                    <span>{((promotion.totalSales / promotion.projectedSales) * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${Math.min(100, (promotion.totalSales / promotion.projectedSales) * 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
+                {(() => {
+                  const progressBar = calculateProgressBar(promotion.totalSales, promotion.projectedSales);
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progresso da Meta</span>
+                        <span className={progressBar.hasExcess ? 'text-success font-semibold' : ''}>
+                          {progressBar.percentage}%
+                          {progressBar.hasExcess && ' ✨'}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div 
+                            className="bg-primary h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${progressBar.baseWidth}%` }}
+                          ></div>
+                        </div>
+                        {progressBar.hasExcess && (
+                          <div className="absolute top-0 left-0 w-full">
+                            <div 
+                              className="bg-success h-2 rounded-full opacity-75 animate-pulse border border-success/50" 
+                              style={{ width: `${progressBar.excessWidth}%` }}
+                              title={`Superávit de ${(parseFloat(progressBar.percentage) - 100).toFixed(1)}%`}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <Separator />
 
@@ -473,10 +557,7 @@ export default function PromotionsManagement() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => {
-                      // Navegar para relatórios com filtro da promoção
-                      console.log('Analisar impacto da promoção:', promotion.id);
-                    }}
+                    onClick={() => handleAnalytics(promotion)}
                   >
                     <BarChart3 className="h-4 w-4" />
                   </Button>
@@ -946,12 +1027,11 @@ export default function PromotionsManagement() {
 
               {/* Botão Analisar Impacto */}
               <div className="flex justify-center">
-                <Button 
+                <Button
                   className="bg-primary hover:bg-primary-hover"
                   onClick={() => {
-                    // Navegar para relatórios com filtro específico
-                    console.log('Analisar impacto da promoção:', selectedPromotion.id);
                     setIsDetailsOpen(false);
+                    handleAnalytics(selectedPromotion);
                   }}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
@@ -960,6 +1040,444 @@ export default function PromotionsManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Analytics da Promoção */}
+      <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          {selectedPromotion && (() => {
+            const analytics = getPromotionAnalytics(selectedPromotion);
+            const statusBadge = getStatusBadge(selectedPromotion.status);
+            
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-3">
+                    <BarChart3 className="h-6 w-6 text-primary" />
+                    Analytics da Promoção
+                  </DialogTitle>
+                  <DialogDescription>
+                    Análise completa de performance e impacto da promoção "{selectedPromotion.name}"
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                  {/* Header da Promoção */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <Card className="lg:col-span-2">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold">{selectedPromotion.name}</h3>
+                            <Badge variant={statusBadge.variant}>
+                              <statusBadge.icon className="h-3 w-3 mr-1" />
+                              {statusBadge.label}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{selectedPromotion.description}</p>
+                          <div className="flex items-center gap-6 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Percent className="h-4 w-4 text-primary" />
+                              <span>Desconto: {formatPercent(selectedPromotion.discount)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              <span>{formatDate(selectedPromotion.startDate)} - {formatDate(selectedPromotion.endDate)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-primary" />
+                              <span>{selectedPromotion.products.length} produtos</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-center space-y-2">
+                          <div className="text-2xl font-bold text-success">
+                            {formatCurrency(analytics.totalRevenue)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">Receita Total</p>
+                          <div className="text-lg font-semibold text-primary">
+                            {analytics.totalApplications}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Aplicações da Promoção</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Métricas Principais */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="flex items-center justify-center mb-2">
+                          <TrendingUp className="h-6 w-6 text-success" />
+                        </div>
+                        <div className="text-xl font-bold text-success">
+                          {analytics.roi.toFixed(1)}%
+                        </div>
+                        <p className="text-sm text-muted-foreground">ROI</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="flex items-center justify-center mb-2">
+                          <Target className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="text-xl font-bold text-primary">
+                          {analytics.conversionRate.toFixed(1)}%
+                        </div>
+                        <p className="text-sm text-muted-foreground">Taxa de Conversão</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="flex items-center justify-center mb-2">
+                          <DollarSign className="h-6 w-6 text-warning" />
+                        </div>
+                        <div className="text-xl font-bold text-warning">
+                          {formatCurrency(analytics.avgTicket)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Ticket Médio</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-4 text-center">
+                        <div className="flex items-center justify-center mb-2">
+                          <Star className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div className="text-xl font-bold text-orange-500">
+                          {((analytics.totalRevenue / selectedPromotion.projectedSales) * 100).toFixed(1)}%
+                        </div>
+                        <p className="text-sm text-muted-foreground">Meta Alcançada</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Vendas Diárias */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-success" />
+                        Evolução das Vendas Diárias
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Gráfico Simulado com Cards */}
+                        <div className="space-y-3">
+                          <h4 className="font-medium">Vendas por Dia</h4>
+                          {analytics.dailySales.map((day, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <p className="font-medium">{formatDate(day.date)}</p>
+                                <p className="text-sm text-muted-foreground">{day.applications} aplicações</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-success">{formatCurrency(day.sales)}</p>
+                                <div className="w-24 bg-muted rounded-full h-2 mt-1">
+                                  <div 
+                                    className="bg-success h-2 rounded-full" 
+                                    style={{ width: `${calculateDailySalesBar(day.sales, Math.max(...analytics.dailySales.map(d => d.sales)))}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Estatísticas Resumidas */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium">Estatísticas do Período</h4>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                              <span className="text-sm font-medium">Melhor Dia</span>
+                              <div className="text-right">
+                                <p className="font-semibold text-success">
+                                  {formatCurrency(Math.max(...analytics.dailySales.map(d => d.sales)))}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDate(analytics.dailySales.find(d => d.sales === Math.max(...analytics.dailySales.map(d => d.sales)))?.date || '')}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                              <span className="text-sm font-medium">Média Diária</span>
+                              <p className="font-semibold text-primary">
+                                {formatCurrency(analytics.dailySales.reduce((acc, d) => acc + d.sales, 0) / analytics.dailySales.length)}
+                              </p>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                              <span className="text-sm font-medium">Total de Aplicações</span>
+                              <p className="font-semibold text-warning">
+                                {analytics.dailySales.reduce((acc, d) => acc + d.applications, 0)}
+                              </p>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                              <span className="text-sm font-medium">Crescimento</span>
+                              <div className="text-right">
+                                {(() => {
+                                  const firstDay = analytics.dailySales[0]?.sales || 0;
+                                  const lastDay = analytics.dailySales[analytics.dailySales.length - 1]?.sales || 0;
+                                  const growth = ((lastDay - firstDay) / firstDay * 100);
+                                  return (
+                                    <p className={`font-semibold ${growth >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                      {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+                                    </p>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Performance por Produto */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-primary" />
+                        Performance dos Produtos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Produto</TableHead>
+                            <TableHead>Preço Original</TableHead>
+                            <TableHead>Preço Promocional</TableHead>
+                            <TableHead>Vendas</TableHead>
+                            <TableHead>Receita</TableHead>
+                            <TableHead>Conversão</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {analytics.productPerformance
+                            .sort((a, b) => b.revenue - a.revenue)
+                            .map((product) => (
+                              <TableRow key={product.id}>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{product.name}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">{product.id}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="line-through text-muted-foreground">
+                                    {formatCurrency(product.originalPrice)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-semibold text-success">
+                                    {formatCurrency(product.discountedPrice)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-semibold">{product.salesCount}</span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-semibold text-success">
+                                    {formatCurrency(product.revenue)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {product.conversionRate}%
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+
+                  {/* Performance por Categoria */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5 text-warning" />
+                        Performance por Categoria
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          {analytics.categoryPerformance.map((category, index) => (
+                            <div key={index} className="p-4 border rounded-lg">
+                              <div className="flex justify-between items-start mb-3">
+                                <h4 className="font-medium">{category.category}</h4>
+                                <Badge variant="outline">{category.applications} vendas</Badge>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="text-muted-foreground">Receita</p>
+                                  <p className="font-semibold text-success">{formatCurrency(category.sales)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Ticket Médio</p>
+                                  <p className="font-semibold text-primary">{formatCurrency(category.avgTicket)}</p>
+                                </div>
+                              </div>
+                              <div className="mt-3">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs text-muted-foreground">Participação nas vendas</span>
+                                  <span className="text-xs font-medium">
+                                    {((category.sales / analytics.totalRevenue) * 100).toFixed(1)}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2">
+                                  <div 
+                                    className="bg-primary h-2 rounded-full" 
+                                    style={{ width: `${Math.min(100, (category.sales / analytics.totalRevenue) * 100)}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="space-y-4">
+                          <h4 className="font-medium">Ranking de Categorias</h4>
+                          <div className="space-y-3">
+                            {analytics.categoryPerformance
+                              .sort((a, b) => b.sales - a.sales)
+                              .map((category, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                                      index === 0 ? 'bg-yellow-500' :
+                                      index === 1 ? 'bg-gray-400' :
+                                      index === 2 ? 'bg-amber-600' : 'bg-muted-foreground'
+                                    }`}>
+                                      {index + 1}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">{category.category}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {category.applications} aplicações
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold text-success">
+                                      {formatCurrency(category.sales)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {((category.sales / analytics.totalRevenue) * 100).toFixed(1)}%
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Comparativo com Projeções */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5 text-orange-500" />
+                        Comparativo: Realizado vs Projetado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="text-center p-4 border rounded-lg">
+                          <div className="text-2xl font-bold text-success mb-2">
+                            {formatCurrency(selectedPromotion.totalSales)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">Receita Realizada</p>
+                        </div>
+                        <div className="text-center p-4 border rounded-lg">
+                          <div className="text-2xl font-bold text-primary mb-2">
+                            {formatCurrency(selectedPromotion.projectedSales)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">Receita Projetada</p>
+                        </div>
+                        <div className="text-center p-4 border rounded-lg">
+                          <div className={`text-2xl font-bold mb-2 ${
+                            selectedPromotion.totalSales >= selectedPromotion.projectedSales ? 'text-success' : 'text-warning'
+                          }`}>
+                            {selectedPromotion.totalSales >= selectedPromotion.projectedSales ? '+' : ''}
+                            {formatCurrency(selectedPromotion.totalSales - selectedPromotion.projectedSales)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Diferença ({((selectedPromotion.totalSales / selectedPromotion.projectedSales) * 100).toFixed(1)}%)
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {(() => {
+                        const finalProgressBar = calculateProgressBar(selectedPromotion.totalSales, selectedPromotion.projectedSales);
+                        return (
+                          <div className="mt-6">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="font-medium">Progresso da Meta</span>
+                              <span className={`text-sm ${
+                                finalProgressBar.hasExcess ? 'text-success font-semibold' : 'text-muted-foreground'
+                              }`}>
+                                {finalProgressBar.percentage}% da meta
+                                {finalProgressBar.hasExcess && ' 🎉'}
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <div className="w-full bg-muted rounded-full h-3">
+                                <div 
+                                  className={`h-3 rounded-full transition-all duration-500 ${
+                                    selectedPromotion.totalSales >= selectedPromotion.projectedSales ? 'bg-success' : 'bg-warning'
+                                  }`}
+                                  style={{ width: `${finalProgressBar.baseWidth}%` }}
+                                ></div>
+                              </div>
+                              {finalProgressBar.hasExcess && (
+                                <div className="absolute top-0 left-0 w-full">
+                                  <div 
+                                    className="bg-gradient-to-r from-success to-green-400 h-3 rounded-full opacity-80 animate-pulse border-2 border-success/30" 
+                                    style={{ width: `${finalProgressBar.excessWidth}%` }}
+                                    title={`Superávit de ${formatCurrency(selectedPromotion.totalSales - selectedPromotion.projectedSales)}`}
+                                  ></div>
+                                </div>
+                              )}
+                              {finalProgressBar.hasExcess && (
+                                <div className="absolute -top-1 left-0 text-xs text-success font-bold animate-bounce">
+                                  ✨ SUPERÁVIT
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+
+                  {/* Ações */}
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => console.log('Exportar relatório')}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar Relatório
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsAnalyticsOpen(false)}>
+                      <X className="h-4 w-4 mr-2" />
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
