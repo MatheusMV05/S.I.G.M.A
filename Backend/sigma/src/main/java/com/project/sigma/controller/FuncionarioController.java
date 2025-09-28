@@ -23,17 +23,29 @@ public class FuncionarioController {
         return new ResponseEntity<>(novoFuncionario, HttpStatus.CREATED);
     }
 
-    // Endpoint 2: Listar todos os funcionários (GET)
+    /**
+     * Endpoint unificado para buscar funcionários.
+     * Suporta busca de todos ou por cargo.
+     * Exemplos:
+     * GET /api/funcionarios -> Lista todos
+     * GET /api/funcionarios?cargo=Gerente -> Filtra por cargo
+     */
     @GetMapping
-    public ResponseEntity<List<FuncionarioDTO>> listarTodosFuncionarios() {
-        List<FuncionarioDTO> funcionarios = funcionarioService.listarTodos();
+    public ResponseEntity<List<FuncionarioDTO>> getFuncionarios(
+            @RequestParam(value = "cargo", required = false) String cargo) {
+        // Chamando o novo método do service
+        List<FuncionarioDTO> funcionarios = funcionarioService.buscarFuncionarios(cargo);
         return ResponseEntity.ok(funcionarios);
     }
 
-    // Endpoint 3: Buscar um funcionário por ID (GET)
+    /**
+     * Endpoint para buscar um funcionário específico por ID.
+     * GET /api/funcionarios/{id}
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<FuncionarioDTO> buscarFuncionarioPorId(@PathVariable Long id) {
-        return funcionarioService.buscarPorId(id)
+    public ResponseEntity<FuncionarioDTO> getFuncionarioPorId(@PathVariable Long id) {
+        // Chamando o novo método do service para buscar um único funcionário
+        return funcionarioService.buscarUmFuncionarioPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

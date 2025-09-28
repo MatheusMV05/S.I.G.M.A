@@ -22,4 +22,8 @@ public class ClienteDTO {
     //Isso será útil para a lógica no frontend e backend.
     private String tipoCliente;
 
+    private String email;
+    private String telefone;
+    private Boolean ativo;
+
 }

@@ -4,10 +4,18 @@ import com.project.sigma.dto.FuncionarioDTO;
 import com.project.sigma.model.Funcionario;
 import com.project.sigma.model.Pessoa;
 import com.project.sigma.repository.FuncionarioRepository;
-import com.project.sigma.repository.PessoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import com.project.sigma.dto.FuncionarioDTO;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,70 +25,83 @@ import java.util.stream.Collectors;
 public class FuncionarioService {
 
     @Autowired
-    private PessoaRepository pessoaRepository;
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private FuncionarioRepository funcionarioRepository;
 
-    // CREATE
+    /**
+     * Cria um novo funcionário completo (Pessoa, Funcionario, Telefone) em uma única transação.
+     * @param funcionarioDTO O DTO com os dados do funcionário.
+     * @return O DTO com os IDs preenchidos.
+     */
     @Transactional
     public FuncionarioDTO criarFuncionario(FuncionarioDTO funcionarioDTO) {
-        // 1. Salva a parte "Pessoa" e recupera o objeto com o ID gerado
-        Pessoa pessoaSalva = pessoaRepository.salvar(funcionarioDTO.getPessoa());
-
-        // 2. Associa o ID da pessoa salva ao funcionário
-        Funcionario funcionario = funcionarioDTO.getFuncionario();
-        funcionario.setId_pessoa(pessoaSalva.getId_pessoa());
-
-        // 3. Salva a parte "Funcionário"
-        Funcionario funcionarioSalvo = funcionarioRepository.salvar(funcionario);
-
-        // 4. Retorna o DTO completo com os dados salvos
-        return new FuncionarioDTO(pessoaSalva, funcionarioSalvo);
-    }
-
-    // READ (all)
-    public List<FuncionarioDTO> listarTodos() {
-        List<Funcionario> funcionarios = funcionarioRepository.buscarTodos();
-        return funcionarios.stream().map(func -> {
-            Pessoa pessoa = pessoaRepository.buscarPorId(func.getId_pessoa())
-                    .orElse(new Pessoa()); // ou lançar exceção se preferir
-            return new FuncionarioDTO(pessoa, func);
-        }).collect(Collectors.toList());
-    }
-
-    // READ (by ID)
-    public Optional<FuncionarioDTO> buscarPorId(Long id) {
-        Optional<Funcionario> funcionarioOpt = funcionarioRepository.buscarPorId(id);
-        if (funcionarioOpt.isPresent()) {
-            Optional<Pessoa> pessoaOpt = pessoaRepository.buscarPorId(id);
-            if (pessoaOpt.isPresent()) {
-                return Optional.of(new FuncionarioDTO(pessoaOpt.get(), funcionarioOpt.get()));
-            }
+        // --- REGRAS DE NEGÓCIO ---
+        if (funcionarioDTO.getPessoa() == null || !StringUtils.hasText(funcionarioDTO.getPessoa().getNome())) {
+            throw new IllegalArgumentException("O nome do funcionário é obrigatório.");
         }
-        return Optional.empty();
+        if (funcionarioDTO.getFuncionario() == null || !StringUtils.hasText(funcionarioDTO.getFuncionario().getMatricula())) {
+            throw new IllegalArgumentException("A matrícula do funcionário é obrigatória.");
+        }
+        // NOVA REGRA: Validação do telefone
+        if (!StringUtils.hasText(funcionarioDTO.getTelefone())) {
+            throw new IllegalArgumentException("O telefone do funcionário é obrigatório.");
+        }
+
+        // A lógica complexa foi movida para o repositório. O service apenas chama o método.
+        return funcionarioRepository.save(funcionarioDTO);
     }
 
-    // UPDATE
+    /**
+     * Busca funcionários, opcionalmente filtrando por cargo.
+     */
+    public List<FuncionarioDTO> buscarFuncionarios(String cargo) {
+        // Chama o search do repository, sem ID, para buscar uma lista
+        return funcionarioRepository.search(null, cargo);
+    }
+
+    /**
+     * Busca um único funcionário pelo seu ID.
+     */
+    public Optional<FuncionarioDTO> buscarUmFuncionarioPorId(Long id) {
+        // Chama o search do repository passando o ID
+        List<FuncionarioDTO> funcionarios = funcionarioRepository.search(id, null);
+
+        // Se a lista não estiver vazia, retorna o primeiro (e único) elemento.
+        return funcionarios.stream().findFirst();
+    }
+
+    /**
+     * Atualiza um funcionário existente em uma única transação.
+     * @param id O ID do funcionário a ser atualizado.
+     * @param funcionarioDTO O DTO com as informações atualizadas.
+     * @return O DTO atualizado.
+     */
     @Transactional
     public FuncionarioDTO atualizarFuncionario(Long id, FuncionarioDTO funcionarioDTO) {
         // Garante que os IDs estão corretos
         funcionarioDTO.getPessoa().setId_pessoa(id);
-        funcionarioDTO.getFuncionario().setId_pessoa(id);
 
-        pessoaRepository.atualizar(funcionarioDTO.getPessoa());
-        funcionarioRepository.atualizar(funcionarioDTO.getFuncionario());
+        // Adiciona validações também na atualização
+        if (funcionarioDTO.getPessoa() == null || !StringUtils.hasText(funcionarioDTO.getPessoa().getNome())) {
+            throw new IllegalArgumentException("O nome do funcionário é obrigatório.");
+        }
+        if (!StringUtils.hasText(funcionarioDTO.getTelefone())) {
+            throw new IllegalArgumentException("O telefone do funcionário é obrigatório.");
+        }
 
-        return funcionarioDTO;
+        return funcionarioRepository.update(funcionarioDTO);
     }
 
 
-    // DELETE
+    /**
+     * Deleta um funcionário pelo seu ID.
+     * @param id O ID da pessoa/funcionário a ser deletada.
+     */
     @Transactional
     public void deletarFuncionario(Long id) {
-        // 1. Deleta da tabela 'funcionario' (que tem a foreign key)
-        funcionarioRepository.deletarPorId(id);
-        // 2. Deleta da tabela 'Pessoa'
-        pessoaRepository.deletarPorId(id);
+        // A chamada agora é única e o ON DELETE CASCADE faz o resto.
+        funcionarioRepository.deleteById(id);
     }
 }

@@ -13,6 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
+import java.util.ArrayList;
+
 
 @Repository
 public class ClienteRepository {
@@ -24,48 +26,6 @@ public class ClienteRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    //Leitura de dados:
-
-    /**
-     * Busca todos os clientes (PF e PJ) e retorna uma lista de DTOs.
-     */
-    public List<ClienteDTO> findAll() {
-        String sql = "SELECT " +
-                "p.id_pessoa, p.nome, p.rua, p.numero, p.bairro, p.cidade, " +
-                "c.ranke, " +
-                "cf.cpf, " +
-                "cj.cnpj " +
-                "FROM Pessoa p " +
-                "JOIN Cliente c ON p.id_pessoa = c.id_pessoa " +
-                "LEFT JOIN cliente_fisica cf ON c.id_pessoa = cf.id_pessoa " +
-                "LEFT JOIN cliente_juridico cj ON c.id_pessoa = cj.id_pessoa " +
-                "ORDER BY p.nome;";
-
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Pessoa pessoa = new Pessoa();
-            pessoa.setId_pessoa(rs.getLong("id_pessoa"));
-            pessoa.setNome(rs.getString("nome"));
-            pessoa.setRua(rs.getString("rua"));
-            pessoa.setNumero(rs.getString("numero"));
-            pessoa.setBairro(rs.getString("bairro"));
-            pessoa.setCidade(rs.getString("cidade"));
-
-            ClienteDTO dto = new ClienteDTO();
-            dto.setPessoa(pessoa);
-            dto.setRanke(rs.getInt("ranke"));
-            dto.setCpf(rs.getString("cpf"));
-            dto.setCnpj(rs.getString("cnpj"));
-
-            if (dto.getCpf() != null) {
-                dto.setTipoCliente("PF");
-            } else if (dto.getCnpj() != null) {
-                dto.setTipoCliente("PJ");
-            }
-
-            return dto;
-        });
-    }
-
     //Salvar clientes (inserção):
 
     /**
@@ -73,7 +33,7 @@ public class ClienteRepository {
      */
     @Transactional
     public ClienteDTO save(ClienteDTO clienteDTO) {
-        // 1. Salvar na tabela Pessoa e obter o ID gerado
+        // 1. Salvar na tabela Pessoa (nenhuma alteração aqui)
         String pessoaSql = "INSERT INTO Pessoa (nome, rua, numero, bairro, cidade) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -92,10 +52,17 @@ public class ClienteRepository {
         clienteDTO.getPessoa().setId_pessoa(generatedPessoaId);
 
         // 2. Salvar na tabela Cliente
-        String clienteSql = "INSERT INTO Cliente (id_pessoa, ranke) VALUES (?, ?)";
-        jdbcTemplate.update(clienteSql, generatedPessoaId, clienteDTO.getRanke() != null ? clienteDTO.getRanke() : 1);
+        String clienteSql = "INSERT INTO Cliente (id_pessoa, email) VALUES (?, ?)";
+        jdbcTemplate.update(clienteSql, generatedPessoaId, clienteDTO.getEmail());
 
-        // 3. Salvar na tabela específica (PF ou PJ)
+        // 3. Salvar o Telefone
+        // Verifica se um telefone foi enviado no DTO antes de tentar inseri-lo.
+        if (clienteDTO.getTelefone() != null && !clienteDTO.getTelefone().isEmpty()) {
+            String telefoneSql = "INSERT INTO Telefone (id_pessoa, numero) VALUES (?, ?)";
+            jdbcTemplate.update(telefoneSql, generatedPessoaId, clienteDTO.getTelefone());
+        }
+
+        // 4. Salvar na tabela específica (PF ou PJ)
         if ("PF".equals(clienteDTO.getTipoCliente())) {
             String pfSql = "INSERT INTO cliente_fisica (id_pessoa, cpf) VALUES (?, ?)";
             jdbcTemplate.update(pfSql, generatedPessoaId, clienteDTO.getCpf());
@@ -105,8 +72,11 @@ public class ClienteRepository {
         } else {
             throw new IllegalArgumentException("Tipo de cliente inválido: " + clienteDTO.getTipoCliente());
         }
-        //Todo cliente criado vai ter cmo rank inicial "1" = bronze!!!!
-        clienteDTO.setRanke(1);
+
+        // 5. Atualizar o DTO com os valores padrão para retornar ao frontend
+        // Isso garante que a resposta da API reflita o estado real do objeto no banco de dados.
+        clienteDTO.setRanke(1); // Rank inicial Bronze
+        clienteDTO.setAtivo(true); // Status inicial Ativo
 
         return clienteDTO;
     }
@@ -129,7 +99,25 @@ public class ClienteRepository {
         String pessoaSql = "UPDATE Pessoa SET nome = ?, rua = ?, numero = ?, bairro = ?, cidade = ? WHERE id_pessoa = ?";
         jdbcTemplate.update(pessoaSql, pessoa.getNome(), pessoa.getRua(), pessoa.getNumero(), pessoa.getBairro(), pessoa.getCidade(), id);
 
-        // 2. Atualizar a tabela específica (PF ou PJ)
+        // 2. Atualizar a tabela Cliente
+        // Atualizamos o email e o status 'ativo' com base no que vem do DTO.
+        String clienteSql = "UPDATE Cliente SET email = ?, ativo = ? WHERE id_pessoa = ?";
+        jdbcTemplate.update(clienteSql, clienteDTO.getEmail(), clienteDTO.getAtivo(), id);
+
+        // 3. Atualizar o Telefone
+        // Esta é uma lógica de "upsert": se o telefone existe, atualiza; se não, cria.
+        if (clienteDTO.getTelefone() != null && !clienteDTO.getTelefone().isEmpty()) {
+            String telefoneUpdateSql = "UPDATE Telefone SET numero = ? WHERE id_pessoa = ?";
+            int rowsAffected = jdbcTemplate.update(telefoneUpdateSql, clienteDTO.getTelefone(), id);
+
+            // Se nenhuma linha foi afetada, significa que não havia telefone para este cliente, então inserimos um novo.
+            if (rowsAffected == 0) {
+                String telefoneInsertSql = "INSERT INTO Telefone (id_pessoa, numero) VALUES (?, ?)";
+                jdbcTemplate.update(telefoneInsertSql, id, clienteDTO.getTelefone());
+            }
+        }
+
+        // 4. Atualizar a tabela específica (PF ou PJ) (sem alterações)
         if ("PF".equals(clienteDTO.getTipoCliente())) {
             String pfSql = "UPDATE cliente_fisica SET cpf = ? WHERE id_pessoa = ?";
             jdbcTemplate.update(pfSql, clienteDTO.getCpf(), id);
@@ -139,6 +127,97 @@ public class ClienteRepository {
         }
 
         return clienteDTO;
+    }
+
+    /**
+     * Busca clientes com base em múltiplos critérios de filtro.
+     * @param searchTerm Termo de busca para nome, email, documento ou telefone.
+     * @param tipoCliente "PF" para Pessoa Física, "PJ" para Pessoa Jurídica.
+     * @param status "ativo" ou "inativo" para o status do cliente.
+     * @return Uma lista de ClienteDTOs que correspondem aos critérios.
+     */
+    public List<ClienteDTO> search(String searchTerm, String tipoCliente, String status) {
+        // 1. Iniciar a construção da Query SQL
+        StringBuilder sql = new StringBuilder(
+                "SELECT " +
+                        "p.id_pessoa, p.nome, p.rua, p.numero, p.bairro, p.cidade, " +
+                        "c.email, c.ativo, c.ranke, c.total_gasto, c.data_ultima_compra, " +
+                        "t.numero as telefone, " +
+                        "cf.cpf, " +
+                        "cj.cnpj " +
+                        "FROM Pessoa p " +
+                        "JOIN Cliente c ON p.id_pessoa = c.id_pessoa " +
+                        "LEFT JOIN Telefone t ON p.id_pessoa = t.id_pessoa " + // JOIN com Telefone
+                        "LEFT JOIN cliente_fisica cf ON c.id_pessoa = cf.id_pessoa " +
+                        "LEFT JOIN cliente_juridico cj ON c.id_pessoa = cj.id_pessoa "
+        );
+
+        StringBuilder whereClause = new StringBuilder();
+        List<Object> params = new ArrayList<>();
+
+        // 2. Adicionar filtro de busca por texto (searchTerm)
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            String likeTerm = "%" + searchTerm.trim().toLowerCase() + "%";
+            whereClause.append("(LOWER(p.nome) LIKE ? OR LOWER(c.email) LIKE ? OR LOWER(t.numero) LIKE ? OR cf.cpf LIKE ? OR cj.cnpj LIKE ?)");
+            params.add(likeTerm);
+            params.add(likeTerm);
+            params.add(likeTerm);
+            params.add(likeTerm);
+            params.add(likeTerm);
+        }
+
+        // 3. Adicionar filtro por Tipo de Cliente (PF/PJ)
+        if (tipoCliente != null && !tipoCliente.trim().isEmpty()) {
+            if (whereClause.length() > 0) whereClause.append(" AND ");
+
+            if ("PF".equalsIgnoreCase(tipoCliente)) {
+                whereClause.append("cf.id_pessoa IS NOT NULL");
+            } else if ("PJ".equalsIgnoreCase(tipoCliente)) {
+                whereClause.append("cj.id_pessoa IS NOT NULL");
+            }
+        }
+
+        // 4. Adicionar filtro por Status (ativo/inativo)
+        if (status != null && !status.trim().isEmpty()) {
+            if (whereClause.length() > 0) whereClause.append(" AND ");
+            whereClause.append("c.ativo = ?");
+            params.add("ativo".equalsIgnoreCase(status)); // Converte "ativo" para true, qualquer outra coisa para false
+        }
+
+        // 5. Montar a query final
+        if (whereClause.length() > 0) {
+            sql.append(" WHERE ").append(whereClause);
+        }
+        sql.append(" ORDER BY p.nome;");
+
+        // 6. Executar a query e mapear os resultados
+        return jdbcTemplate.query(sql.toString(), params.toArray(), (rs, rowNum) -> {
+            Pessoa pessoa = new Pessoa();
+            pessoa.setId_pessoa(rs.getLong("id_pessoa"));
+            pessoa.setNome(rs.getString("nome"));
+            pessoa.setRua(rs.getString("rua"));
+            pessoa.setNumero(rs.getString("numero"));
+            pessoa.setBairro(rs.getString("bairro"));
+            pessoa.setCidade(rs.getString("cidade"));
+
+            ClienteDTO dto = new ClienteDTO();
+            dto.setPessoa(pessoa);
+            dto.setEmail(rs.getString("email"));
+            dto.setTelefone(rs.getString("telefone"));
+            dto.setAtivo(rs.getBoolean("ativo"));
+            dto.setRanke(rs.getInt("ranke"));
+            dto.setCpf(rs.getString("cpf"));
+            dto.setCnpj(rs.getString("cnpj"));
+            // Os campos total_gasto e data_ultima_compra estão disponíveis no 'rs' se você precisar deles no DTO
+
+            if (dto.getCpf() != null) {
+                dto.setTipoCliente("PF");
+            } else if (dto.getCnpj() != null) {
+                dto.setTipoCliente("PJ");
+            }
+
+            return dto;
+        });
     }
 
     //Deletar um cliente (remoção):

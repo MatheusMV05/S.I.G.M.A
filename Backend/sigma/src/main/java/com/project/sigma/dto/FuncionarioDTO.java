@@ -13,5 +13,6 @@ public class FuncionarioDTO {
 
     private Pessoa pessoa;
     private Funcionario funcionario;
+    private String telefone;
 
 }

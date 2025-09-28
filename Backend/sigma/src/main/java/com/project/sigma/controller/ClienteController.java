@@ -21,12 +21,21 @@ public class ClienteController {
     }
 
     /**
-     * Endpoint para buscar todos os clientes.
-     * HTTP GET /api/clientes
+     * Endpoint para buscar clientes, com suporte a filtros.
+     * Se nenhum parâmetro for passado, retorna todos os clientes.
+     * Exemplos de uso:
+     * GET /api/clientes
+     * GET /api/clientes?q=Silva
+     * GET /api/clientes?tipo=PF
+     * GET /api/clientes?status=ativo
+     * GET /api/clientes?q=joao&tipo=PF&status=ativo
      */
     @GetMapping
-    public ResponseEntity<List<ClienteDTO>> getAllClientes() {
-        List<ClienteDTO> clientes = clienteService.buscarTodosClientes();
+    public ResponseEntity<List<ClienteDTO>> getClientes(
+            @RequestParam(value = "q", required = false) String searchTerm,
+            @RequestParam(value = "tipo", required = false) String tipoCliente,
+            @RequestParam(value = "status", required = false) String status) {
+        List<ClienteDTO> clientes = clienteService.buscarClientes(searchTerm, tipoCliente, status);
         return ResponseEntity.ok(clientes);
     }
 
