@@ -16,22 +16,23 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Permitir origens específicas (frontend)
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",  // Porta padrão React/Vite
-            "http://localhost:5173",  // Porta padrão Vite
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173"
-        ));
+        // Permitir todas as origens durante desenvolvimento
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         
         // Métodos HTTP permitidos
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         
         // Headers permitidos
         configuration.setAllowedHeaders(Arrays.asList("*"));
         
+        // Headers expostos
+        configuration.setExposedHeaders(Arrays.asList("*"));
+        
         // Permitir credenciais
         configuration.setAllowCredentials(true);
+        
+        // Tempo de cache para requisições preflight
+        configuration.setMaxAge(3600L);
         
         // Aplicar configuração a todas as rotas
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

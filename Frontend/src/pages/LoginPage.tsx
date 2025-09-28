@@ -16,7 +16,7 @@ export default function LoginPage() {
   const { isAuthenticated, login } = useAuth();
   const requestPasswordReset = useRequestPasswordReset();
   
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +39,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
-    const success = await login(email, password);
+    const success = await login(username, password);
     
     if (success) {
       setLoginSuccess(true);
@@ -84,7 +84,7 @@ export default function LoginPage() {
 
   const openForgotPassword = () => {
     setIsForgotPasswordOpen(true);
-    setResetEmail(email); // Pre-preencher com o email do login se existir
+    setResetEmail(''); // Limpar campo de email para recuperação
     setResetError('');
     setResetSuccess(false);
   };
@@ -183,15 +183,15 @@ export default function LoginPage() {
           <CardContent className="space-y-6 relative z-10">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                <Label htmlFor="email" className="text-sm font-semibold">
-                  Login / E-mail
+                <Label htmlFor="username" className="text-sm font-semibold">
+                  Nome de Usuário
                 </Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="h-10 sm:h-12 text-sm sm:text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-primary/50 focus:scale-[1.02] focus:shadow-lg"
                 />

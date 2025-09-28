@@ -6,6 +6,11 @@ import type {
   User 
 } from './types';
 
+// Tipo específico para a resposta do backend Spring Boot
+interface BackendLoginResponse {
+  token: string;
+}
+
 class AuthService {
   private static instance: AuthService;
   
@@ -20,17 +25,37 @@ class AuthService {
    * Realiza login do usuário
    */
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await apiRequest<AuthResponse>('/auth/login', {
+    const response = await apiRequest<BackendLoginResponse>('/login', {
       method: 'POST',
-      body: JSON.stringify(credentials),
+      body: JSON.stringify({
+        login: credentials.username,
+        senha: credentials.password
+      }),
     });
 
-    // Armazena os tokens no localStorage
-    localStorage.setItem('auth_token', response.accessToken);
-    localStorage.setItem('refresh_token', response.refreshToken);
-    localStorage.setItem('user_data', JSON.stringify(response.user));
+    // Armazena o token no localStorage
+    localStorage.setItem('auth_token', response.token);
+    
+    // Como o backend não retorna dados do usuário no login, vamos criar um usuário básico
+    const basicUser = {
+      id: '1',
+      name: credentials.username,
+      email: credentials.username,
+      role: 'ADMIN' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      active: true
+    };
+    
+    localStorage.setItem('user_data', JSON.stringify(basicUser));
 
-    return response;
+    // Retorna no formato esperado pelo frontend
+    return {
+      accessToken: response.token,
+      refreshToken: '', // Backend não fornece refresh token ainda
+      user: basicUser,
+      expiresIn: 3600 // 1 hora
+    };
   }
 
   /**

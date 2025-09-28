@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/login", "/api/users").permitAll()
+                        .requestMatchers("/api/login", "/api/auth/login", "/api/auth/users", "/api/auth/debug/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // --- ADIÇÃO 2: Adicionar o nosso filtro à cadeia de segurança ---
