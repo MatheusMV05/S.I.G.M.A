@@ -623,7 +623,7 @@ export default function UserManagement() {
                       {(formData.permissions || []).map((permission) => (
                         <div key={permission} className="flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-success" />
-                          <span className="text-sm">{permission.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                          <span className="text-sm">{permission}</span>
                         </div>
                       ))}
                     </div>
@@ -806,7 +806,7 @@ export default function UserManagement() {
                         {selectedUser.permissions.map((permission) => (
                           <div key={permission} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
                             <ShieldCheck className="h-4 w-4 text-success" />
-                            <span className="text-sm">{permission.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                            <span className="text-sm">{permission}</span>
                           </div>
                         ))}
                       </div>

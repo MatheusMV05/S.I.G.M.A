@@ -47,12 +47,12 @@ export const rolePermissions = {
     'customer_service'
   ],
   cashier: [
-    'sales_registration',
-    'simple_cancellation',
-    'price_consultation',
-    'product_availability',
-    'customer_service',
-    'payment_processing'
+    'Registro de Vendas',
+    'Cancelamento Simples',
+    'Consulta de Preços',
+    'Disponibilidade de Produtos',
+    'Atendimento ao Cliente',
+    'Processamento de Pagamentos'
   ],
   stock: [
     'stock_entry',

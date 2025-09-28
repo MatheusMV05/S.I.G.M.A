@@ -48,6 +48,10 @@ Paleta baseada no logo Sigma: Preto profundo, branco puro, roxo vibrante e magen
     --input-focus: 280 100% 60%;   /* Focus roxo vibrante */
     --ring: 280 100% 60%;          /* Focus rings roxo */
     
+    /* Popover/Dropdown Elements */
+    --popover: 0 0% 10%;           /* Fundo dos dropdowns em tom escuro consistente */
+    --popover-foreground: 0 0% 98%; /* Texto dos dropdowns em branco puro */
+    
     /* Navigation & Sidebar */
     --sidebar-background: 0 0% 2%;        /* Sidebar ainda mais escura */
     --sidebar-foreground: 0 0% 90%;
