@@ -591,8 +591,8 @@ export default function Dashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* Quick Actions */}
-      <Card className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
+      {/* Quick Actions - Escondido em mobile pois as páginas não são acessíveis */}
+      <Card className="animate-fade-in hidden md:block" style={{ animationDelay: '0.8s' }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
