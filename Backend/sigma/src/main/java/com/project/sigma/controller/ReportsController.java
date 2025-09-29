@@ -29,19 +29,19 @@ public class ReportsController {
             System.out.println("📦 Total de produtos ativos: " + totalProducts);
 
             // Total categories
-            String totalCategoriesQuery = "SELECT COUNT(*) FROM Categoria WHERE ativo = true";
+            String totalCategoriesQuery = "SELECT COUNT(*) FROM Categoria WHERE status = 'ATIVA'";
             System.out.println("📊 Executando query: " + totalCategoriesQuery);
             Integer totalCategories = jdbcTemplate.queryForObject(totalCategoriesQuery, Integer.class);
             System.out.println("📂 Total de categorias ativas: " + totalCategories);
 
-            // Low stock products count
-            String lowStockQuery = "SELECT COUNT(*) FROM Produto WHERE quant_em_estoque <= estoque_minimo AND status = 'ATIVO'";
+            // Low stock products count - CORRIGIDO: usar 'estoque' em vez de 'quant_em_estoque'
+            String lowStockQuery = "SELECT COUNT(*) FROM Produto WHERE estoque <= estoque_minimo AND status = 'ATIVO'";
             System.out.println("📊 Executando query: " + lowStockQuery);
             Integer lowStockCount = jdbcTemplate.queryForObject(lowStockQuery, Integer.class);
             System.out.println("⚠️ Produtos com baixo estoque: " + lowStockCount);
 
-            // Total stock value (approximate)
-            String stockValueQuery = "SELECT COALESCE(SUM(quant_em_estoque * valor_unitario), 0) FROM Produto WHERE status = 'ATIVO'";
+            // Total stock value - CORRIGIDO: usar 'estoque' e 'preco_venda' em vez de 'quant_em_estoque' e 'valor_unitario'
+            String stockValueQuery = "SELECT COALESCE(SUM(estoque * preco_venda), 0) FROM Produto WHERE status = 'ATIVO'";
             System.out.println("📊 Executando query: " + stockValueQuery);
             Double totalStockValue = jdbcTemplate.queryForObject(stockValueQuery, Double.class);
             System.out.println("💰 Valor total do estoque: " + totalStockValue);

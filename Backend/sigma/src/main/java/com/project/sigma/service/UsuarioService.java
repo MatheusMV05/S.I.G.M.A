@@ -26,7 +26,7 @@ public class UsuarioService {
     }
 
     public Optional<Usuario> buscarPorLogin(String login) {
-        return usuarioRepository.findByLogin(login);
+        return usuarioRepository.findByUsername(login);
     }
 
 }

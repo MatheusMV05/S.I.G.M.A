@@ -6,15 +6,13 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProdutoResponseDTO {
 
-    // Campos mapeados para o frontend (nomes em snake_case)
-    private Integer id_produto;
+    private Long id_produto;
     private String nome;
     private String marca;
     private String descricao;
@@ -28,8 +26,8 @@ public class ProdutoResponseDTO {
     private String unidade;
     private Double peso;
     private LocalDate data_validade;
-    private String data_criacao;  // Formato ISO string
-    private String data_atualizacao; // Formato ISO string
+    private String data_criacao;
+    private String data_atualizacao;
 
     // Categoria aninhada
     private CategoriaSimpleDTO category;
@@ -38,7 +36,7 @@ public class ProdutoResponseDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CategoriaSimpleDTO {
-        private Integer id;
+        private Long id;
         private String nome;
     }
 }

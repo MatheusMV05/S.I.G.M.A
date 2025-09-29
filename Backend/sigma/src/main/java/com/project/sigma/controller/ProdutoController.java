@@ -22,7 +22,7 @@ public class ProdutoController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(required = false) String search,
-        @RequestParam(required = false) Integer categoryId,
+        @RequestParam(required = false) Long categoryId,
         @RequestParam(required = false) String status
     ) {
         System.out.println("📦 GET /api/products - Listando produtos com paginação");
@@ -30,19 +30,16 @@ public class ProdutoController {
 
         PaginatedResponseDTO<ProdutoResponseDTO> response = produtoService.buscarProdutosComPaginacao(page, size, search, categoryId, status);
 
-        System.out.println("📤 Retornando " + response.getContent().size() + " produtos de " + response.getTotalElements() + " total");
+        System.out.println("📤 Retornando resposta paginada");
         return response;
     }
 
-    // Add endpoint for low stock products that frontend is calling
     @GetMapping("/low-stock")
     public ResponseEntity<?> getLowStockProducts() {
         System.out.println("⚠️ GET /api/products/low-stock - Buscando produtos com baixo estoque");
 
         try {
-            // For now, return empty array but with proper logging
-            System.out.println("✅ Retornando lista vazia de produtos com baixo estoque (implementação futura)");
-            return ResponseEntity.ok(new Object[0]);
+            return ResponseEntity.ok(produtoService.buscarProdutosComBaixoEstoque());
         } catch (Exception e) {
             System.err.println("❌ Erro ao buscar produtos com baixo estoque: " + e.getMessage());
             return ResponseEntity.ok(new Object[0]);
@@ -50,83 +47,72 @@ public class ProdutoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProdutoResponseDTO> getProdutoById(@PathVariable Integer id) {
-        ProdutoResponseDTO produto = produtoService.buscarProdutoCompletoPorId(id);
-        return produto != null ? ResponseEntity.ok(produto) : ResponseEntity.notFound().build();
+    public ResponseEntity<ProdutoResponseDTO> getProdutoById(@PathVariable Long id) {
+        return produtoService.buscarProdutoCompletoPorId(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<Produto> criarProduto(@RequestBody ProdutoRequestDTO dto) {
         System.out.println("=== DEBUG PRODUTO CREATE ===");
         System.out.println("DTO recebido do frontend para CRIAR:");
-        dto.debugPrint();
 
-        // Verificar se os campos obrigatórios estão presentes
-        System.out.println("=== VALIDAÇÃO DOS CAMPOS ===");
-        System.out.println("Nome: " + (dto.getNome() != null ? "✅ " + dto.getNome() : "❌ NULL"));
-        System.out.println("Valor Unitário: " + (dto.getValorUnitario() != null ? "✅ " + dto.getValorUnitario() : "❌ NULL"));
-        System.out.println("Quantidade: " + (dto.getQuantEmEstoque() != null ? "✅ " + dto.getQuantEmEstoque() : "❌ NULL"));
-        System.out.println("Preço Custo: " + (dto.getPrecoCusto() != null ? "✅ " + dto.getPrecoCusto() : "❌ NULL"));
-        System.out.println("Status: " + (dto.getStatus() != null ? "✅ " + dto.getStatus() : "❌ NULL"));
-        System.out.println("============================");
-
-        // Converter DTO para entidade Produto
+        // Convert DTO to entity using new schema field names
         Produto produto = new Produto();
         produto.setNome(dto.getNome());
         produto.setMarca(dto.getMarca());
-        produto.setQuantEmEstoque(dto.getQuantEmEstoque());
-        produto.setValorUnitario(dto.getValorUnitario());
-        produto.setDataValidade(dto.getDataValidade());
-        produto.setIdCategoria(dto.getIdCategoria());
+        produto.setEstoque(dto.getQuantEmEstoque());
+        produto.setPreco_venda(dto.getValorUnitario());
+        produto.setData_validade(dto.getDataValidade());
+        produto.setId_categoria(dto.getIdCategoria());
         produto.setDescricao(dto.getDescricao());
-        produto.setEstoqueMinimo(dto.getEstoqueMinimo());
-        produto.setEstoqueMaximo(dto.getEstoqueMaximo());
-        produto.setPrecoCusto(dto.getPrecoCusto());
-        produto.setStatus(dto.getStatus());
-        produto.setCodigoBarras(dto.getCodigoBarras());
-        produto.setUnidade(dto.getUnidade());
-        produto.setPeso(dto.getPeso());
+        produto.setEstoque_minimo(dto.getEstoqueMinimo());
+        // CORRIGIDO: garantir que estoque_maximo nunca seja null
+        produto.setEstoque_maximo(dto.getEstoqueMaximo() != null ? dto.getEstoqueMaximo() : 1000);
+        produto.setPreco_custo(dto.getPrecoCusto());
+        produto.setStatus(Produto.StatusProduto.valueOf(dto.getStatus()));
+        produto.setCodigo_barras(dto.getCodigoBarras());
 
         System.out.println("Produto convertido antes de enviar para service:");
-        System.out.println("valor_unitario: " + produto.getValorUnitario());
-        System.out.println("quant_em_estoque: " + produto.getQuantEmEstoque());
-        System.out.println("preco_custo: " + produto.getPrecoCusto());
+        System.out.println("preco_venda: " + produto.getPreco_venda());
+        System.out.println("estoque: " + produto.getEstoque());
+        System.out.println("preco_custo: " + produto.getPreco_custo());
         System.out.println("status: " + produto.getStatus());
+        System.out.println("estoque_maximo: " + produto.getEstoque_maximo());
         System.out.println("===============================");
 
         Produto novoProduto = produtoService.criarProduto(produto);
-        System.out.println("✅ Produto criado com sucesso - ID: " + novoProduto.getIdProduto());
+        System.out.println("✅ Produto criado com sucesso");
         return new ResponseEntity<>(novoProduto, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Produto> atualizarProduto(@PathVariable Integer id, @RequestBody ProdutoRequestDTO dto) {
+    public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody ProdutoRequestDTO dto) {
         System.out.println("=== DEBUG PRODUTO UPDATE ===");
         System.out.println("ID recebido: " + id);
-        System.out.println("DTO recebido do frontend:");
-        dto.debugPrint();
 
-        // Converter DTO para entidade Produto
+        // Convert DTO to entity using new schema field names
         Produto produto = new Produto();
-        produto.setIdProduto(id);
+        produto.setId_produto(id);
         produto.setNome(dto.getNome());
         produto.setMarca(dto.getMarca());
-        produto.setQuantEmEstoque(dto.getQuantEmEstoque());
-        produto.setValorUnitario(dto.getValorUnitario());
-        produto.setDataValidade(dto.getDataValidade());
-        produto.setIdCategoria(dto.getIdCategoria());
+        produto.setEstoque(dto.getQuantEmEstoque());
+        produto.setPreco_venda(dto.getValorUnitario());
+        produto.setData_validade(dto.getDataValidade());
+        produto.setId_categoria(dto.getIdCategoria());
         produto.setDescricao(dto.getDescricao());
-        produto.setEstoqueMinimo(dto.getEstoqueMinimo());
-        produto.setEstoqueMaximo(dto.getEstoqueMaximo());
-        produto.setPrecoCusto(dto.getPrecoCusto());
-        produto.setStatus(dto.getStatus());
-        produto.setCodigoBarras(dto.getCodigoBarras());
-        produto.setUnidade(dto.getUnidade());
-        produto.setPeso(dto.getPeso());
+        produto.setEstoque_minimo(dto.getEstoqueMinimo());
+        // CORRIGIDO: garantir que estoque_maximo nunca seja null
+        produto.setEstoque_maximo(dto.getEstoqueMaximo() != null ? dto.getEstoqueMaximo() : 1000);
+        produto.setPreco_custo(dto.getPrecoCusto());
+        produto.setStatus(Produto.StatusProduto.valueOf(dto.getStatus()));
+        produto.setCodigo_barras(dto.getCodigoBarras());
 
         System.out.println("Produto antes de enviar para service:");
-        System.out.println("valor_unitario: " + produto.getValorUnitario());
-        System.out.println("quant_em_estoque: " + produto.getQuantEmEstoque());
+        System.out.println("preco_venda: " + produto.getPreco_venda());
+        System.out.println("estoque: " + produto.getEstoque());
+        System.out.println("estoque_maximo: " + produto.getEstoque_maximo());
         System.out.println("===============================");
 
         Produto produtoAtualizado = produtoService.atualizarProduto(produto);
@@ -134,7 +120,7 @@ public class ProdutoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarProduto(@PathVariable Integer id) {
+    public ResponseEntity<Void> deletarProduto(@PathVariable Long id) {
         produtoService.deletarProduto(id);
         return ResponseEntity.noContent().build();
     }

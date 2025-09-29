@@ -64,3 +64,4 @@ public class FuncionarioController {
         return ResponseEntity.noContent().build();
     }
 }
+

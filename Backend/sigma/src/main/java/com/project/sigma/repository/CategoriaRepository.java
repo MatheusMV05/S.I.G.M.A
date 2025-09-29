@@ -10,158 +10,163 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class CategoriaRepository {
-
-    private final JdbcTemplate jdbcTemplate;
+public class CategoriaRepository implements BaseRepository<Categoria, Long> {
 
     @Autowired
-    public CategoriaRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    private JdbcTemplate jdbcTemplate;
 
-    private static final class CategoriaRowMapper implements RowMapper<Categoria> {
-        @Override
-        public Categoria mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Categoria categoria = new Categoria();
-            categoria.setId_categoria(rs.getInt("id_categoria"));  // INT em vez de Long
-            categoria.setNome(rs.getString("nome"));
-            categoria.setDescricao(rs.getString("descricao"));
-            categoria.setAtivo(rs.getBoolean("ativo"));
-            categoria.setData_criacao(rs.getTimestamp("data_criacao").toLocalDateTime());
-            categoria.setData_atualizacao(rs.getTimestamp("data_atualizacao").toLocalDateTime());
-            return categoria;
-        }
-    }
+    private static final String INSERT_SQL =
+        "INSERT INTO Categoria (nome, descricao, status) VALUES (?, ?, ?)";
 
-    // BUSCAR TODAS as categorias
-    public List<Categoria> findAll() {
-        String sql = "SELECT * FROM Categoria WHERE ativo = TRUE ORDER BY nome ASC";
-        System.out.println("🔍 Repository: Executando query: " + sql);
-        try {
-            List<Categoria> result = jdbcTemplate.query(sql, new CategoriaRowMapper());
-            System.out.println("✅ Repository: " + result.size() + " categorias encontradas");
-            if (!result.isEmpty()) {
-                System.out.println("📋 Primeira categoria: " + result.get(0).getNome() + " (ID: " + result.get(0).getId_categoria() + ")");
-            }
-            return result;
-        } catch (Exception e) {
-            System.out.println("❌ Repository: Erro na query - " + e.getMessage());
-            e.printStackTrace();
-            throw e;
-        }
-    }
+    private static final String SELECT_BY_ID_SQL =
+        "SELECT * FROM Categoria WHERE id_categoria = ?";
 
-    // BUSCAR UMA categoria por ID
-    public Optional<Categoria> findById(Integer id) {  // Integer em vez de Long
-        String sql = "SELECT * FROM categoria WHERE id_categoria = ?";
-        try {
-            Categoria categoria = jdbcTemplate.queryForObject(sql, new Object[]{id}, new CategoriaRowMapper());
-            return Optional.ofNullable(categoria);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
+    private static final String SELECT_ALL_SQL =
+        "SELECT * FROM Categoria ORDER BY nome";
 
-    // BUSCAR categoria por nome (para validar duplicatas)
-    public Optional<Categoria> findByNomeIgnoreCase(String nome) {
-        String sql = "SELECT * FROM categoria WHERE LOWER(nome) = LOWER(?)";
-        try {
-            Categoria categoria = jdbcTemplate.queryForObject(sql, new Object[]{nome}, new CategoriaRowMapper());
-            return Optional.ofNullable(categoria);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
+    private static final String UPDATE_SQL =
+        "UPDATE Categoria SET nome = ?, descricao = ?, status = ? WHERE id_categoria = ?";
 
-    // CRIAR nova categoria
+    private static final String DELETE_SQL =
+        "DELETE FROM Categoria WHERE id_categoria = ?";
+
+    private static final String EXISTS_SQL =
+        "SELECT COUNT(*) FROM Categoria WHERE id_categoria = ?";
+
+    @Override
     public Categoria save(Categoria categoria) {
         if (categoria.getId_categoria() == null) {
-            return inserir(categoria);
+            return insert(categoria);
         } else {
-            return atualizar(categoria);
+            return update(categoria);
         }
     }
 
-    private Categoria inserir(Categoria categoria) {
-        String sql = "INSERT INTO categoria (nome, descricao, ativo, data_criacao, data_atualizacao) VALUES (?, ?, ?, ?, ?)";
-
+    private Categoria insert(Categoria categoria) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        LocalDateTime agora = LocalDateTime.now();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(INSERT_SQL, new String[]{"id_categoria"});
             ps.setString(1, categoria.getNome());
             ps.setString(2, categoria.getDescricao());
-            ps.setBoolean(3, categoria.getAtivo() != null ? categoria.getAtivo() : true);
-            ps.setObject(4, agora);
-            ps.setObject(5, agora);
+            ps.setString(3, categoria.getStatus().name());
             return ps;
         }, keyHolder);
 
-        categoria.setId_categoria(keyHolder.getKey().intValue());  // intValue() em vez de longValue()
-        categoria.setData_criacao(agora);
-        categoria.setData_atualizacao(agora);
-
+        categoria.setId_categoria(keyHolder.getKey().longValue());
         return categoria;
     }
 
-    private Categoria atualizar(Categoria categoria) {
-        String sql = "UPDATE categoria SET nome = ?, descricao = ?, ativo = ?, data_atualizacao = ? WHERE id_categoria = ?";
-
-        LocalDateTime agora = LocalDateTime.now();
-
-        jdbcTemplate.update(sql,
-                categoria.getNome(),
-                categoria.getDescricao(),
-                categoria.getAtivo(),
-                agora,
-                categoria.getId_categoria()
-        );
-
-        categoria.setData_atualizacao(agora);
+    private Categoria update(Categoria categoria) {
+        jdbcTemplate.update(UPDATE_SQL,
+            categoria.getNome(),
+            categoria.getDescricao(),
+            categoria.getStatus().name(),
+            categoria.getId_categoria());
         return categoria;
     }
 
-    // DELETAR categoria
-    public void delete(Categoria categoria) {
-        String sql = "DELETE FROM categoria WHERE id_categoria = ?";
-        jdbcTemplate.update(sql, categoria.getId_categoria());
-    }
-
-    // VERIFICAR se categoria tem produtos vinculados
-    public boolean temProdutosVinculados(Integer idCategoria) {  // Integer em vez de Long
-        String sql = "SELECT COUNT(*) FROM produto WHERE id_categoria = ?";  // Corrigir nome do campo
+    @Override
+    public Optional<Categoria> findById(Long id) {
         try {
-            Integer count = jdbcTemplate.queryForObject(sql, new Object[]{idCategoria}, Integer.class);
-            return count != null && count > 0;
+            Categoria categoria = jdbcTemplate.queryForObject(SELECT_BY_ID_SQL, categoriaRowMapper(), id);
+            return Optional.ofNullable(categoria);
         } catch (Exception e) {
-            return false;
+            return Optional.empty();
         }
     }
 
-    // ATUALIZAR produtos órfãos (quando categoria é excluída)
-    public void removerCategoriaDosProdutos(Integer idCategoria) {  // Integer em vez de Long
-        String sql = "UPDATE produto SET id_categoria = NULL WHERE id_categoria = ?";  // Corrigir nome do campo
-        jdbcTemplate.update(sql, idCategoria);
+    @Override
+    public List<Categoria> findAll() {
+        return jdbcTemplate.query(SELECT_ALL_SQL, categoriaRowMapper());
     }
 
-    // BUSCAR categorias por status
+    @Override
+    public void deleteById(Long id) {
+        jdbcTemplate.update(DELETE_SQL, id);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        Integer count = jdbcTemplate.queryForObject(EXISTS_SQL, Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    public List<Categoria> findByStatus(Categoria.StatusCategoria status) {
+        return jdbcTemplate.query(
+            "SELECT * FROM Categoria WHERE status = ? ORDER BY nome",
+            categoriaRowMapper(),
+            status.name());
+    }
+
+    public Optional<Categoria> findByNome(String nome) {
+        try {
+            Categoria categoria = jdbcTemplate.queryForObject(
+                "SELECT * FROM Categoria WHERE nome = ?",
+                categoriaRowMapper(),
+                nome);
+            return Optional.ofNullable(categoria);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Categoria> findByNomeIgnoreCase(String nome) {
+        try {
+            Categoria categoria = jdbcTemplate.queryForObject(
+                "SELECT * FROM Categoria WHERE LOWER(nome) = LOWER(?)",
+                categoriaRowMapper(),
+                nome);
+            return Optional.ofNullable(categoria);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public List<Categoria> findByAtivo(Boolean ativo) {
-        String sql = "SELECT * FROM categoria WHERE ativo = ? ORDER BY nome ASC";
-        return jdbcTemplate.query(sql, new Object[]{ativo}, new CategoriaRowMapper());
+        Categoria.StatusCategoria status = ativo ? Categoria.StatusCategoria.ATIVA : Categoria.StatusCategoria.INATIVA;
+        return findByStatus(status);
     }
 
-    // BUSCAR categorias com filtro de nome
     public List<Categoria> findByNomeContainingIgnoreCaseAndAtivo(String nome, Boolean ativo) {
-        String sql = "SELECT * FROM categoria WHERE LOWER(nome) LIKE LOWER(?) AND ativo = ? ORDER BY nome ASC";
-        String nomePattern = "%" + nome + "%";
-        return jdbcTemplate.query(sql, new Object[]{nomePattern, ativo}, new CategoriaRowMapper());
+        Categoria.StatusCategoria status = ativo ? Categoria.StatusCategoria.ATIVA : Categoria.StatusCategoria.INATIVA;
+        return jdbcTemplate.query(
+            "SELECT * FROM Categoria WHERE LOWER(nome) LIKE LOWER(?) AND status = ? ORDER BY nome",
+            categoriaRowMapper(),
+            "%" + nome + "%",
+            status.name());
+    }
+
+    public boolean temProdutosVinculados(Long id) {
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM Produto WHERE id_categoria = ?",
+            Integer.class,
+            id);
+        return count != null && count > 0;
+    }
+
+    public void removerCategoriaDosProdutos(Long id) {
+        jdbcTemplate.update(
+            "UPDATE Produto SET id_categoria = NULL WHERE id_categoria = ?",
+            id);
+    }
+
+    public void delete(Categoria categoria) {
+        deleteById(categoria.getId_categoria());
+    }
+
+    private RowMapper<Categoria> categoriaRowMapper() {
+        return (ResultSet rs, int rowNum) -> {
+            Categoria categoria = new Categoria();
+            categoria.setId_categoria(rs.getLong("id_categoria"));
+            categoria.setNome(rs.getString("nome"));
+            categoria.setDescricao(rs.getString("descricao"));
+            categoria.setStatus(Categoria.StatusCategoria.valueOf(rs.getString("status")));
+            return categoria;
+        };
     }
 }

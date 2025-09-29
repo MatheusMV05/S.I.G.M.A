@@ -40,7 +40,6 @@ public class AuthController {
             System.out.println("Token de autenticação criado para: " + loginRequest.getLogin());
 
             Authentication authentication = authenticationManager.authenticate(
-                    // A linha abaixo é a correção: getPassword -> getSenha
                     new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getSenha())
             );
 
@@ -51,16 +50,16 @@ public class AuthController {
             final Usuario userDetails = (Usuario) userDetailService.loadUserByUsername(loginRequest.getLogin());
 
             if (userDetails != null) {
-                System.out.println("✅ Usuário autenticado - Nome: " + userDetails.getNome() + ", Role: " + userDetails.getRole());
+                System.out.println("✅ Usuário autenticado - ID: " + userDetails.getId_pessoa() + ", Role: " + userDetails.getRole());
 
                 final String token = jwtService.generateToken(userDetails);
                 System.out.println("✅ Token JWT gerado: " + token.substring(0, 20) + "...");
 
                 LoginResponse response = new LoginResponse(
-                        userDetails.getId_usuario(),
-                        userDetails.getNome(),
+                        userDetails.getId_pessoa(),
                         userDetails.getUsername(),
-                        userDetails.getRole(),
+                        userDetails.getUsername(),
+                        userDetails.getRole().name(),
                         token
                 );
 

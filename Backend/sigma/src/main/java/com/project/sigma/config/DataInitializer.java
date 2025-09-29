@@ -27,12 +27,12 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Nenhum administrador padrão encontrado. Criando usuário 'admin'...");
 
             Usuario admin = new Usuario();
-            admin.setNome("Administrador do Sistema");
+            admin.setId_pessoa(1L); // Setting a default ID for the admin user
             admin.setUsername("admin");
             // Codifica a senha antes de salvar
             admin.setPassword(passwordEncoder.encode("admin"));
-            admin.setRole("ADMIN");
-            admin.setStatus("ATIVO");
+            admin.setRole(Usuario.Role.ADMIN);
+            admin.setStatus(Usuario.StatusUsuario.ATIVO);
 
             // Salva o novo administrador
             usuarioRepository.save(admin);

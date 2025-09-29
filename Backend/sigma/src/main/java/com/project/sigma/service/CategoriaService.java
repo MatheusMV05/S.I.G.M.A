@@ -35,7 +35,6 @@ public class CategoriaService {
             return categorias;
         } catch (Exception e) {
             System.out.println("❌ Service: Erro ao buscar categorias - " + e.getMessage());
-            e.printStackTrace();
             throw e;
         }
     }
@@ -45,7 +44,7 @@ public class CategoriaService {
      * @param id O ID da categoria a ser buscada.
      * @return Um Optional contendo a Categoria se encontrada, ou vazio caso contrário.
      */
-    public Optional<Categoria> buscarPorId(Integer id) {
+    public Optional<Categoria> buscarPorId(Long id) {
         System.out.println("🔍 Service: Buscando categoria por ID: " + id);
         try {
             Optional<Categoria> categoria = categoriaRepository.findById(id);
@@ -57,7 +56,6 @@ public class CategoriaService {
             return categoria;
         } catch (Exception e) {
             System.out.println("❌ Service: Erro ao buscar categoria por ID - " + e.getMessage());
-            e.printStackTrace();
             throw e;
         }
     }
@@ -88,7 +86,7 @@ public class CategoriaService {
         Categoria categoria = new Categoria();
         categoria.setNome(request.getNome().trim());
         categoria.setDescricao(request.getDescricao());
-        categoria.setAtivo(request.getAtivo() != null ? request.getAtivo() : true);
+        categoria.setStatus(booleanToStatus(request.getAtivo() != null ? request.getAtivo() : true));
 
         Categoria saved = categoriaRepository.save(categoria);
         return toResponse(saved);
@@ -102,7 +100,7 @@ public class CategoriaService {
      * @throws EntityNotFoundException Se a categoria não for encontrada.
      * @throws IllegalArgumentException Se o nome já estiver em uso por outra categoria.
      */
-    public CategoriaResponse atualizarCategoria(Integer id, UpdateCategoriaRequest request) {
+    public CategoriaResponse atualizarCategoria(Long id, UpdateCategoriaRequest request) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
@@ -128,7 +126,7 @@ public class CategoriaService {
         }
 
         if (request.getAtivo() != null) {
-            categoria.setAtivo(request.getAtivo());
+            categoria.setStatus(booleanToStatus(request.getAtivo()));
         }
 
         Categoria saved = categoriaRepository.save(categoria);
@@ -141,7 +139,7 @@ public class CategoriaService {
      * @throws EntityNotFoundException Se a categoria não for encontrada.
      * @throws IllegalStateException Se a categoria possuir produtos vinculados.
      */
-    public void excluirCategoria(Integer id) {  // Integer em vez de Long
+    public void excluirCategoria(Long id) {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
@@ -161,7 +159,7 @@ public class CategoriaService {
      * @return A categoria com o status atualizado.
      * @throws EntityNotFoundException Se a categoria não for encontrada.
      */
-    public CategoriaResponse alterarStatus(Integer id, Boolean ativo) {  // Integer em vez de Long
+    public CategoriaResponse alterarStatus(Long id, Boolean ativo) {
         if (ativo == null) {
             throw new IllegalArgumentException("Campo 'ativo' é obrigatório");
         }
@@ -169,7 +167,7 @@ public class CategoriaService {
         Categoria categoria = categoriaRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
-        categoria.setAtivo(ativo);
+        categoria.setStatus(booleanToStatus(ativo));
         Categoria saved = categoriaRepository.save(categoria);
 
         return toResponse(saved);
@@ -207,12 +205,32 @@ public class CategoriaService {
      */
     private CategoriaResponse toResponse(Categoria categoria) {
         CategoriaResponse response = new CategoriaResponse();
-        response.setIdCategoria(categoria.getId_categoria().longValue());
+        response.setIdCategoria(categoria.getId_categoria());
         response.setNome(categoria.getNome());
         response.setDescricao(categoria.getDescricao());
-        response.setAtivo(categoria.getAtivo());
-        response.setDataCriacao(categoria.getData_criacao());
-        response.setDataAtualizacao(categoria.getData_atualizacao());
+        response.setAtivo(statusToBoolean(categoria.getStatus()));
+        // Note: dataCriacao and dataAtualizacao are not available in the current model
+        // These would need to be added to the Categoria model if needed
+        response.setDataCriacao(null);
+        response.setDataAtualizacao(null);
         return response;
+    }
+
+    /**
+     * Converte Boolean para StatusCategoria.
+     * @param ativo Status como boolean.
+     * @return StatusCategoria correspondente.
+     */
+    private Categoria.StatusCategoria booleanToStatus(Boolean ativo) {
+        return (ativo != null && ativo) ? Categoria.StatusCategoria.ATIVA : Categoria.StatusCategoria.INATIVA;
+    }
+
+    /**
+     * Converte StatusCategoria para Boolean.
+     * @param status Status como enum.
+     * @return Boolean correspondente.
+     */
+    private Boolean statusToBoolean(Categoria.StatusCategoria status) {
+        return status == Categoria.StatusCategoria.ATIVA;
     }
 }

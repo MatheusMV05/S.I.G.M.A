@@ -3,26 +3,24 @@ package com.project.sigma.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Categoria {
-
-    @JsonProperty("id_categoria")
-    private Integer id_categoria;
-
+    private Long id_categoria;
     private String nome;
     private String descricao;
-    private Boolean ativo = true;
+    private StatusCategoria status;
 
-    @JsonProperty("data_criacao")
-    private LocalDateTime data_criacao;
+    public enum StatusCategoria {
+        ATIVA, INATIVA
+    }
 
-    @JsonProperty("data_atualizacao")
-    private LocalDateTime data_atualizacao;
-
+    public Categoria(String nome, String descricao) {
+        this.nome = nome;
+        this.descricao = descricao;
+        this.status = StatusCategoria.ATIVA;
+    }
 }
+

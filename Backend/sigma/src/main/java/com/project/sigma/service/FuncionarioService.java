@@ -3,20 +3,17 @@ package com.project.sigma.service;
 import com.project.sigma.dto.FuncionarioDTO;
 import com.project.sigma.model.Funcionario;
 import com.project.sigma.model.Pessoa;
+import com.project.sigma.model.Telefone;
 import com.project.sigma.repository.FuncionarioRepository;
+import com.project.sigma.repository.PessoaRepository;
+import com.project.sigma.repository.TelefoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import com.project.sigma.dto.FuncionarioDTO;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,10 +22,13 @@ import java.util.stream.Collectors;
 public class FuncionarioService {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private FuncionarioRepository funcionarioRepository;
 
     @Autowired
-    private FuncionarioRepository funcionarioRepository;
+    private PessoaRepository pessoaRepository;
+
+    @Autowired
+    private TelefoneRepository telefoneRepository;
 
     /**
      * Cria um novo funcionário completo (Pessoa, Funcionario, Telefone) em uma única transação.
@@ -38,70 +38,210 @@ public class FuncionarioService {
     @Transactional
     public FuncionarioDTO criarFuncionario(FuncionarioDTO funcionarioDTO) {
         // --- REGRAS DE NEGÓCIO ---
-        if (funcionarioDTO.getPessoa() == null || !StringUtils.hasText(funcionarioDTO.getPessoa().getNome())) {
+        if (!StringUtils.hasText(funcionarioDTO.getNome())) {
             throw new IllegalArgumentException("O nome do funcionário é obrigatório.");
         }
-        if (funcionarioDTO.getFuncionario() == null || !StringUtils.hasText(funcionarioDTO.getFuncionario().getMatricula())) {
+        if (!StringUtils.hasText(funcionarioDTO.getMatricula())) {
             throw new IllegalArgumentException("A matrícula do funcionário é obrigatória.");
         }
-        // NOVA REGRA: Validação do telefone
         if (!StringUtils.hasText(funcionarioDTO.getTelefone())) {
             throw new IllegalArgumentException("O telefone do funcionário é obrigatório.");
         }
+        if (funcionarioDTO.getSalario() == null || funcionarioDTO.getSalario().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O salário deve ser maior que zero.");
+        }
 
-        // A lógica complexa foi movida para o repositório. O service apenas chama o método.
-        return funcionarioRepository.save(funcionarioDTO);
+        // Create Pessoa first
+        Pessoa pessoa = new Pessoa();
+        pessoa.setNome(funcionarioDTO.getNome());
+        pessoa.setEmail(funcionarioDTO.getEmail());
+        pessoa.setRua(funcionarioDTO.getRua());
+        pessoa.setNumero(funcionarioDTO.getNumero());
+        pessoa.setBairro(funcionarioDTO.getBairro());
+        pessoa.setCidade(funcionarioDTO.getCidade());
+        pessoa.setCep(funcionarioDTO.getCep());
+        pessoa = pessoaRepository.save(pessoa);
+
+        // Create Telefone
+        if (StringUtils.hasText(funcionarioDTO.getTelefone())) {
+            Telefone telefone = new Telefone();
+            telefone.setId_pessoa(pessoa.getId_pessoa());
+            telefone.setNumero(funcionarioDTO.getTelefone());
+            telefone.setTipo(Telefone.TipoTelefone.COMERCIAL);
+            telefoneRepository.save(telefone);
+        }
+
+        // Create Funcionario
+        Funcionario funcionario = new Funcionario();
+        funcionario.setId_pessoa(pessoa.getId_pessoa());
+        funcionario.setMatricula(funcionarioDTO.getMatricula());
+        funcionario.setSalario(funcionarioDTO.getSalario());
+        funcionario.setCargo(funcionarioDTO.getCargo());
+        funcionario.setSetor(funcionarioDTO.getSetor());
+        funcionario.setId_supervisor(funcionarioDTO.getId_supervisor());
+        funcionario.setStatus(Funcionario.StatusFuncionario.ATIVO);
+        funcionario.setData_admissao(funcionarioDTO.getData_admissao() != null ?
+            funcionarioDTO.getData_admissao() : LocalDate.now());
+        funcionario = funcionarioRepository.save(funcionario);
+
+        return convertToDTO(funcionario);
     }
 
     /**
-     * Busca funcionários, opcionalmente filtrando por cargo.
+     * Busca funcionários com filtros opcionais.
+     * @param cargo Cargo para filtrar (opcional)
+     * @return Lista de funcionários
      */
     public List<FuncionarioDTO> buscarFuncionarios(String cargo) {
-        // Chama o search do repository, sem ID, para buscar uma lista
-        return funcionarioRepository.search(null, cargo);
+        List<Funcionario> funcionarios;
+
+        if (StringUtils.hasText(cargo)) {
+            funcionarios = funcionarioRepository.findBySetor(cargo); // Using setor as proxy for cargo
+        } else {
+            funcionarios = funcionarioRepository.findAll();
+        }
+
+        return funcionarios.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     /**
-     * Busca um único funcionário pelo seu ID.
+     * Busca um funcionário específico por ID.
+     * @param id ID do funcionário
+     * @return Optional contendo o funcionário se encontrado
      */
     public Optional<FuncionarioDTO> buscarUmFuncionarioPorId(Long id) {
-        // Chama o search do repository passando o ID
-        List<FuncionarioDTO> funcionarios = funcionarioRepository.search(id, null);
-
-        // Se a lista não estiver vazia, retorna o primeiro (e único) elemento.
-        return funcionarios.stream().findFirst();
+        return funcionarioRepository.findById(id)
+                .map(this::convertToDTO);
     }
 
     /**
-     * Atualiza um funcionário existente em uma única transação.
-     * @param id O ID do funcionário a ser atualizado.
-     * @param funcionarioDTO O DTO com as informações atualizadas.
-     * @return O DTO atualizado.
+     * Atualiza um funcionário existente.
+     * @param id ID do funcionário
+     * @param funcionarioDTO Dados atualizados
+     * @return DTO atualizado
      */
     @Transactional
     public FuncionarioDTO atualizarFuncionario(Long id, FuncionarioDTO funcionarioDTO) {
-        // Garante que os IDs estão corretos
-        funcionarioDTO.getPessoa().setId_pessoa(id);
+        Optional<Funcionario> funcionarioOpt = funcionarioRepository.findById(id);
+        if (funcionarioOpt.isEmpty()) {
+            throw new IllegalArgumentException("Funcionário não encontrado com ID: " + id);
+        }
 
-        // Adiciona validações também na atualização
-        if (funcionarioDTO.getPessoa() == null || !StringUtils.hasText(funcionarioDTO.getPessoa().getNome())) {
+        if (!StringUtils.hasText(funcionarioDTO.getNome())) {
             throw new IllegalArgumentException("O nome do funcionário é obrigatório.");
         }
-        if (!StringUtils.hasText(funcionarioDTO.getTelefone())) {
-            throw new IllegalArgumentException("O telefone do funcionário é obrigatório.");
+
+        Funcionario funcionario = funcionarioOpt.get();
+
+        // Update Pessoa
+        Optional<Pessoa> pessoaOpt = pessoaRepository.findById(id);
+        if (pessoaOpt.isPresent()) {
+            Pessoa pessoa = pessoaOpt.get();
+            pessoa.setNome(funcionarioDTO.getNome());
+            pessoa.setEmail(funcionarioDTO.getEmail());
+            pessoa.setRua(funcionarioDTO.getRua());
+            pessoa.setNumero(funcionarioDTO.getNumero());
+            pessoa.setBairro(funcionarioDTO.getBairro());
+            pessoa.setCidade(funcionarioDTO.getCidade());
+            pessoa.setCep(funcionarioDTO.getCep());
+            pessoaRepository.save(pessoa);
         }
 
-        return funcionarioRepository.update(funcionarioDTO);
-    }
+        // Update Funcionario
+        funcionario.setMatricula(funcionarioDTO.getMatricula());
+        funcionario.setSalario(funcionarioDTO.getSalario());
+        funcionario.setCargo(funcionarioDTO.getCargo());
+        funcionario.setSetor(funcionarioDTO.getSetor());
+        funcionario.setId_supervisor(funcionarioDTO.getId_supervisor());
+        if (StringUtils.hasText(funcionarioDTO.getStatus())) {
+            funcionario.setStatus(Funcionario.StatusFuncionario.valueOf(funcionarioDTO.getStatus()));
+        }
+        funcionario = funcionarioRepository.save(funcionario);
 
+        return convertToDTO(funcionario);
+    }
 
     /**
      * Deleta um funcionário pelo seu ID.
-     * @param id O ID da pessoa/funcionário a ser deletada.
+     * @param id ID do funcionário
      */
     @Transactional
     public void deletarFuncionario(Long id) {
-        // A chamada agora é única e o ON DELETE CASCADE faz o resto.
+        if (id == null) {
+            throw new IllegalArgumentException("O ID do funcionário não pode ser nulo para a exclusão.");
+        }
         funcionarioRepository.deleteById(id);
+    }
+
+    /**
+     * Busca funcionário por matrícula.
+     * @param matricula Matrícula do funcionário
+     * @return Optional contendo o funcionário se encontrado
+     */
+    public Optional<FuncionarioDTO> buscarPorMatricula(String matricula) {
+        return funcionarioRepository.findByMatricula(matricula)
+                .map(this::convertToDTO);
+    }
+
+    /**
+     * Busca funcionários por setor.
+     * @param setor Setor dos funcionários
+     * @return Lista de funcionários do setor
+     */
+    public List<FuncionarioDTO> buscarPorSetor(String setor) {
+        return funcionarioRepository.findBySetor(setor).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Converte Funcionario entity para DTO.
+     * @param funcionario Entity
+     * @return DTO
+     */
+    private FuncionarioDTO convertToDTO(Funcionario funcionario) {
+        FuncionarioDTO dto = new FuncionarioDTO();
+
+        // Set funcionario data
+        dto.setId_pessoa(funcionario.getId_pessoa());
+        dto.setMatricula(funcionario.getMatricula());
+        dto.setSalario(funcionario.getSalario());
+        dto.setCargo(funcionario.getCargo());
+        dto.setSetor(funcionario.getSetor());
+        dto.setId_supervisor(funcionario.getId_supervisor());
+        dto.setStatus(funcionario.getStatus().name());
+        dto.setData_admissao(funcionario.getData_admissao());
+        dto.setAtivo(funcionario.getStatus() == Funcionario.StatusFuncionario.ATIVO);
+
+        // Get Pessoa data
+        Optional<Pessoa> pessoaOpt = pessoaRepository.findById(funcionario.getId_pessoa());
+        if (pessoaOpt.isPresent()) {
+            Pessoa pessoa = pessoaOpt.get();
+            dto.setNome(pessoa.getNome());
+            dto.setEmail(pessoa.getEmail());
+            dto.setRua(pessoa.getRua());
+            dto.setNumero(pessoa.getNumero());
+            dto.setBairro(pessoa.getBairro());
+            dto.setCidade(pessoa.getCidade());
+            dto.setCep(pessoa.getCep());
+        }
+
+        // Get Telefone data
+        List<Telefone> telefones = telefoneRepository.findByPessoa(funcionario.getId_pessoa());
+        if (!telefones.isEmpty()) {
+            dto.setTelefone(telefones.get(0).getNumero());
+        }
+
+        // Get supervisor name if exists
+        if (funcionario.getId_supervisor() != null) {
+            Optional<Pessoa> supervisorPessoaOpt = pessoaRepository.findById(funcionario.getId_supervisor());
+            if (supervisorPessoaOpt.isPresent()) {
+                dto.setNomeSupervisor(supervisorPessoaOpt.get().getNome());
+            }
+        }
+
+        return dto;
     }
 }

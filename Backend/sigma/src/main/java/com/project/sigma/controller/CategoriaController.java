@@ -41,7 +41,7 @@ public class CategoriaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Categoria> getCategoriaById(@PathVariable Integer id) {
+    public ResponseEntity<Categoria> getCategoriaById(@PathVariable Long id) {
         System.out.println("🔍 GET /api/categorias/" + id + " - Buscando categoria por ID");
         try {
             return categoriaService.buscarPorId(id)
@@ -87,7 +87,7 @@ public class CategoriaController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<CategoriaResponse> atualizarCategoria(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestBody UpdateCategoriaRequest request) {
         System.out.println("✏️ PUT /api/categorias/" + id + " - Atualizando categoria");
         try {
@@ -106,7 +106,7 @@ public class CategoriaController {
      * DELETE /api/categorias/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluirCategoria(@PathVariable Integer id) {
+    public ResponseEntity<Void> excluirCategoria(@PathVariable Long id) {
         System.out.println("🗑️ DELETE /api/categorias/" + id + " - Excluindo categoria");
         try {
             categoriaService.excluirCategoria(id);
@@ -125,7 +125,7 @@ public class CategoriaController {
      */
     @PatchMapping("/{id}/status")
     public ResponseEntity<CategoriaResponse> alterarStatus(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestBody Map<String, Boolean> statusRequest) {
         System.out.println("🔄 PATCH /api/categorias/" + id + "/status - Alterando status");
         try {
@@ -180,12 +180,14 @@ public class CategoriaController {
      */
     private CategoriaResponse toResponse(Categoria categoria) {
         CategoriaResponse response = new CategoriaResponse();
-        response.setIdCategoria(categoria.getId_categoria().longValue());
+        response.setIdCategoria(categoria.getId_categoria());
         response.setNome(categoria.getNome());
         response.setDescricao(categoria.getDescricao());
-        response.setAtivo(categoria.getAtivo());
-        response.setDataCriacao(categoria.getData_criacao());
-        response.setDataAtualizacao(categoria.getData_atualizacao());
+        // Convert StatusCategoria enum to Boolean
+        response.setAtivo(categoria.getStatus() == Categoria.StatusCategoria.ATIVA);
+        // These fields are not available in the current model
+        response.setDataCriacao(null);
+        response.setDataAtualizacao(null);
         return response;
     }
 
@@ -209,21 +211,20 @@ public class CategoriaController {
                         "id_categoria", primeira.getId_categoria(),
                         "nome", primeira.getNome(),
                         "descricao", primeira.getDescricao(),
-                        "ativo", primeira.getAtivo(),
-                        "data_criacao", primeira.getData_criacao(),
-                        "data_atualizacao", primeira.getData_atualizacao()
+                        "status", primeira.getStatus(),
+                        "ativo", primeira.getStatus() == Categoria.StatusCategoria.ATIVA
                 ));
 
                 System.out.println("🔍 Primeira categoria:");
                 System.out.println("   ID: " + primeira.getId_categoria());
                 System.out.println("   Nome: " + primeira.getNome());
-                System.out.println("   Ativo: " + primeira.getAtivo());
+                System.out.println("   Status: " + primeira.getStatus());
+                System.out.println("   Ativo: " + (primeira.getStatus() == Categoria.StatusCategoria.ATIVA));
             }
 
             return ResponseEntity.ok(debug);
         } catch (Exception e) {
             System.out.println("❌ Erro no debug: " + e.getMessage());
-            e.printStackTrace();
             Map<String, Object> error = Map.of("erro", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
@@ -246,9 +247,11 @@ public class CategoriaController {
                         item.put("id_categoria", categoria.getId_categoria());
                         item.put("nome", categoria.getNome());
                         item.put("descricao", categoria.getDescricao());
-                        item.put("ativo", categoria.getAtivo());
-                        item.put("data_criacao", categoria.getData_criacao());
-                        item.put("data_atualizacao", categoria.getData_atualizacao());
+                        item.put("status", categoria.getStatus().name());
+                        item.put("ativo", categoria.getStatus() == Categoria.StatusCategoria.ATIVA);
+                        // These fields are not available in current model
+                        item.put("data_criacao", null);
+                        item.put("data_atualizacao", null);
                         return item;
                     })
                     .collect(java.util.stream.Collectors.toList());
@@ -263,7 +266,6 @@ public class CategoriaController {
 
         } catch (Exception e) {
             System.out.println("❌ Erro ao buscar categorias para frontend: " + e.getMessage());
-            e.printStackTrace();
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);

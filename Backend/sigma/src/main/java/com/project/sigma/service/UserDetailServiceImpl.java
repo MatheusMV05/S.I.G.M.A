@@ -18,17 +18,14 @@ public class UserDetailServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         System.out.println("Tentando carregar usuário: " + username);
 
-        // Busca o usuário no repositório
-        Usuario usuario = usuarioRepository.findByLogin(username)
+        // Busca o usuário no repositório usando o novo método JDBC
+        Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> {
                     System.err.println("Usuário não encontrado no banco: " + username);
                     return new UsernameNotFoundException("Usuário não encontrado: " + username);
                 });
 
-        System.out.println("Usuário encontrado no banco: " + usuario.getNome() + " - Role: " + usuario.getRole());
-
-        // --- CORREÇÃO AQUI ---
-        // A linha abaixo foi corrigida de getSenha() para getPassword()
+        System.out.println("Usuário encontrado no banco: " + usuario.getId_pessoa() + " - Role: " + usuario.getRole());
         System.out.println("Senha no banco (hash): " + usuario.getPassword().substring(0, 10) + "...");
 
         return usuario;

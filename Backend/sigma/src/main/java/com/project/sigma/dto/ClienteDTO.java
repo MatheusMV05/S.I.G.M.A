@@ -1,29 +1,34 @@
 package com.project.sigma.dto;
 
 import lombok.Data;
-import com.project.sigma.model.Pessoa;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 public class ClienteDTO {
 
-    //Usaremos composição para incluir todos os dados da Pessoa
-    private Pessoa pessoa;
-
-    //Campo da tabela Cliente
-    private Integer ranke;
-
-    //Campo da tabela cliente_fisica (pode ser nulo)
-    private String cpf;
-
-    //Campo da tabela cliente_juridico (pode ser nulo)
-    private String cnpj;
-
-    //Um campo para identificar o tipo de cliente (PF ou PJ)
-    //Isso será útil para a lógica no frontend e backend.
-    private String tipoCliente;
-
+    // Pessoa fields
+    private String nome;
     private String email;
+    private String rua;
+    private String numero;
+    private String bairro;
+    private String cidade;
+    private String cep;
     private String telefone;
-    private Boolean ativo;
 
+    // Cliente fields
+    private String tipoCliente; // "PF" ou "PJ"
+    private Boolean ativo;
+    private Integer ranking;
+    private BigDecimal totalGasto;
+
+    // ClienteFisico fields (for PF)
+    private String cpf;
+    private LocalDate dataNascimento;
+
+    // ClienteJuridico fields (for PJ)
+    private String cnpj;
+    private String razaoSocial;
+    private String inscricaoEstadual;
 }

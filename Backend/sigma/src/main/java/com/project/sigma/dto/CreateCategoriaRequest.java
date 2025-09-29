@@ -9,3 +9,4 @@ public class CreateCategoriaRequest {
     private String descricao;
     private Boolean ativo = true;
 }
+

@@ -26,7 +26,7 @@ public class ProdutoRequestDTO {
     private LocalDate dataValidade;
 
     @JsonProperty("id_categoria")
-    private Integer idCategoria;
+    private Long idCategoria;
 
     private String descricao;
 
@@ -47,21 +47,26 @@ public class ProdutoRequestDTO {
     private String unidade;
     private Double peso;
 
+    /**
+     * Debug method to print all field values for testing purposes
+     */
     public void debugPrint() {
-        System.out.println("=== DEBUG ProdutoRequestDTO ===");
-        System.out.println("nome: " + nome);
-        System.out.println("marca: " + marca);
-        System.out.println("valor_unitario: " + valorUnitario);
-        System.out.println("quant_em_estoque: " + quantEmEstoque);
-        System.out.println("id_categoria: " + idCategoria);
-        System.out.println("descricao: " + descricao);
-        System.out.println("estoque_minimo: " + estoqueMinimo);
-        System.out.println("estoque_maximo: " + estoqueMaximo);
-        System.out.println("preco_custo: " + precoCusto);
-        System.out.println("status: " + status);
-        System.out.println("codigo_barras: " + codigoBarras);
-        System.out.println("unidade: " + unidade);
-        System.out.println("peso: " + peso);
-        System.out.println("===============================");
+        System.out.println("=== ProdutoRequestDTO Debug Info ===");
+        System.out.println("Nome: " + nome);
+        System.out.println("Marca: " + marca);
+        System.out.println("Quantidade em Estoque: " + quantEmEstoque);
+        System.out.println("Valor Unitário: " + valorUnitario);
+        System.out.println("Data Validade: " + dataValidade);
+        System.out.println("ID Categoria: " + idCategoria);
+        System.out.println("Descrição: " + descricao);
+        System.out.println("Estoque Mínimo: " + estoqueMinimo);
+        System.out.println("Estoque Máximo: " + estoqueMaximo);
+        System.out.println("Preço Custo: " + precoCusto);
+        System.out.println("Status: " + status);
+        System.out.println("Código de Barras: " + codigoBarras);
+        System.out.println("Unidade: " + unidade);
+        System.out.println("Peso: " + peso);
+        System.out.println("=====================================");
     }
 }
+
