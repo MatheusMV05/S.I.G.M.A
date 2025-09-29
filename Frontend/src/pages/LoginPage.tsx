@@ -162,7 +162,7 @@ export default function LoginPage() {
             Bem-vindo ao S.I.G.M.A. 
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg font-medium">
-            Sistema Integrado de Gestão e Movimentação de Ativos
+            Sistema Integrado de Gestão para Mercados e Atacados
           </p>
         </div>
 
@@ -263,51 +263,13 @@ export default function LoginPage() {
                 Esqueci minha senha
               </Button>
             </div>
-
-            {/* Informações de teste */}
-            <div className="pt-4 border-t border-border/50">
-              <div className="text-center space-y-3">
-                <p className="text-sm text-muted-foreground font-medium">
-                  Credenciais para demonstração:
-                </p>
-                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 space-y-2 text-left">
-                  <div className="grid gap-1 sm:gap-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono text-xs text-muted-foreground">Admin:</span>
-                      <span className="font-mono text-xs text-foreground truncate">admin@comprebem.com</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono text-xs text-muted-foreground">Gerente:</span>
-                      <span className="font-mono text-xs text-foreground truncate">gerente@comprebem.com</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono text-xs text-muted-foreground">Supervisor:</span>
-                      <span className="font-mono text-xs text-foreground truncate">supervisor@comprebem.com</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono text-xs text-muted-foreground">Caixa:</span>
-                      <span className="font-mono text-xs text-foreground truncate">caixa@comprebem.com</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono text-xs text-muted-foreground">Estoque:</span>
-                      <span className="font-mono text-xs text-foreground truncate">estoque@comprebem.com</span>
-                    </div>
-                    <div className="border-t border-border/30 pt-2 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono text-xs text-muted-foreground">Senha (todos):</span>
-                        <span className="font-mono text-sm font-bold text-primary">123456</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
           </CardContent>
         </Card>
 
         {/* Footer */}
         <div className="text-center text-xs sm:text-sm text-muted-foreground space-y-1 animate-fade-in">
-          <p className="font-semibold">© 2024 Compre Bem Supermercado</p>
+          <p className="font-semibold">© 2025 Compre Bem Supermercado</p>
           <p className="hidden sm:block">Sistema desenvolvido para gestão completa</p>
         </div>
       </div>

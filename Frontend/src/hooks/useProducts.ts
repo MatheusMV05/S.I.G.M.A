@@ -102,7 +102,7 @@ export const useUpdateProduct = () => {
       productService.updateProduct(id, data),
     onSuccess: (updatedProduct) => {
       // Atualiza o produto específico no cache
-      queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
+      queryClient.setQueryData(productKeys.detail(updatedProduct.id_produto.toString()), updatedProduct);
       // Invalida listas
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       queryClient.invalidateQueries({ queryKey: productKeys.lowStock() });
@@ -135,23 +135,23 @@ export const useToggleProductStatus = () => {
       productService.toggleProductStatus(id, active),
     onSuccess: (updatedProduct) => {
       // Atualiza o produto específico no cache
-      queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
+      queryClient.setQueryData(productKeys.detail(updatedProduct.id_produto.toString()), updatedProduct);
       // Invalida listas
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
     },
   });
 };
 
-// Hook para atualizar preço do produto - por enquanto usando update geral
+// Hook para atualizar preço do produto - usando updateProduct
 export const useUpdateProductPrice = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: ({ id, price, costPrice }: { id: string; price: number; costPrice?: number }) =>
-      productService.updateProductPrice(id, price, costPrice),
+      productService.updateProduct(id, { preco_venda: price, preco_custo: costPrice }),
     onSuccess: (updatedProduct) => {
       // Atualiza o produto específico no cache
-      queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
+      queryClient.setQueryData(productKeys.detail(updatedProduct.id_produto.toString()), updatedProduct);
       // Invalida listas
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
     },
@@ -167,7 +167,7 @@ export const useUpdateProductStock = () => {
       productService.updateProductStock(id, stock),
     onSuccess: (updatedProduct) => {
       // Atualiza o produto específico no cache
-      queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
+      queryClient.setQueryData(productKeys.detail(updatedProduct.id_produto.toString()), updatedProduct);
       // Invalida listas e estoque baixo
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       queryClient.invalidateQueries({ queryKey: productKeys.lowStock() });

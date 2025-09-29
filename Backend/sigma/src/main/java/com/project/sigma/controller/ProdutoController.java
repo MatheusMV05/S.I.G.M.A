@@ -23,12 +23,16 @@ public class ProdutoController {
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(required = false) String search,
         @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) Long categoriaId, // ADICIONADO: para compatibilidade com frontend
         @RequestParam(required = false) String status
     ) {
-        System.out.println("📦 GET /api/products - Listando produtos com paginação");
-        System.out.println("   📄 Parâmetros: page=" + page + ", size=" + size + ", search=" + search + ", categoryId=" + categoryId + ", status=" + status);
+        // CORRIGIDO: usar categoriaId se categoryId for null
+        Long finalCategoryId = categoryId != null ? categoryId : categoriaId;
 
-        PaginatedResponseDTO<ProdutoResponseDTO> response = produtoService.buscarProdutosComPaginacao(page, size, search, categoryId, status);
+        System.out.println("📦 GET /api/products - Listando produtos com paginação");
+        System.out.println("   📄 Parâmetros: page=" + page + ", size=" + size + ", search=" + search + ", categoryId=" + categoryId + ", categoriaId=" + categoriaId + ", finalCategoryId=" + finalCategoryId + ", status=" + status);
+
+        PaginatedResponseDTO<ProdutoResponseDTO> response = produtoService.buscarProdutosComPaginacao(page, size, search, finalCategoryId, status);
 
         System.out.println("📤 Retornando resposta paginada");
         return response;
@@ -46,7 +50,7 @@ public class ProdutoController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")  // CORRIGIDO: especifica que id deve ser numérico
     public ResponseEntity<ProdutoResponseDTO> getProdutoById(@PathVariable Long id) {
         return produtoService.buscarProdutoCompletoPorId(id)
                 .map(ResponseEntity::ok)

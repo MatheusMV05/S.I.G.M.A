@@ -6,7 +6,7 @@ export * from './types';
 
 // Importar serviços
 import { authService } from './authService';
-import { productService } from './productService';
+import { productJavaService } from './productJavaService'; // Mudança: usar productJavaService
 import { categoryService } from './categoryService';
 import { categoryBackendService } from './categoryBackendService';
 import { supplierService } from './supplierService';
@@ -19,7 +19,7 @@ import { reportsService } from './reportsService';
 
 // Exportar serviços individualmente
 export { authService } from './authService';
-export { productService } from './productService';
+export { productJavaService as productService } from './productJavaService'; // Usar productJavaService
 export { categoryService } from './categoryService';
 export { categoryBackendService } from './categoryBackendService';
 export { supplierService } from './supplierService';
@@ -33,7 +33,7 @@ export { reportsService } from './reportsService';
 // Objeto com todos os serviços para facilitar importação
 export const services = {
   auth: authService,
-  products: productService,
+  products: productJavaService, // Usar productJavaService
   categories: categoryService,
   categoriesBackend: categoryBackendService,
   suppliers: supplierService,

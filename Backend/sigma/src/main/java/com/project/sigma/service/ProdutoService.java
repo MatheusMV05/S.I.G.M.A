@@ -29,7 +29,48 @@ public class ProdutoService {
 
         // Usar o método otimizado que já traz a categoria
         List<Produto> produtos = produtoRepository.findAllWithCategory();
-        List<ProdutoResponseDTO> produtosDTOs = produtos.stream()
+
+        // CORRIGIDO: Aplicar filtros nos produtos
+        List<Produto> produtosFiltrados = produtos.stream()
+            .filter(produto -> {
+                // Filtro por texto de busca (nome, marca, descrição)
+                if (search != null && !search.trim().isEmpty()) {
+                    String searchLower = search.toLowerCase().trim();
+                    boolean matchNome = produto.getNome() != null && produto.getNome().toLowerCase().contains(searchLower);
+                    boolean matchMarca = produto.getMarca() != null && produto.getMarca().toLowerCase().contains(searchLower);
+                    boolean matchDescricao = produto.getDescricao() != null && produto.getDescricao().toLowerCase().contains(searchLower);
+
+                    if (!matchNome && !matchMarca && !matchDescricao) {
+                        return false;
+                    }
+                }
+
+                // Filtro por categoria
+                if (categoryId != null && !categoryId.equals(produto.getId_categoria())) {
+                    return false;
+                }
+
+                // Filtro por status
+                if (status != null && !status.trim().isEmpty()) {
+                    if (!status.equalsIgnoreCase(produto.getStatus().name())) {
+                        return false;
+                    }
+                }
+
+                return true;
+            })
+            .collect(Collectors.toList());
+
+        // Calcular paginação
+        int totalElements = produtosFiltrados.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, totalElements);
+
+        // Aplicar paginação
+        List<Produto> produtosPaginados = produtosFiltrados.subList(startIndex, endIndex);
+
+        List<ProdutoResponseDTO> produtosDTOs = produtosPaginados.stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
 
@@ -37,10 +78,10 @@ public class ProdutoService {
         response.setContent(produtosDTOs);
         response.setPage(page);
         response.setSize(size);
-        response.setTotalPages(1);
-        response.setTotalElements(produtosDTOs.size());
+        response.setTotalPages(totalPages);
+        response.setTotalElements(totalElements);
         response.setFirst(page == 0);
-        response.setLast(true);
+        response.setLast(page >= totalPages - 1);
         response.setNumber(page);
 
         return response;

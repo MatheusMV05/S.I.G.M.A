@@ -8,14 +8,19 @@ export interface ProductJavaAPI {
   preco_venda: number;
   estoque: number;
   estoque_minimo: number;
+  estoque_maximo?: number;
   status: 'ATIVO' | 'INATIVO';
-  categoria?: {
-    id_categoria?: number;
-    nome?: string;
+  
+  // Mudança de "categoria" para "category"
+  category?: {
+    id: number;      // Mudança de "id_categoria" para "id"
+    nome: string;
   };
+  
   codigo_barras?: string;
   unidade?: string;
   peso?: number;
+  data_validade?: string;
   data_criacao?: string;
   data_atualizacao?: string;
 }
@@ -95,11 +100,13 @@ export const adaptProductFromJava = (javaProduct: ProductJavaAPI): ProductAPI =>
       preco_venda: 0,
       estoque: 0,
       estoque_minimo: 0,
+      estoque_maximo: 0,
       status: 'ATIVO',
       category: { id: 0, nome: '' },
       codigo_barras: '',
       unidade: '',
       peso: 0,
+      data_validade: '',
       data_criacao: new Date().toISOString(),
       data_atualizacao: new Date().toISOString(),
     };
@@ -114,14 +121,16 @@ export const adaptProductFromJava = (javaProduct: ProductJavaAPI): ProductAPI =>
     preco_venda: javaProduct.preco_venda || 0,
     estoque: javaProduct.estoque || 0,
     estoque_minimo: javaProduct.estoque_minimo || 0,
+    estoque_maximo: javaProduct.estoque_maximo,
     status: javaProduct.status || 'ATIVO',
     category: {
-      id: javaProduct.categoria?.id_categoria || 0,
-      nome: javaProduct.categoria?.nome || '',
+      id: javaProduct.category?.id || 0,
+      nome: javaProduct.category?.nome || '',
     },
     codigo_barras: javaProduct.codigo_barras,
     unidade: javaProduct.unidade,
     peso: javaProduct.peso,
+    data_validade: javaProduct.data_validade,
     data_criacao: javaProduct.data_criacao,
     data_atualizacao: javaProduct.data_atualizacao,
   };
@@ -151,11 +160,13 @@ export interface ProductAPI {
   preco_venda: number;
   estoque: number;
   estoque_minimo: number;
+  estoque_maximo?: number;
   status: 'ATIVO' | 'INATIVO';
   category: { id: number; nome: string; };
   codigo_barras?: string;
   unidade?: string;
   peso?: number;
+  data_validade?: string;
   data_criacao?: string;
   data_atualizacao?: string;
 }
