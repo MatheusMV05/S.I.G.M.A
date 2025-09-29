@@ -56,25 +56,25 @@ const menuItems = [
     title: 'Dashboard',
     url: '/dashboard',
     icon: LayoutDashboard,
-    roles: ['admin', 'manager', 'supervisor', 'cashier', 'stock'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR', 'CASHIER', 'STOCK'] as UserRole[],
   },
   {
     title: 'Ponto de Venda',
     url: '/pos',
     icon: ShoppingCart,
-    roles: ['admin', 'manager', 'supervisor', 'cashier'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR', 'CASHIER'] as UserRole[],
   },
   {
     title: 'Produtos',
     url: '/products',
     icon: Package,
-    roles: ['admin', 'manager', 'stock'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER', 'STOCK'] as UserRole[],
   },
   {
     title: 'Estoque',
     url: '/inventory',
     icon: Warehouse,
-    roles: ['admin', 'manager', 'supervisor', 'stock'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR', 'STOCK'] as UserRole[],
   },
 ];
 
@@ -83,31 +83,31 @@ const managementItems = [
     title: 'Clientes',
     url: '/customers',
     icon: Users,
-    roles: ['admin', 'manager', 'supervisor'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
   },
   {
     title: 'Fornecedores',
     url: '/suppliers',
     icon: Building2,
-    roles: ['admin', 'manager'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER'] as UserRole[],
   },
   {
     title: 'Funcionários',
     url: '/employees',
     icon: UserCheck,
-    roles: ['admin', 'manager'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER'] as UserRole[],
   },
   {
     title: 'Categorias',
     url: '/categories',
     icon: Tag,
-    roles: ['admin', 'manager'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER'] as UserRole[],
   },
   {
     title: 'Promoções',
     url: '/promotions',
     icon: Percent,
-    roles: ['admin'] as UserRole[],
+    roles: ['ADMIN'] as UserRole[],
   },
 ];
 
@@ -116,7 +116,7 @@ const systemItems = [
     title: 'Usuários',
     url: '/users',
     icon: UserCog,
-    roles: ['admin'] as UserRole[],
+    roles: ['ADMIN'] as UserRole[],
   },
 ];
 
@@ -125,7 +125,7 @@ const reportItems = [
     title: 'Relatórios',
     url: '/reports',
     icon: BarChart3,
-    roles: ['admin', 'manager', 'supervisor'] as UserRole[],
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
   },
 ];
 
@@ -200,11 +200,11 @@ export function AppSidebar() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'admin': return 'Administrador';
-      case 'manager': return 'Gerente';
-      case 'supervisor': return 'Supervisor';
-      case 'cashier': return 'Operador de Caixa';
-      case 'stock': return 'Estoquista';
+      case 'ADMIN': return 'Administrador';
+      case 'MANAGER': return 'Gerente';
+      case 'SUPERVISOR': return 'Supervisor';
+      case 'CASHIER': return 'Operador de Caixa';
+      case 'STOCK': return 'Estoquista';
       default: return 'Usuário';
     }
   };
@@ -252,7 +252,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Cadastros Gerais - Admin e Gerente */}
-        {hasPermission(['admin', 'manager']) && (
+        {hasPermission(['ADMIN', 'MANAGER']) && (
           <SidebarGroup>
             <SidebarGroupLabel>Cadastros</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -280,7 +280,7 @@ export function AppSidebar() {
         )}
 
         {/* Relatórios - Admin, Gerente e Supervisor */}
-        {hasPermission(['admin', 'manager', 'supervisor']) && (
+        {hasPermission(['ADMIN', 'MANAGER', 'SUPERVISOR']) && (
           <SidebarGroup>
             <SidebarGroupLabel>Análises</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -308,7 +308,7 @@ export function AppSidebar() {
         )}
 
         {/* Sistema - Apenas Admin */}
-        {hasPermission(['admin']) && (
+        {hasPermission(['ADMIN']) && (
           <SidebarGroup>
             <SidebarGroupLabel>Sistema</SidebarGroupLabel>
             <SidebarGroupContent>

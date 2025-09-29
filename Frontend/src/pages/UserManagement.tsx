@@ -42,12 +42,12 @@ const mockAllUsers = [
     id: '1',
     name: 'Carlos Oliveira',
     email: 'admin@comprebem.com',
-    role: 'admin' as UserRole,
+    role: 'ADMIN' as UserRole,
     department: 'Administração',
     status: 'active',
     lastLogin: '2024-12-02T10:30:00',
     createdAt: '2024-01-15T09:00:00',
-    permissions: rolePermissions.admin,
+    permissions: rolePermissions.ADMIN,
     phone: '(11) 99999-0001',
     salary: 8000.00,
     hireDate: '2024-01-15'
@@ -56,12 +56,12 @@ const mockAllUsers = [
     id: '2',
     name: 'Amanda Silva',
     email: 'gerente@comprebem.com',
-    role: 'manager' as UserRole,
+    role: 'MANAGER' as UserRole,
     department: 'Gerência',
     status: 'active',
     lastLogin: '2024-12-02T09:15:00',
     createdAt: '2024-02-01T09:00:00',
-    permissions: rolePermissions.manager,
+    permissions: rolePermissions.MANAGER,
     phone: '(11) 99999-0002',
     salary: 6000.00,
     hireDate: '2024-02-01'
@@ -70,12 +70,12 @@ const mockAllUsers = [
     id: '3',
     name: 'João Santos',
     email: 'supervisor@comprebem.com',
-    role: 'supervisor' as UserRole,
+    role: 'SUPERVISOR' as UserRole,
     department: 'Supervisão',
     status: 'active',
     lastLogin: '2024-12-02T08:45:00',
     createdAt: '2024-03-10T09:00:00',
-    permissions: rolePermissions.supervisor,
+    permissions: rolePermissions.SUPERVISOR,
     phone: '(11) 99999-0003',
     salary: 4500.00,
     hireDate: '2024-03-10'
@@ -84,12 +84,12 @@ const mockAllUsers = [
     id: '4',
     name: 'Maria Costa',
     email: 'caixa@comprebem.com',
-    role: 'cashier' as UserRole,
+    role: 'CASHIER' as UserRole,
     department: 'Caixa',
     status: 'active',
     lastLogin: '2024-12-01T18:30:00',
     createdAt: '2024-04-20T09:00:00',
-    permissions: rolePermissions.cashier,
+    permissions: rolePermissions.CASHIER,
     phone: '(11) 99999-0004',
     salary: 2800.00,
     hireDate: '2024-04-20'
@@ -98,12 +98,12 @@ const mockAllUsers = [
     id: '5',
     name: 'Pedro Lima',
     email: 'estoque@comprebem.com',
-    role: 'stock' as UserRole,
+    role: 'STOCK' as UserRole,
     department: 'Estoque',
     status: 'active',
     lastLogin: '2024-12-02T07:00:00',
     createdAt: '2024-05-05T09:00:00',
-    permissions: rolePermissions.stock,
+    permissions: rolePermissions.STOCK,
     phone: '(11) 99999-0005',
     salary: 2500.00,
     hireDate: '2024-05-05'
@@ -112,12 +112,12 @@ const mockAllUsers = [
     id: '6',
     name: 'Ana Ferreira',
     email: 'caixa2@comprebem.com',
-    role: 'cashier' as UserRole,
+    role: 'CASHIER' as UserRole,
     department: 'Caixa',
     status: 'inactive',
     lastLogin: '2024-11-28T17:30:00',
     createdAt: '2024-06-15T09:00:00',
-    permissions: rolePermissions.cashier,
+    permissions: rolePermissions.CASHIER,
     phone: '(11) 99999-0006',
     salary: 2800.00,
     hireDate: '2024-06-15'
@@ -151,7 +151,7 @@ export default function UserManagement() {
   const [editMode, setEditMode] = useState(false);
 
   // Verificar se o usuário tem permissão para gerenciar usuários
-  if (!hasPermission(['admin'])) {
+  if (!hasPermission(['ADMIN'])) {
     return (
       <div className="p-6">
         <div className="text-center">
@@ -222,13 +222,13 @@ export default function UserManagement() {
     setFormData({
       name: '',
       email: '',
-      role: 'cashier',
+      role: 'CASHIER',
       department: '',
       status: 'active',
       phone: '',
       salary: 0,
       hireDate: '',
-      permissions: rolePermissions.cashier
+      permissions: rolePermissions.CASHIER
     });
     setEditMode(false);
     setIsDialogOpen(true);
@@ -256,11 +256,11 @@ export default function UserManagement() {
     return {
       total: mockAllUsers.length,
       active: mockAllUsers.filter(u => u.status === 'active').length,
-      admins: mockAllUsers.filter(u => u.role === 'admin').length,
-      managers: mockAllUsers.filter(u => u.role === 'manager').length,
-      supervisors: mockAllUsers.filter(u => u.role === 'supervisor').length,
-      cashiers: mockAllUsers.filter(u => u.role === 'cashier').length,
-      stockers: mockAllUsers.filter(u => u.role === 'stock').length
+      admins: mockAllUsers.filter(u => u.role === 'ADMIN').length,
+      managers: mockAllUsers.filter(u => u.role === 'MANAGER').length,
+      supervisors: mockAllUsers.filter(u => u.role === 'SUPERVISOR').length,
+      cashiers: mockAllUsers.filter(u => u.role === 'CASHIER').length,
+      stockers: mockAllUsers.filter(u => u.role === 'STOCK').length
     };
   };
 
@@ -633,19 +633,19 @@ export default function UserManagement() {
                 <div className="p-4 bg-muted/20 rounded-lg">
                   <h4 className="font-medium mb-2">Descrição do Perfil:</h4>
                   <div className="text-sm text-muted-foreground">
-                    {formData.role === 'admin' && (
+                    {formData.role === 'ADMIN' && (
                       <p>Acesso total ao sistema. Pode criar, editar e remover usuários. Acompanha relatórios financeiros, de vendas e de estoque. Aprova mudanças críticas.</p>
                     )}
-                    {formData.role === 'manager' && (
+                    {formData.role === 'MANAGER' && (
                       <p>Gerência de Estoque e Funcionários. Cadastra produtos, controla entrada e saída, cria escalas, aprova férias. Visualiza relatórios de vendas e desempenho.</p>
                     )}
-                    {formData.role === 'supervisor' && (
+                    {formData.role === 'SUPERVISOR' && (
                       <p>Consulta relatórios de estoque e vendas. Autoriza cancelamentos e devoluções. Auxilia no fechamento de caixa. Não gerencia funcionários.</p>
                     )}
-                    {formData.role === 'cashier' && (
+                    {formData.role === 'CASHIER' && (
                       <p>Registra vendas. Realiza cancelamentos simples. Consulta preços e disponibilidade de produtos. Não tem acesso a relatórios de estoque.</p>
                     )}
-                    {formData.role === 'stock' && (
+                    {formData.role === 'STOCK' && (
                       <p>Dá entrada e saída de mercadorias. Consulta saldo de estoque. Reporta perdas. Não cadastra novos produtos nem altera preços.</p>
                     )}
                   </div>

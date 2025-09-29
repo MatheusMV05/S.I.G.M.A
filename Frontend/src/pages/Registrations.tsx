@@ -190,10 +190,10 @@ export default function Registrations() {
 
   const getRoleLabel = (role: string) => {
     const roles = {
-      admin: 'Administrador',
-      supervisor: 'Supervisor',
-      cashier: 'Operador de Caixa',
-      stock: 'Estoquista'
+      ADMIN: 'Administrador',
+      SUPERVISOR: 'Supervisor',
+      CASHIER: 'Operador de Caixa',
+      STOCK: 'Estoquista'
     };
     return roles[role as keyof typeof roles] || role;
   };

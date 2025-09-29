@@ -88,11 +88,11 @@ export function MobileHeader({ showMenuButton = true }: MobileHeaderProps) {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'admin': return 'Administrador';
-      case 'manager': return 'Gerente';
-      case 'supervisor': return 'Supervisor';
-      case 'cashier': return 'Operador de Caixa';
-      case 'stock': return 'Estoquista';
+      case 'ADMIN': return 'Administrador';
+      case 'MANAGER': return 'Gerente';
+      case 'SUPERVISOR': return 'Supervisor';
+      case 'CASHIER': return 'Operador de Caixa';
+      case 'STOCK': return 'Estoquista';
       default: return 'Usuário';
     }
   };
