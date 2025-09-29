@@ -53,7 +53,7 @@ export interface CategoryJavaAPI {
   id_categoria?: number;
   nome: string;
   descricao?: string;
-  ativo: boolean;
+  status: 'ATIVA' | 'INATIVA';
   data_criacao?: string;
   data_atualizacao?: string;
 }
@@ -179,7 +179,7 @@ export const adaptCategoryFromJava = (javaCategory: CategoryJavaAPI) => {
     id: javaCategory.id_categoria ? javaCategory.id_categoria.toString() : '',
     name: javaCategory.nome || '',
     description: javaCategory.descricao || '',
-    active: javaCategory.ativo !== undefined ? javaCategory.ativo : true,
+    active: javaCategory.status === 'ATIVA',
     createdAt: javaCategory.data_criacao || new Date().toISOString(),
     updatedAt: javaCategory.data_atualizacao || new Date().toISOString(),
   };

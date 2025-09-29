@@ -13,7 +13,7 @@ export interface CategoryBackendResponse {
   id_categoria?: number;
   nome: string;
   descricao?: string;
-  ativo: boolean;
+  status: 'ATIVA' | 'INATIVA';
   data_criacao?: string;
   data_atualizacao?: string;
 }
@@ -56,7 +56,7 @@ class CategoryBackendService {
     // Aplicar filtro de status se fornecido
     if (params?.ativo !== undefined) {
       filteredCategories = filteredCategories.filter(category => 
-        category.ativo === params.ativo
+        params.ativo ? category.status === 'ATIVA' : category.status === 'INATIVA'
       );
     }
     
@@ -122,7 +122,7 @@ class CategoryBackendService {
   async toggleCategoryStatus(id: string, ativo: boolean): Promise<CategoryBackendResponse> {
     return await apiRequest<CategoryBackendResponse>(`/categorias/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ ativo }),
+      body: JSON.stringify({ status: ativo ? 'ATIVA' : 'INATIVA' }),
     });
   }
 
@@ -166,7 +166,7 @@ class CategoryBackendService {
       id: backendCategory.id_categoria.toString(),
       name: backendCategory.nome || '',
       description: backendCategory.descricao || '',
-      active: backendCategory.ativo !== undefined ? backendCategory.ativo : true,
+      active: backendCategory.status === 'ATIVA',
       createdAt: backendCategory.data_criacao || new Date().toISOString(),
       updatedAt: backendCategory.data_atualizacao || new Date().toISOString(),
     };
@@ -176,10 +176,11 @@ class CategoryBackendService {
    * Transforma dados do frontend para formato do backend
    */
   transformToBackendFormat(frontendData: any): CategoryBackendRequest {
+    const ativo = frontendData.active !== undefined ? frontendData.active : frontendData.ativo !== undefined ? frontendData.ativo : true;
     return {
       nome: frontendData.name || frontendData.nome,
       descricao: frontendData.description || frontendData.descricao,
-      ativo: frontendData.active !== undefined ? frontendData.active : frontendData.ativo !== undefined ? frontendData.ativo : true,
+      ativo,
     };
   }
 }
