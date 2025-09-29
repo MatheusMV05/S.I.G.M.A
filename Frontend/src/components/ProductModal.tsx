@@ -29,7 +29,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Package, DollarSign, Warehouse, Info } from 'lucide-react';
-import { useCategories } from '@/hooks/useCategories';
+import { useCategories, useCategoriesTree } from '@/hooks/useCategories';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
 
@@ -58,7 +58,7 @@ interface ProductAPI {
   estoque: number;
   estoque_minimo: number;
   status: 'ATIVO' | 'INATIVO';
-  category: { id: number; nome: string; };
+  category: { id: string; nome: string; }; // Updated to string
   codigo_barras?: string;
   unidade?: string;
   peso?: number;
@@ -79,11 +79,33 @@ const unidades = [
 ];
 
 export function ProductModal({ open, onOpenChange, product, mode }: ProductModalProps) {
-  const { data: categoriesData } = useCategories({ active: true });
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useCategories({ 
+    active: true,
+    page: 0,
+    size: 100
+  });
+
+  // Teste alternativo com useCategoriesTree
+  const { data: categoriesTreeData, isLoading: treeLoading, error: treeError } = useCategoriesTree();
+  
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   
-  const categories = (categoriesData?.content ?? []) as unknown as Array<{ id: number; nome: string }>;
+  // Tentar primeiro com categoriesData, depois com categoriesTreeData
+  const categoriesFromPaginated = (categoriesData?.content ?? []).filter(cat => cat.id && cat.id !== '');
+  const categoriesFromTree = (categoriesTreeData ?? []).filter(cat => cat.id && cat.id !== '' && cat.active);
+  const categories = categoriesFromPaginated.length > 0 ? categoriesFromPaginated : categoriesFromTree;
+
+  // Debug logs para o modal
+  React.useEffect(() => {
+    if (open) {
+      console.log('=== DEBUG CATEGORIAS NO MODAL ===');
+      console.log('Modal aberto - Categorias carregadas:', categories.length);
+      console.log('Categorias:', categories);
+      console.log('Loading categorias:', categoriesLoading || treeLoading);
+      console.log('================================');
+    }
+  }, [open, categories, categoriesLoading, treeLoading]);
 
   const form = useForm<ProductFormData>({
     defaultValues: {
@@ -499,15 +521,28 @@ export function ProductModal({ open, onOpenChange, product, mode }: ProductModal
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma categoria" />
+                                <SelectValue placeholder={
+                                  (categoriesLoading || treeLoading) ? "Carregando categorias..." :
+                                  (categoriesError && treeError) ? "Erro ao carregar categorias" :
+                                  categories.length === 0 ? "Nenhuma categoria disponível" :
+                                  "Selecione uma categoria"
+                                } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id.toString()}>
-                                  {category.nome}
-                                </SelectItem>
-                              ))}
+                              {(categoriesLoading || treeLoading) ? (
+                                <SelectItem value="loading" disabled>Carregando categorias...</SelectItem>
+                              ) : (categoriesError && treeError) ? (
+                                <SelectItem value="error" disabled>Erro ao carregar categorias</SelectItem>
+                              ) : categories.length === 0 ? (
+                                <SelectItem value="empty" disabled>Nenhuma categoria disponível</SelectItem>
+                              ) : (
+                                categories.map((category) => (
+                                  <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))
+                              )}
                             </SelectContent>
                           </Select>
                           <FormDescription>

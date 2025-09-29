@@ -25,7 +25,10 @@ import {
   Search, Plus, Edit, Trash2, AlertTriangle, Eye, Calendar, Package, DollarSign, Grid3X3, List, Download,
 } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
-import { useCategories } from '@/hooks/useCategories';
+import {
+  useCategories,
+  useCategoriesTree
+} from '@/hooks/useCategories';
 import { ProductModal } from '@/components/ProductModal';
 import { DeleteProductModal } from '@/components/DeleteProductModal';
 import { toast } from 'sonner';
@@ -43,7 +46,7 @@ type ProductAPI = {
   estoque: number;
   estoque_minimo: number;
   status: 'ATIVO' | 'INATIVO';
-  category: { id: number; nome: string; }; // A categoria aninhada
+  category: { id: string; nome: string; }; // A categoria aninhada - id como string
   codigo_barras?: string;
   unidade?: string;
   peso?: number;
@@ -83,10 +86,28 @@ export default function Products() {
     // status: selectedStatus !== 'all' ? selectedStatus.toUpperCase() : undefined,
   });
   
-  const { data: categoriesData } = useCategories({ active: true });
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useCategories({ 
+    active: true,
+    page: 0,
+    size: 100 // Carregar muitas categorias para o select
+  });
+
+  // Teste alternativo com useCategoriesTree
+  const { data: categoriesTreeData, isLoading: treeLoading, error: treeError } = useCategoriesTree();
   
   const products = (productsPage?.content ?? []) as unknown as ProductAPI[];
-  const categories = (categoriesData?.content ?? []) as unknown as Array<{ id: number; nome: string }>;
+  
+  // Tentar primeiro com categoriesData, depois com categoriesTreeData
+  const categoriesFromPaginated = (categoriesData?.content ?? []).filter(cat => cat.id && cat.id !== '');
+  const categoriesFromTree = (categoriesTreeData ?? []).filter(cat => cat.id && cat.id !== '' && cat.active);
+  const categories = categoriesFromPaginated.length > 0 ? categoriesFromPaginated : categoriesFromTree;
+
+  // Debug logs detalhados (podem ser removidos depois)
+  React.useEffect(() => {
+    if (categories.length > 0) {
+      console.log('✅ Categorias carregadas com sucesso:', categories.length);
+    }
+  }, [categories]);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -240,13 +261,25 @@ export default function Products() {
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={
+                  (categoriesLoading || treeLoading) ? "Carregando..." : 
+                  (categoriesError && treeError) ? "Erro ao carregar" : 
+                  "Categoria"
+                } />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas Categorias</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={String(cat.id)}>{cat.nome}</SelectItem>
-                ))}
+                {(categoriesLoading || treeLoading) ? (
+                  <SelectItem value="loading" disabled>Carregando categorias...</SelectItem>
+                ) : (categoriesError && treeError) ? (
+                  <SelectItem value="error" disabled>Erro ao carregar categorias</SelectItem>
+                ) : categories.length === 0 ? (
+                  <SelectItem value="empty" disabled>Nenhuma categoria encontrada</SelectItem>
+                ) : (
+                  categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>

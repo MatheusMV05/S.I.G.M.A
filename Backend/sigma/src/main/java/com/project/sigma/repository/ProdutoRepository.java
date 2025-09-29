@@ -200,7 +200,14 @@ public class ProdutoRepository {
                 ps.setInt(6, produto.getIdCategoria());
                 ps.setString(7, produto.getDescricao());
                 ps.setInt(8, produto.getEstoqueMinimo());
-                ps.setInt(9, produto.getEstoqueMaximo());
+
+                // Tratar estoque_maximo null
+                if (produto.getEstoqueMaximo() != null) {
+                    ps.setInt(9, produto.getEstoqueMaximo());
+                } else {
+                    ps.setNull(9, java.sql.Types.INTEGER);
+                }
+
                 ps.setBigDecimal(10, produto.getPrecoCusto());
                 ps.setString(11, produto.getStatus());
                 ps.setString(12, produto.getCodigoBarras());

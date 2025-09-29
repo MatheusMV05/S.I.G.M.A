@@ -25,7 +25,7 @@ interface ProductAPI {
   estoque: number;
   estoque_minimo: number;
   status: 'ATIVO' | 'INATIVO';
-  category: { id: number; nome: string; };
+  category: { id: string; nome: string; }; // Updated to string
   codigo_barras?: string;
   unidade?: string;
   peso?: number;

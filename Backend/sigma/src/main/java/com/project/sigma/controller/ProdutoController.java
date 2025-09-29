@@ -56,8 +56,46 @@ public class ProdutoController {
     }
 
     @PostMapping
-    public ResponseEntity<Produto> criarProduto(@RequestBody Produto produto) {
+    public ResponseEntity<Produto> criarProduto(@RequestBody ProdutoRequestDTO dto) {
+        System.out.println("=== DEBUG PRODUTO CREATE ===");
+        System.out.println("DTO recebido do frontend para CRIAR:");
+        dto.debugPrint();
+
+        // Verificar se os campos obrigatórios estão presentes
+        System.out.println("=== VALIDAÇÃO DOS CAMPOS ===");
+        System.out.println("Nome: " + (dto.getNome() != null ? "✅ " + dto.getNome() : "❌ NULL"));
+        System.out.println("Valor Unitário: " + (dto.getValorUnitario() != null ? "✅ " + dto.getValorUnitario() : "❌ NULL"));
+        System.out.println("Quantidade: " + (dto.getQuantEmEstoque() != null ? "✅ " + dto.getQuantEmEstoque() : "❌ NULL"));
+        System.out.println("Preço Custo: " + (dto.getPrecoCusto() != null ? "✅ " + dto.getPrecoCusto() : "❌ NULL"));
+        System.out.println("Status: " + (dto.getStatus() != null ? "✅ " + dto.getStatus() : "❌ NULL"));
+        System.out.println("============================");
+
+        // Converter DTO para entidade Produto
+        Produto produto = new Produto();
+        produto.setNome(dto.getNome());
+        produto.setMarca(dto.getMarca());
+        produto.setQuantEmEstoque(dto.getQuantEmEstoque());
+        produto.setValorUnitario(dto.getValorUnitario());
+        produto.setDataValidade(dto.getDataValidade());
+        produto.setIdCategoria(dto.getIdCategoria());
+        produto.setDescricao(dto.getDescricao());
+        produto.setEstoqueMinimo(dto.getEstoqueMinimo());
+        produto.setEstoqueMaximo(dto.getEstoqueMaximo());
+        produto.setPrecoCusto(dto.getPrecoCusto());
+        produto.setStatus(dto.getStatus());
+        produto.setCodigoBarras(dto.getCodigoBarras());
+        produto.setUnidade(dto.getUnidade());
+        produto.setPeso(dto.getPeso());
+
+        System.out.println("Produto convertido antes de enviar para service:");
+        System.out.println("valor_unitario: " + produto.getValorUnitario());
+        System.out.println("quant_em_estoque: " + produto.getQuantEmEstoque());
+        System.out.println("preco_custo: " + produto.getPrecoCusto());
+        System.out.println("status: " + produto.getStatus());
+        System.out.println("===============================");
+
         Produto novoProduto = produtoService.criarProduto(produto);
+        System.out.println("✅ Produto criado com sucesso - ID: " + novoProduto.getIdProduto());
         return new ResponseEntity<>(novoProduto, HttpStatus.CREATED);
     }
 
