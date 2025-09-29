@@ -20,7 +20,7 @@ import Customers from "@/pages/Customers";
 import Registrations from "@/pages/Registrations";
 import SuppliersManagement from "@/pages/SuppliersManagement";
 import EmployeesManagement from "@/pages/EmployeesManagement";
-import CategoriesManagement from "@/pages/CategoriesManagement";
+import CategoriesManagementBackend from "@/pages/CategoriesManagementBackend";
 import PromotionsManagement from "@/pages/PromotionsManagement";
 import UserManagement from "@/pages/UserManagement";
 import POS from "@/pages/POS";
@@ -104,7 +104,7 @@ function AppRoutes() {
       {/* Management Routes */}
       <Route path="/suppliers" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><SuppliersManagement /></ProtectedRoute>} />
       <Route path="/employees" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><EmployeesManagement /></ProtectedRoute>} />
-      <Route path="/categories" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><CategoriesManagement /></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><CategoriesManagementBackend /></ProtectedRoute>} />
       <Route path="/promotions" element={<ProtectedRoute requiredRoles={['ADMIN']}><PromotionsManagement /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute requiredRoles={['ADMIN']}><UserManagement /></ProtectedRoute>} />
 

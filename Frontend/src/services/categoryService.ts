@@ -1,4 +1,5 @@
-import { apiRequest } from './api';
+import { categoryBackendService } from './categoryBackendService';
+import { adaptCategoryFromJava, adaptCategoryToJava } from './javaApiTypes';
 import type { 
   Category, 
   CreateCategoryRequest, 
@@ -25,95 +26,104 @@ class CategoryService {
     parentId?: string;
     active?: boolean;
   }): Promise<PaginatedResponse<Category>> {
-    const queryParams = new URLSearchParams();
+    const javaParams = {
+      page: params?.page,
+      size: params?.size,
+      search: params?.search,
+      ativo: params?.active,
+    };
     
-    if (params?.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params?.size !== undefined) queryParams.set('size', params.size.toString());
-    if (params?.search) queryParams.set('search', params.search);
-    if (params?.parentId) queryParams.set('parentId', params.parentId);
-    if (params?.active !== undefined) queryParams.set('active', params.active.toString());
-
-    const queryString = queryParams.toString();
-    const endpoint = `/categories${queryString ? `?${queryString}` : ''}`;
-
-    return await apiRequest<PaginatedResponse<Category>>(endpoint);
+    const response = await categoryBackendService.getCategories(javaParams);
+    
+    return {
+      content: response.content.map(adaptCategoryFromJava),
+      totalElements: response.totalElements,
+      totalPages: response.totalPages,
+      size: response.size,
+      number: response.number,
+      first: response.first,
+      last: response.last,
+    };
   }
 
   /**
    * Busca categorias em formato de árvore
    */
   async getCategoriesTree(): Promise<Category[]> {
-    return await apiRequest<Category[]>('/categories/tree');
+    const response = await categoryBackendService.getAllCategories();
+    return response.map(adaptCategoryFromJava);
   }
 
   /**
    * Busca categoria por ID
    */
   async getCategoryById(id: string): Promise<Category> {
-    return await apiRequest<Category>(`/categories/${id}`);
+    const response = await categoryBackendService.getCategoryById(id);
+    return adaptCategoryFromJava(response);
   }
 
   /**
    * Cria uma nova categoria
    */
   async createCategory(categoryData: CreateCategoryRequest): Promise<Category> {
-    return await apiRequest<Category>('/categories', {
-      method: 'POST',
-      body: JSON.stringify(categoryData),
-    });
+    const javaData = adaptCategoryToJava(categoryData);
+    const response = await categoryBackendService.createCategory(javaData);
+    return adaptCategoryFromJava(response);
   }
 
   /**
    * Atualiza uma categoria existente
    */
   async updateCategory(id: string, categoryData: Partial<CreateCategoryRequest>): Promise<Category> {
-    return await apiRequest<Category>(`/categories/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(categoryData),
-    });
+    const javaData = adaptCategoryToJava(categoryData);
+    const response = await categoryBackendService.updateCategory(id, javaData);
+    return adaptCategoryFromJava(response);
   }
 
   /**
    * Exclui uma categoria
    */
   async deleteCategory(id: string): Promise<void> {
-    await apiRequest<void>(`/categories/${id}`, {
-      method: 'DELETE',
-    });
+    return await categoryBackendService.deleteCategory(id);
   }
 
   /**
    * Ativa/desativa uma categoria
    */
   async toggleCategoryStatus(id: string, active: boolean): Promise<Category> {
-    return await apiRequest<Category>(`/categories/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ active }),
-    });
+    const response = await categoryBackendService.toggleCategoryStatus(id, active);
+    return adaptCategoryFromJava(response);
   }
 
   /**
    * Busca subcategorias de uma categoria pai
    */
   async getSubcategories(parentId: string): Promise<Category[]> {
-    return await apiRequest<Category[]>(`/categories/${parentId}/subcategories`);
+    // Backend atual não suporta hierarquia
+    return [];
   }
 
   /**
    * Busca categorias populares (com mais produtos)
    */
   async getPopularCategories(limit = 10): Promise<Category[]> {
-    return await apiRequest<Category[]>(`/categories/popular?limit=${limit}`);
+    const response = await categoryBackendService.getAllCategories();
+    return response.slice(0, limit).map(adaptCategoryFromJava);
   }
 
   /**
    * Move categoria para outro pai
    */
   async moveCategory(id: string, newParentId: string | null): Promise<Category> {
-    return await apiRequest<Category>(`/categories/${id}/move`, {
-      method: 'PATCH',
-      body: JSON.stringify({ parentId: newParentId }),
-    });
+    throw new Error('Mover categorias não é suportado pelo backend atual');
+  }
+
+  /**
+   * Busca todas as categorias sem paginação (útil para dropdowns)
+   */
+  async getAllCategories(): Promise<Category[]> {
+    const response = await categoryBackendService.getAllCategories();
+    return response.map(adaptCategoryFromJava);
   }
 }
 

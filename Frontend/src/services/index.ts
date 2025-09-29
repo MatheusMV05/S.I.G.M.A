@@ -8,6 +8,7 @@ export * from './types';
 import { authService } from './authService';
 import { productService } from './productService';
 import { categoryService } from './categoryService';
+import { categoryBackendService } from './categoryBackendService';
 import { supplierService } from './supplierService';
 import { customerService } from './customerService';
 import { salesService } from './salesService';
@@ -20,6 +21,7 @@ import { reportsService } from './reportsService';
 export { authService } from './authService';
 export { productService } from './productService';
 export { categoryService } from './categoryService';
+export { categoryBackendService } from './categoryBackendService';
 export { supplierService } from './supplierService';
 export { customerService } from './customerService';
 export { salesService } from './salesService';
@@ -33,6 +35,7 @@ export const services = {
   auth: authService,
   products: productService,
   categories: categoryService,
+  categoriesBackend: categoryBackendService,
   suppliers: supplierService,
   customers: customerService,
   sales: salesService,
