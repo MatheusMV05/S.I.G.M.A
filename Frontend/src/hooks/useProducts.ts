@@ -41,15 +41,15 @@ export const useProduct = (id: string) => {
   });
 };
 
-// Hook para buscar produto por código de barras
-export const useProductByBarcode = (barcode: string) => {
-  return useQuery({
-    queryKey: ['products', 'barcode', barcode],
-    queryFn: () => productService.getProductByBarcode(barcode),
-    enabled: !!barcode && barcode.length >= 8,
-    staleTime: 5 * 60 * 1000,
-  });
-};
+// Hook para buscar produto por código de barras - desabilitado por enquanto
+// export const useProductByBarcode = (barcode: string) => {
+//   return useQuery({
+//     queryKey: ['products', 'barcode', barcode],
+//     queryFn: () => productJavaService.getProductByBarcode(barcode),
+//     enabled: !!barcode && barcode.length >= 8,
+//     staleTime: 5 * 60 * 1000,
+//   });
+// };
 
 // Hook para produtos com estoque baixo
 export const useLowStockProducts = () => {
@@ -60,24 +60,24 @@ export const useLowStockProducts = () => {
   });
 };
 
-// Hook para produtos mais vendidos
-export const useTopSellingProducts = (limit = 10) => {
-  return useQuery({
-    queryKey: [...productKeys.topSelling(), limit],
-    queryFn: () => productService.getTopSellingProducts(limit),
-    staleTime: 5 * 60 * 1000,
-  });
-};
+// Hook para produtos mais vendidos - desabilitado por enquanto
+// export const useTopSellingProducts = (limit = 10) => {
+//   return useQuery({
+//     queryKey: [...productKeys.topSelling(), limit],
+//     queryFn: () => productJavaService.getTopSellingProducts(limit),
+//     staleTime: 5 * 60 * 1000,
+//   });
+// };
 
-// Hook para sugestões de produtos
-export const useProductSuggestions = (query: string, limit = 5) => {
-  return useQuery({
-    queryKey: [...productKeys.suggestions(query), limit],
-    queryFn: () => productService.getProductSuggestions(query, limit),
-    enabled: query.length >= 2,
-    staleTime: 30 * 1000, // 30 segundos
-  });
-};
+// Hook para sugestões de produtos - desabilitado por enquanto
+// export const useProductSuggestions = (query: string, limit = 5) => {
+//   return useQuery({
+//     queryKey: [...productKeys.suggestions(query), limit],
+//     queryFn: () => productJavaService.getProductSuggestions(query, limit),
+//     enabled: query.length >= 2,
+//     staleTime: 30 * 1000,
+//   });
+// };
 
 // Hook para criar produto
 export const useCreateProduct = () => {
@@ -142,7 +142,7 @@ export const useToggleProductStatus = () => {
   });
 };
 
-// Hook para atualizar preço do produto
+// Hook para atualizar preço do produto - por enquanto usando update geral
 export const useUpdateProductPrice = () => {
   const queryClient = useQueryClient();
   
@@ -175,28 +175,26 @@ export const useUpdateProductStock = () => {
   });
 };
 
-// Hook para duplicar produto
-export const useDuplicateProduct = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: string) => productService.duplicateProduct(id),
-    onSuccess: () => {
-      // Invalida todas as listas de produtos
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-    },
-  });
-};
+// Hook para duplicar produto - desabilitado por enquanto
+// export const useDuplicateProduct = () => {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: (id: string) => productJavaService.duplicateProduct(id),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+//     },
+//   });
+// };
 
-// Hook para importar produtos
-export const useImportProducts = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (file: File) => productService.importProducts(file),
-    onSuccess: () => {
-      // Invalida todas as listas de produtos
-      queryClient.invalidateQueries({ queryKey: productKeys.all });
-    },
-  });
-};
+// Hook para importar produtos - desabilitado por enquanto
+// export const useImportProducts = () => {
+//   const queryClient = useQueryClient();
+//   
+//   return useMutation({
+//     mutationFn: (file: File) => productJavaService.importProducts(file),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: productKeys.all });
+//     },
+//   });
+// };

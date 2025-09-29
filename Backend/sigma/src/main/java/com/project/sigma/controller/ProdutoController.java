@@ -1,6 +1,7 @@
 package com.project.sigma.controller;
 
 import com.project.sigma.dto.PaginatedResponseDTO;
+import com.project.sigma.dto.ProdutoRequestDTO;
 import com.project.sigma.dto.ProdutoResponseDTO;
 import com.project.sigma.model.Produto;
 import com.project.sigma.service.ProdutoService;
@@ -61,8 +62,35 @@ public class ProdutoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Produto> atualizarProduto(@PathVariable Integer id, @RequestBody Produto produto) {
+    public ResponseEntity<Produto> atualizarProduto(@PathVariable Integer id, @RequestBody ProdutoRequestDTO dto) {
+        System.out.println("=== DEBUG PRODUTO UPDATE ===");
+        System.out.println("ID recebido: " + id);
+        System.out.println("DTO recebido do frontend:");
+        dto.debugPrint();
+
+        // Converter DTO para entidade Produto
+        Produto produto = new Produto();
         produto.setIdProduto(id);
+        produto.setNome(dto.getNome());
+        produto.setMarca(dto.getMarca());
+        produto.setQuantEmEstoque(dto.getQuantEmEstoque());
+        produto.setValorUnitario(dto.getValorUnitario());
+        produto.setDataValidade(dto.getDataValidade());
+        produto.setIdCategoria(dto.getIdCategoria());
+        produto.setDescricao(dto.getDescricao());
+        produto.setEstoqueMinimo(dto.getEstoqueMinimo());
+        produto.setEstoqueMaximo(dto.getEstoqueMaximo());
+        produto.setPrecoCusto(dto.getPrecoCusto());
+        produto.setStatus(dto.getStatus());
+        produto.setCodigoBarras(dto.getCodigoBarras());
+        produto.setUnidade(dto.getUnidade());
+        produto.setPeso(dto.getPeso());
+
+        System.out.println("Produto antes de enviar para service:");
+        System.out.println("valor_unitario: " + produto.getValorUnitario());
+        System.out.println("quant_em_estoque: " + produto.getQuantEmEstoque());
+        System.out.println("===============================");
+
         Produto produtoAtualizado = produtoService.atualizarProduto(produto);
         return ResponseEntity.ok(produtoAtualizado);
     }

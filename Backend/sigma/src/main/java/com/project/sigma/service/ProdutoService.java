@@ -49,9 +49,29 @@ public class ProdutoService {
      * @return O produto atualizado.
      */
     public Produto atualizarProduto(Produto produto) {
+        System.out.println("=== DEBUG SERVICE ATUALIZAR PRODUTO ===");
+        System.out.println("ID do produto: " + produto.getIdProduto());
+        System.out.println("Nome: " + produto.getNome());
+        System.out.println("Marca: " + produto.getMarca());
+        System.out.println("valor_unitario no service: " + produto.getValorUnitario());
+        System.out.println("quant_em_estoque no service: " + produto.getQuantEmEstoque());
+        System.out.println("id_categoria no service: " + produto.getIdCategoria());
+        System.out.println("preco_custo no service: " + produto.getPrecoCusto());
+        System.out.println("status no service: " + produto.getStatus());
+
         if (produto.getIdProduto() == null) {
             throw new IllegalArgumentException("ID do produto não pode ser nulo para atualização.");
         }
+
+        // Validação crítica para valor_unitario
+        if (produto.getValorUnitario() == null) {
+            System.err.println("❌ ERRO CRÍTICO: valor_unitario está NULL no service!");
+            throw new IllegalArgumentException("O preço de venda (valor_unitario) é obrigatório para atualização.");
+        }
+
+        System.out.println("Chamando repository.save() com valor_unitario: " + produto.getValorUnitario());
+        System.out.println("=======================================");
+
         return produtoRepository.save(produto);
     }
 

@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
+import { ProductModal } from '@/components/ProductModal';
+import { DeleteProductModal } from '@/components/DeleteProductModal';
 import { toast } from 'sonner';
 
 // --- CORREÇÃO IMPORTANTE ---
@@ -59,6 +61,13 @@ export default function Products() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedProduct, setSelectedProduct] = useState<ProductAPI | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  
+  // Estados dos modais
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [productToEdit, setProductToEdit] = useState<ProductAPI | null>(null);
+  const [productToDelete, setProductToDelete] = useState<ProductAPI | null>(null);
 
   // Hooks do React Query para buscar dados (sem alterações)
   const {
@@ -81,6 +90,24 @@ export default function Products() {
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  // Funções para controle dos modais
+  const handleCreateProduct = () => {
+    setModalMode('create');
+    setProductToEdit(null);
+    setProductModalOpen(true);
+  };
+
+  const handleEditProduct = (product: ProductAPI) => {
+    setModalMode('edit');
+    setProductToEdit(product);
+    setProductModalOpen(true);
+  };
+
+  const handleDeleteProduct = (product: ProductAPI) => {
+    setProductToDelete(product);
+    setDeleteModalOpen(true);
+  };
 
   // Calcular estatísticas dos produtos
   const productStats = useMemo(() => {
@@ -137,7 +164,7 @@ export default function Products() {
               }}>
                 <Download className="mr-2 h-4 w-4" /> Exportar CSV
               </Button>
-              <Button>
+              <Button onClick={handleCreateProduct}>
                 <Plus className="mr-2 h-4 w-4" /> Novo Produto
               </Button>
             </div>
@@ -333,8 +360,21 @@ export default function Products() {
                         <Button variant="ghost" size="icon" onClick={() => setSelectedProduct(product)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleEditProduct(product)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteProduct(product)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -435,10 +475,19 @@ export default function Products() {
                         Detalhes
                       </Button>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                        >
                           <Edit className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteProduct(product)}
+                        >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -651,6 +700,21 @@ export default function Products() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Adicionar/Editar Produto */}
+      <ProductModal
+        open={productModalOpen}
+        onOpenChange={setProductModalOpen}
+        product={productToEdit}
+        mode={modalMode}
+      />
+
+      {/* Modal de Confirmação de Exclusão */}
+      <DeleteProductModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        product={productToDelete}
+      />
     </div>
   );
 }

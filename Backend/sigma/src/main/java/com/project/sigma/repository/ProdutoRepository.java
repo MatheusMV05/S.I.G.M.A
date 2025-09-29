@@ -214,6 +214,14 @@ public class ProdutoRepository {
             produto.setIdProduto(Objects.requireNonNull(keyHolder.getKey()).intValue());
         } else {
             // Atualizar
+            System.out.println("=== DEBUG REPOSITORY UPDATE ===");
+            System.out.println("Produto ID: " + produto.getIdProduto());
+            System.out.println("valor_unitario no repository: " + produto.getValorUnitario());
+            System.out.println("quant_em_estoque no repository: " + produto.getQuantEmEstoque());
+            System.out.println("id_categoria no repository: " + produto.getIdCategoria());
+            System.out.println("preco_custo no repository: " + produto.getPrecoCusto());
+            System.out.println("status no repository: " + produto.getStatus());
+
             produto.setDataAtualizacao(LocalDateTime.now());
 
             String sql = """
@@ -225,6 +233,26 @@ public class ProdutoRepository {
                 WHERE id_produto = ?
             """;
 
+            System.out.println("SQL a ser executado: " + sql);
+            System.out.println("Parâmetros do SQL:");
+            System.out.println("1. nome: " + produto.getNome());
+            System.out.println("2. marca: " + produto.getMarca());
+            System.out.println("3. quant_em_estoque: " + produto.getQuantEmEstoque());
+            System.out.println("4. valor_unitario: " + produto.getValorUnitario());
+            System.out.println("5. data_validade: " + produto.getDataValidade());
+            System.out.println("6. id_categoria: " + produto.getIdCategoria());
+            System.out.println("7. descricao: " + produto.getDescricao());
+            System.out.println("8. estoque_minimo: " + produto.getEstoqueMinimo());
+            System.out.println("9. estoque_maximo: " + produto.getEstoqueMaximo());
+            System.out.println("10. preco_custo: " + produto.getPrecoCusto());
+            System.out.println("11. status: " + produto.getStatus());
+            System.out.println("12. codigo_barras: " + produto.getCodigoBarras());
+            System.out.println("13. unidade: " + produto.getUnidade());
+            System.out.println("14. peso: " + produto.getPeso());
+            System.out.println("15. data_atualizacao: " + produto.getDataAtualizacao());
+            System.out.println("16. id_produto (WHERE): " + produto.getIdProduto());
+            System.out.println("================================");
+
             jdbcTemplate.update(sql,
                 produto.getNome(), produto.getMarca(), produto.getQuantEmEstoque(),
                 produto.getValorUnitario(), produto.getDataValidade(), produto.getIdCategoria(),
@@ -233,6 +261,8 @@ public class ProdutoRepository {
                 produto.getUnidade(), produto.getPeso(), produto.getDataAtualizacao(),
                 produto.getIdProduto()
             );
+
+            System.out.println("✅ UPDATE executado com sucesso!");
         }
         return produto;
     }

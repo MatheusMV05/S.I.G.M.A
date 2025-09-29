@@ -17,6 +17,31 @@ class ProductService {
   }
 
   /**
+   * Transforma dados do formulário frontend para o formato esperado pelo backend
+   */
+  private transformToBackendFormat(data: any): any {
+    const transformed: any = { ...data };
+    
+    // Mapeia os campos do frontend para o backend
+    if ('preco_venda' in data) {
+      transformed.valor_unitario = data.preco_venda;
+      delete transformed.preco_venda;
+    }
+    
+    if ('estoque' in data) {
+      transformed.quant_em_estoque = data.estoque;
+      delete transformed.estoque;
+    }
+    
+    if ('categoria_id' in data) {
+      transformed.id_categoria = parseInt(data.categoria_id);
+      delete transformed.categoria_id;
+    }
+    
+    return transformed;
+  }
+
+  /**
    * Busca produtos com paginação e filtros
    */
   async getProducts(params?: {
@@ -61,20 +86,22 @@ class ProductService {
   /**
    * Cria um novo produto
    */
-  async createProduct(productData: CreateProductRequest): Promise<Product> {
+  async createProduct(productData: any): Promise<Product> {
+    const transformedData = this.transformToBackendFormat(productData);
     return await apiRequest<Product>('/products', {
       method: 'POST',
-      body: JSON.stringify(productData),
+      body: JSON.stringify(transformedData),
     });
   }
 
   /**
    * Atualiza um produto existente
    */
-  async updateProduct(id: string, productData: Partial<CreateProductRequest>): Promise<Product> {
+  async updateProduct(id: string, productData: any): Promise<Product> {
+    const transformedData = this.transformToBackendFormat(productData);
     return await apiRequest<Product>(`/products/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(productData),
+      body: JSON.stringify(transformedData),
     });
   }
 

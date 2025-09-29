@@ -26,6 +26,20 @@ export const apiRequest = async <T>(
     const response = await fetch(url, config);
     
     if (!response.ok) {
+      // Log mais detalhado para debugging
+      console.error(`HTTP ${response.status} on ${endpoint}`);
+      console.error('Headers sent:', config.headers);
+      console.error('Token present:', !!localStorage.getItem('auth_token'));
+      
+      if (response.status === 403) {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+        } else {
+          throw new Error('Acesso negado. Token pode ter expirado. Faça login novamente.');
+        }
+      }
+      
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
