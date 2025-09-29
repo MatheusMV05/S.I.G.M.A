@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class UsuarioService {
 
@@ -15,12 +17,16 @@ public class UsuarioService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public Usuario createUser(Usuario usuario) {
+    public Usuario criarUsuario(Usuario usuario) {
         // Criptografa a senha antes de salvar
-        String senhaCriptografada = passwordEncoder.encode(usuario.getPassword());
-        usuario.setSenha(senhaCriptografada);
-
-        // Salva o usuário no banco de dados
-        return usuarioRepository.save(usuario);
+        // A linha abaixo é a correção: setSenha -> setPassword
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+        usuarioRepository.save(usuario);
+        return usuario;
     }
+
+    public Optional<Usuario> buscarPorLogin(String login) {
+        return usuarioRepository.findByLogin(login);
+    }
+
 }

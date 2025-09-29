@@ -1,29 +1,28 @@
 package com.project.sigma.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data // Cria getters, setters, toString(), equals() e hashCode()
-@NoArgsConstructor //Cria um construtor sem argumentos
-@AllArgsConstructor //Cria um construtor com todos os argumentos
-
+@Data
 public class Produto {
 
-    //Atributos:
-    private Integer idProduto;
+    private Long id_produto;
     private String nome;
     private String marca;
-    private Integer quantEmEstoque;
-    private BigDecimal valorUnitario;
-    private LocalDate dataValidade;
-    private Integer idCategoria;
     private String descricao;
-    private Integer estoqueMinimo;
-    private Integer estoqueMaximo;
+    private Long id_categoria;
+    private Long id_fornecedor;
+    private BigDecimal preco_custo;
+    private BigDecimal preco_venda;
+    private int estoque;
+    private int estoque_minimo;
+    private int estoque_maximo;
+    private String localizacao_prateleira;
+    private LocalDate data_validade;
+    private String status; // 'ATIVO' ou 'INATIVO'
 
+    // Relacionamentos (opcional, mas bom para o futuro)
+    private Categoria category;
+    private Fornecedor fornecedor;
 }
-

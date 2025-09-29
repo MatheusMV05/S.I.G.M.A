@@ -26,7 +26,10 @@ public class UserDetailServiceImpl implements UserDetailsService {
                 });
 
         System.out.println("Usuário encontrado no banco: " + usuario.getNome() + " - Role: " + usuario.getRole());
-        System.out.println("Senha no banco (hash): " + usuario.getSenha().substring(0, 10) + "...");
+
+        // --- CORREÇÃO AQUI ---
+        // A linha abaixo foi corrigida de getSenha() para getPassword()
+        System.out.println("Senha no banco (hash): " + usuario.getPassword().substring(0, 10) + "...");
 
         return usuario;
     }

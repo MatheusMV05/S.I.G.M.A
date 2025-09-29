@@ -3,8 +3,8 @@ package com.project.sigma.repository;
 import com.project.sigma.model.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -15,41 +15,36 @@ public class UsuarioRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<Usuario> rowMapper = (rs, rowNum) -> {
-        Usuario usuario = new Usuario();
-        usuario.setId(rs.getLong("id_pessoa"));
-        usuario.setNome(rs.getString("nome"));
-        usuario.setLogin(rs.getString("login"));
-        usuario.setSenha(rs.getString("senha"));
-        usuario.setRole(rs.getString("role"));
-        return usuario;
-    };
-
+    /**
+     * Busca um usuário pelo seu username (login).
+     * A query agora é muito mais simples, consultando apenas a tabela Usuario.
+     */
     public Optional<Usuario> findByLogin(String login) {
-        // ----- A CORREÇÃO ESTÁ AQUI -----
-        String sql = "SELECT u.id_pessoa, p.nome, u.login, u.senha, u.role " +
-                "FROM usuario u " +
-                "JOIN funcionario f ON u.id_pessoa = f.id_pessoa " +
-                "JOIN pessoa p ON f.id_pessoa = p.id_pessoa " + // Trocamos p.id por p.id_pessoa
-                "WHERE u.login = ?";
-        // ----- FIM DA CORREÇÃO -----
+        String sql = "SELECT id_usuario, nome, username, password, role, status FROM Usuario WHERE username = ?";
         try {
-            Usuario usuario = jdbcTemplate.queryForObject(sql, new Object[]{login}, rowMapper);
-            return Optional.of(usuario);
+            // BeanPropertyRowMapper mapeia automaticamente as colunas do SQL para os campos da classe Usuario
+            Usuario usuario = jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(Usuario.class), login);
+            return Optional.ofNullable(usuario);
         } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
+            return Optional.empty(); // Retorna um Optional vazio se nenhum usuário for encontrado
         }
     }
 
-    public Usuario save(Usuario usuario) {
-        String sql = "INSERT INTO usuario (id_pessoa, login, senha, role) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql,
-                usuario.getId(),
-                usuario.getLogin(),
-                usuario.getSenha(),
-                usuario.getRole()
-        );
-        // Retornamos o usuário salvo. Em um sistema real, poderíamos buscar o ID gerado.
-        return usuario;
+    /**
+     * Verifica se um usuário com o username fornecido já existe.
+     * Útil para a criação do admin padrão.
+     */
+    public boolean existsByUsername(String username) {
+        String sql = "SELECT COUNT(*) FROM Usuario WHERE username = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, username);
+        return count != null && count > 0;
+    }
+
+    /**
+     * Salva um novo usuário no banco de dados.
+     */
+    public void save(Usuario usuario) {
+        String sql = "INSERT INTO Usuario (nome, username, password, role, status) VALUES (?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, usuario.getNome(), usuario.getUsername(), usuario.getPassword(), usuario.getRole(), usuario.getStatus());
     }
 }

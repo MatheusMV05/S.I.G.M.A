@@ -1,10 +1,11 @@
 package com.project.sigma.service;
 
-import com.project.sigma.model.Usuario;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -17,87 +18,88 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // 1. CHAVE SECRETA: Use uma chave longa e segura. Em um projeto real,
-    //    isso viria de um arquivo de configuração (application.properties).
-    //    Esta chave precisa ter no mínimo 256 bits (32 bytes).
-    private static final String SECRET_KEY = "sua_chave_secreta_muito_longa_e_segura_para_o_sigma_32_bytes";
+    @Value("${application.security.jwt.secret-key}")
+    private String secretKey;
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
+    @Value("${application.security.jwt.refresh-token.expiration}")
+    private long refreshExpiration;
 
-    // 2. TEMPO DE EXPIRAÇÃO: Define por quanto tempo o token será válido.
-    //    Aqui, estamos definindo para 1 hora (em milissegundos).
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hora
 
-    public String generateToken(Usuario usuario) {
-        // 3. CLAIMS: São as informações que queremos colocar dentro do token.
-        //    O "subject" (sub) é, por padrão, o login do usuário.
-        //    Podemos adicionar informações extras (claims) como nome, roles, etc.
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("nome", usuario.getNome());
-        claims.put("role", usuario.getRole());
-
-        // 4. CONSTRUÇÃO DO TOKEN
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(usuario.getLogin())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                // 5. ASSINATURA: Assina o token com o algoritmo HS256 e a chave secreta.
-                //    Isso garante que o token não foi modificado.
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    // Método privado para obter a chave de assinatura.
-    private Key getSigningKey() {
-        byte[] keyBytes = SECRET_KEY.getBytes();
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    /**
-     * Extrai o username (login) do token.
-     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    /**
-     * Valida o token, verificando se o username corresponde e se não está expirado.
-     */
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-
-    /**
-     * Verifica se o token está expirado.
-     */
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    /**
-     * Extrai a data de expiração do token.
-     */
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    /**
-     * Método genérico para extrair qualquer informação (claim) de dentro do token.
-     */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
+    public String generateToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails);
+    }
+
+    public String generateToken(
+            Map<String, Object> extraClaims,
+            UserDetails userDetails
+    ) {
+        return buildToken(extraClaims, userDetails, jwtExpiration);
+    }
+
+    public String generateRefreshToken(
+            UserDetails userDetails
+    ) {
+        return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+    }
+
+    private String buildToken(
+            Map<String, Object> extraClaims,
+            UserDetails userDetails,
+            long expiration
+    ) {
+        return Jwts
+                .builder()
+                .setClaims(extraClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // --- MÉTODO CORRIGIDO ---
     /**
-     * Decodifica o token e retorna todos os "claims" (informações) contidos nele.
-     * Este é o método central para a leitura do token.
+     * Valida o token verificando se o nome de usuário corresponde e se o token não expirou.
+     * @param token o JWT
+     * @param userDetails os detalhes do usuário vindo do banco de dados
+     * @return true se o token for válido
      */
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    // --- NOVO MÉTODO ---
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    // --- NOVO MÉTODO ---
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        return Jwts
+                .parserBuilder()
+                .setSigningKey(getSignInKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }
