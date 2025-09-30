@@ -41,9 +41,6 @@ public class UsuarioRepository implements BaseRepository<Usuario, Long> {
     private static final String SELECT_BY_USERNAME_SQL =
         "SELECT * FROM Usuario WHERE username = ?";
 
-    private static final String EXISTS_BY_USERNAME_SQL =
-        "SELECT COUNT(*) FROM Usuario WHERE username = ?";
-
     @Override
     public Usuario save(Usuario usuario) {
         if (existsById(usuario.getId_pessoa())) {
@@ -116,10 +113,6 @@ public class UsuarioRepository implements BaseRepository<Usuario, Long> {
             Timestamp.valueOf(lastAccess), id);
     }
 
-    public boolean existsByUsername(String username) {
-        Integer count = jdbcTemplate.queryForObject(EXISTS_BY_USERNAME_SQL, Integer.class, username);
-        return count != null && count > 0;
-    }
 
     private RowMapper<Usuario> usuarioRowMapper() {
         return (ResultSet rs, int rowNum) -> {

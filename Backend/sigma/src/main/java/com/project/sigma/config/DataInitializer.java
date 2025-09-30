@@ -17,13 +17,18 @@ public class DataInitializer implements CommandLineRunner {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         criarAdministradorPadrao();
     }
 
     private void criarAdministradorPadrao() {
-        // Verifica se o usuário 'admin' JÁ EXISTE usando o novo método do repositório
-        if (!usuarioRepository.existsByUsername("admin")) {
+        try {
+            // Verifica se o usuário 'admin' JÁ EXISTE usando o método findByUsername
+            if (usuarioRepository.findByUsername("admin").isPresent()) {
+                System.out.println("Administrador padrão já existe no sistema.");
+                return;
+            }
+
             System.out.println("Nenhum administrador padrão encontrado. Criando usuário 'admin'...");
 
             Usuario admin = new Usuario();
@@ -37,8 +42,9 @@ public class DataInitializer implements CommandLineRunner {
             // Salva o novo administrador
             usuarioRepository.save(admin);
             System.out.println("Administrador padrão criado com sucesso.");
-        } else {
-            System.out.println("Administrador padrão já existe no sistema.");
+        } catch (Exception e) {
+            System.err.println("Erro ao criar administrador padrão: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
