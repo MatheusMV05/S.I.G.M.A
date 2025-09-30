@@ -23,6 +23,7 @@ import EmployeesManagement from "@/pages/EmployeesManagement";
 import CategoriesManagementBackend from "@/pages/CategoriesManagementBackend";
 import PromotionsManagement from "@/pages/PromotionsManagement";
 import UserManagement from "@/pages/UserManagement";
+import Charts from "@/pages/Charts";
 import POS from "@/pages/POS";
 import NotFound from "./pages/NotFound";
 
@@ -98,6 +99,7 @@ function AppRoutes() {
       <Route path="/products" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'STOCK']}><Products /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR', 'STOCK']}><Inventory /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Reports /></ProtectedRoute>} />
+      <Route path="/charts" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Charts /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Customers /></ProtectedRoute>} />
       <Route path="/registrations" element={<ProtectedRoute requiredRoles={['ADMIN']}><Registrations /></ProtectedRoute>} />
       

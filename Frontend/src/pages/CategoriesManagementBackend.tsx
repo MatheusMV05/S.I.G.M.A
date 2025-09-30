@@ -53,6 +53,7 @@ export default function CategoriesManagementBackend() {
   
   // Estado local
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -77,7 +78,7 @@ export default function CategoriesManagementBackend() {
   } = useCategories({
     page: currentPage,
     size: pageSize,
-    search: searchTerm || undefined,
+    search: debouncedSearchTerm || undefined,
     active: true // Por padrão, mostrar apenas categorias ativas
   });
 
@@ -197,10 +198,11 @@ export default function CategoriesManagementBackend() {
   };
 
   // Busca com debounce
+  // Debounce para search term
   React.useEffect(() => {
     const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
       setCurrentPage(0); // Reset para primeira página ao buscar
-      refetchCategories();
     }, 500);
 
     return () => clearTimeout(timer);

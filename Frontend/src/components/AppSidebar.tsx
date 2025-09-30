@@ -36,6 +36,7 @@ import {
   Eye,
   EyeOff,
   ChevronUp,
+  PieChart,
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -125,6 +126,12 @@ const reportItems = [
     title: 'Relatórios',
     url: '/reports',
     icon: BarChart3,
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
+  },
+  {
+    title: 'Comportamento do Cliente',
+    url: '/charts',
+    icon: PieChart,
     roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
   },
 ];
