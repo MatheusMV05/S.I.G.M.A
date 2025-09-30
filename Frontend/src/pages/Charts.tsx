@@ -30,12 +30,12 @@ const Charts = () => {
     { id: 7, title: 'Distribuição da Frequência de Compra por Escolaridade', description: 'Pós-graduação: 48%, Superior: 40,8%, Ensino Médio: 11,2% da frequência de compras.', filename: 'image7.png', available: true },
     { id: 8, title: 'Distribuição da Frequência de Compras por Gênero', description: 'Mulheres: 52%, Homens: 48%. Distribuição quase equilibrada com leve predominância feminina.', filename: 'image8.png', available: true },
     // Placeholders para as 6 imagens adicionais
-    { id: 9, title: 'Análise de Fornecedores', description: 'Performance de fornecedores', filename: 'image9.png', available: false },
-    { id: 10, title: 'Rotatividade de Estoque', description: 'Análise de giro de produtos', filename: 'image10.png', available: false },
-    { id: 11, title: 'Custos Operacionais', description: 'Distribuição de custos', filename: 'image11.png', available: false },
-    { id: 12, title: 'Tendências de Mercado', description: 'Análise de tendências', filename: 'image12.png', available: false },
-    { id: 13, title: 'Indicadores de Performance', description: 'KPIs principais', filename: 'image13.png', available: false },
-    { id: 14, title: 'Projeções Futuras', description: 'Previsões e projeções', filename: 'image14.png', available: false },
+    { id: 9, title: 'Relação entre Renda e Opinião sobre Aumento de Preços', description: 'Análise de como pessoas de diferentes rendas avaliam o aumento de preços em escala numérica.', filename: 'image9.png', available: true },
+    { id: 10, title: 'Gênero vs Fatores de Influência na Escolha', description: 'Diferenças entre homens e mulheres nos critérios de escolha: preço, qualidade, promoções e indicação.', filename: 'image10.png', available: true },
+    { id: 11, title: 'Faixa Etária vs Formato de Pagamento', description: 'Jovens usam cartão/dinheiro variado, faixas mais altas preferem Pix. Métodos digitais crescem com a idade.', filename: 'image11.png', available: true },
+    { id: 12, title: 'Escolaridade vs Critérios de Escolha do Supermercado', description: 'Ensino médio prioriza preço/localização. Graduação/pós-graduação valorizam estrutura e confiança.', filename: 'image12.png', available: true },
+    { id: 13, title: 'Renda vs Frequência de Compras', description: 'Rendas baixas: menor frequência. Rendas altas: maior regularidade, chegando a compras semanais.', filename: 'image13.png', available: true },
+    { id: 14, title: 'Escolaridade vs Preferências de Compra', description: 'Maior escolaridade prefere marcas conhecidas. Menor escolaridade foca em promoções.', filename: 'image14.png', available: true },
   ];
 
   const handleDownloadChart = (chartId: number) => {
@@ -57,9 +57,9 @@ const Charts = () => {
       title="Análise de Comportamento do Consumidor"
       description="Gráficos e análises detalhadas baseadas em pesquisa de comportamento de compra dos clientes."
       features={[
-        "8 gráficos de análise comportamental disponíveis",
-        "Correlações entre idade, renda e frequência de compras",
-        "Distribuições por gênero e escolaridade",
+        "14 gráficos de análise comportamental completos",
+        "Correlações entre idade, renda, escolaridade e comportamento",
+        "Análises de gênero, pagamento e preferências",
         "Visualização em tela cheia",
         "Dados baseados em pesquisa real com clientes"
       ]}
@@ -98,9 +98,9 @@ const Charts = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
+              <div className="text-2xl font-bold">14</div>
               <p className="text-xs text-muted-foreground">
-                Gráficos de pesquisa
+                Gráficos completos
               </p>
             </CardContent>
           </Card>
@@ -111,9 +111,9 @@ const Charts = () => {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5</div>
+              <div className="text-2xl font-bold">8</div>
               <p className="text-xs text-muted-foreground">
-                Idade, renda, gênero, etc.
+                Renda, idade, gênero, etc.
               </p>
             </CardContent>
           </Card>
@@ -124,9 +124,9 @@ const Charts = () => {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">Correlações</div>
+              <div className="text-2xl font-bold text-blue-600">Padrões</div>
               <p className="text-xs text-muted-foreground">
-                Fracas mas identificadas
+                Comportamentais identificados
               </p>
             </CardContent>
           </Card>
@@ -135,13 +135,13 @@ const Charts = () => {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pesquisa</CardTitle>
               <Badge variant="outline" className="text-green-600 border-green-600">
-                Concluída
+                Completa
               </Badge>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Completa</div>
+              <div className="text-2xl font-bold">100%</div>
               <p className="text-xs text-muted-foreground">
-                Dados dos clientes
+                Todos os gráficos
               </p>
             </CardContent>
           </Card>

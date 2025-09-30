@@ -79,7 +79,7 @@ CREATE TABLE Cliente (
 ) COMMENT 'Clientes que compram produtos.';
 
 -- Tabela para Clientes Pessoa Física
-CREATE TABLE ClienteFisica (
+CREATE TABLE ClienteFisico (
                                id_pessoa BIGINT PRIMARY KEY,
                                cpf VARCHAR(14) UNIQUE NOT NULL,
                                data_nascimento DATE,
@@ -88,7 +88,7 @@ CREATE TABLE ClienteFisica (
 ) COMMENT 'Dados específicos de clientes pessoa física.';
 
 -- Tabela para Clientes Pessoa Jurídica
-CREATE TABLE ClienteJuridica (
+CREATE TABLE ClienteJuridico (
                                  id_pessoa BIGINT PRIMARY KEY,
                                  cnpj VARCHAR(18) UNIQUE NOT NULL,
                                  razao_social VARCHAR(255),
@@ -280,19 +280,6 @@ CREATE TABLE PromocaoProduto (
 ) COMMENT 'Define quais produtos participam de cada promoção.';
 
 -- =================================================================
--- ÍNDICES PARA PERFORMANCE
--- =================================================================
-
-CREATE INDEX idx_pessoa_nome ON Pessoa(nome);
-CREATE INDEX idx_pessoa_email ON Pessoa(email);
-CREATE INDEX idx_cliente_tipo ON Cliente(tipo_pessoa);
-CREATE INDEX idx_produto_nome ON Produto(nome);
-CREATE INDEX idx_produto_categoria ON Produto(id_categoria);
-CREATE INDEX idx_venda_data ON Venda(data_venda);
-CREATE INDEX idx_venda_cliente ON Venda(id_cliente);
-CREATE INDEX idx_movimentacao_data ON MovimentacaoEstoque(data_movimentacao);
-
--- =================================================================
 -- DADOS INICIAIS PARA TESTE
 -- =================================================================
 
@@ -332,7 +319,7 @@ VALUES ('João da Silva', 'joao.silva@email.com', 'Rua das Flores', '123', 'Cent
 INSERT INTO Cliente (id_pessoa, tipo_pessoa)
 VALUES (2, 'FISICA');
 
-INSERT INTO ClienteFisica (id_pessoa, cpf, data_nascimento)
+INSERT INTO ClienteFisico (id_pessoa, cpf, data_nascimento)
 VALUES (2, '123.456.789-00', '1990-05-15');
 
 INSERT INTO Telefone (id_pessoa, numero, tipo)
