@@ -12,25 +12,31 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Promocao {
+
     private Long id_promocao;
     private String nome;
     private String descricao;
-    private BigDecimal percentual_desconto;
+    private TipoDesconto tipo_desconto;
+    private BigDecimal valor_desconto;
     private LocalDate data_inicio;
     private LocalDate data_fim;
     private StatusPromocao status;
 
-    // Not stored in DB, populated when needed
-    private List<PromocaoProduto> produtos;
+    private List<Produto> produtos;
 
     public enum StatusPromocao {
         ATIVA, INATIVA, AGENDADA
     }
 
-    public Promocao(String nome, String descricao, BigDecimal percentual_desconto, LocalDate data_inicio, LocalDate data_fim) {
+    public enum TipoDesconto {
+        PERCENTUAL, FIXO
+    }
+
+    public Promocao(String nome, String descricao, TipoDesconto tipo_desconto, BigDecimal valor_desconto, LocalDate data_inicio, LocalDate data_fim) {
         this.nome = nome;
         this.descricao = descricao;
-        this.percentual_desconto = percentual_desconto;
+        this.tipo_desconto = tipo_desconto;
+        this.valor_desconto = valor_desconto;
         this.data_inicio = data_inicio;
         this.data_fim = data_fim;
         this.status = StatusPromocao.AGENDADA;

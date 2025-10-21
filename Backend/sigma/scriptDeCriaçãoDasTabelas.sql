@@ -256,27 +256,24 @@ CREATE TABLE MovimentacaoEstoque (
 -- =================================================================
 
 -- Tabela de Promoções
-CREATE TABLE Promocao (
+CREATE TABLE PROMOCAO (
                           id_promocao BIGINT AUTO_INCREMENT PRIMARY KEY,
                           nome VARCHAR(255) NOT NULL,
                           descricao TEXT,
-                          percentual_desconto DECIMAL(5, 2) NOT NULL,
+                          tipo_desconto VARCHAR(50) NOT NULL, -- 'PERCENTUAL' ou 'FIXO'
+                          valor_desconto DECIMAL(10, 2) NOT NULL,
                           data_inicio DATE NOT NULL,
                           data_fim DATE NOT NULL,
-                          status ENUM('ATIVA', 'INATIVA', 'AGENDADA') NOT NULL DEFAULT 'AGENDADA',
-
-                          CHECK (percentual_desconto > 0 AND percentual_desconto <= 100),
-                          CHECK (data_fim >= data_inicio)
+                          status VARCHAR(50) NOT NULL -- 'ATIVA', 'INATIVA', 'AGENDADA'
 ) COMMENT 'Promoções aplicáveis a produtos.';
 
 -- Tabela de relacionamento Promoção-Produto
-CREATE TABLE PromocaoProduto (
-                                 id_promocao BIGINT NOT NULL,
-                                 id_produto BIGINT NOT NULL,
-
-                                 PRIMARY KEY (id_promocao, id_produto),
-                                 FOREIGN KEY (id_promocao) REFERENCES Promocao(id_promocao) ON DELETE CASCADE,
-                                 FOREIGN KEY (id_produto) REFERENCES Produto(id_produto) ON DELETE CASCADE
+CREATE TABLE PROMOCAO_PRODUTO (
+                                  id_promocao BIGINT NOT NULL,
+                                  id_produto BIGINT NOT NULL,
+                                  PRIMARY KEY (id_promocao, id_produto),
+                                  FOREIGN KEY (id_promocao) REFERENCES PROMOCAO(id_promocao) ON DELETE CASCADE,
+                                  FOREIGN KEY (id_produto) REFERENCES PRODUTO(id_produto) ON DELETE CASCADE
 ) COMMENT 'Define quais produtos participam de cada promoção.';
 
 -- =================================================================

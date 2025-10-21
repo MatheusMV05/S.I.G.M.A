@@ -11,7 +11,6 @@ public class PromocaoProduto {
     private Long id_promocao;
     private Long id_produto;
 
-    // Not stored in DB, populated when needed
     private Promocao promocao;
     private Produto produto;
 
