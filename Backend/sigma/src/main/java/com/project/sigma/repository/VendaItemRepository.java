@@ -21,24 +21,27 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
     private JdbcTemplate jdbcTemplate;
 
     private static final String INSERT_SQL =
-        "INSERT INTO VendaItem (id_venda, id_produto, quantidade, preco_unitario_venda, desconto_item, subtotal) " +
-        "VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO VendaItem (id_venda, id_produto, quantidade, preco_unitario_venda, desconto_item, subtotal) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
 
     private static final String SELECT_BY_ID_SQL =
-        "SELECT * FROM VendaItem WHERE id_venda_item = ?";
+            "SELECT * FROM VendaItem WHERE id_venda_item = ?";
 
     private static final String SELECT_ALL_SQL =
-        "SELECT * FROM VendaItem";
+            "SELECT * FROM VendaItem";
+
+    private static final String SELECT_BY_VENDA_SQL =
+            "SELECT * FROM VendaItem WHERE id_venda = ?";
 
     private static final String UPDATE_SQL =
-        "UPDATE VendaItem SET id_venda = ?, id_produto = ?, quantidade = ?, preco_unitario_venda = ?, desconto_item = ?, subtotal = ? " +
-        "WHERE id_venda_item = ?";
+            "UPDATE VendaItem SET id_venda = ?, id_produto = ?, quantidade = ?, preco_unitario_venda = ?, desconto_item = ?, subtotal = ? " +
+                    "WHERE id_venda_item = ?";
 
     private static final String DELETE_SQL =
-        "DELETE FROM VendaItem WHERE id_venda_item = ?";
+            "DELETE FROM VendaItem WHERE id_venda_item = ?";
 
     private static final String EXISTS_SQL =
-        "SELECT COUNT(*) FROM VendaItem WHERE id_venda_item = ?";
+            "SELECT COUNT(*) FROM VendaItem WHERE id_venda_item = ?";
 
     @Override
     public VendaItem save(VendaItem vendaItem) {
@@ -69,13 +72,13 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
 
     private VendaItem update(VendaItem vendaItem) {
         jdbcTemplate.update(UPDATE_SQL,
-            vendaItem.getId_venda(),
-            vendaItem.getId_produto(),
-            vendaItem.getQuantidade(),
-            vendaItem.getPreco_unitario_venda(),
-            vendaItem.getDesconto_item(),
-            vendaItem.getSubtotal(),
-            vendaItem.getId_venda_item());
+                vendaItem.getId_venda(),
+                vendaItem.getId_produto(),
+                vendaItem.getQuantidade(),
+                vendaItem.getPreco_unitario_venda(),
+                vendaItem.getDesconto_item(),
+                vendaItem.getSubtotal(),
+                vendaItem.getId_venda_item());
         return vendaItem;
     }
 
@@ -94,6 +97,13 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
         return jdbcTemplate.query(SELECT_ALL_SQL, vendaItemRowMapper());
     }
 
+    /**
+     * Busca todos os itens de uma venda específica
+     */
+    public List<VendaItem> findByVenda(Long idVenda) {
+        return jdbcTemplate.query(SELECT_BY_VENDA_SQL, vendaItemRowMapper(), idVenda);
+    }
+
     @Override
     public void deleteById(Long id) {
         jdbcTemplate.update(DELETE_SQL, id);
@@ -105,35 +115,17 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
         return count != null && count > 0;
     }
 
-    public List<VendaItem> findByVenda(Long idVenda) {
-        return jdbcTemplate.query(
-            "SELECT * FROM VendaItem WHERE id_venda = ?",
-            vendaItemRowMapper(),
-            idVenda);
-    }
-
-    public List<VendaItem> findByProduto(Long idProduto) {
-        return jdbcTemplate.query(
-            "SELECT * FROM VendaItem WHERE id_produto = ?",
-            vendaItemRowMapper(),
-            idProduto);
-    }
-
-    public void deleteByVenda(Long idVenda) {
-        jdbcTemplate.update("DELETE FROM VendaItem WHERE id_venda = ?", idVenda);
-    }
-
     private RowMapper<VendaItem> vendaItemRowMapper() {
         return (ResultSet rs, int rowNum) -> {
-            VendaItem vendaItem = new VendaItem();
-            vendaItem.setId_venda_item(rs.getLong("id_venda_item"));
-            vendaItem.setId_venda(rs.getLong("id_venda"));
-            vendaItem.setId_produto(rs.getLong("id_produto"));
-            vendaItem.setQuantidade(rs.getInt("quantidade"));
-            vendaItem.setPreco_unitario_venda(rs.getBigDecimal("preco_unitario_venda"));
-            vendaItem.setDesconto_item(rs.getBigDecimal("desconto_item"));
-            vendaItem.setSubtotal(rs.getBigDecimal("subtotal"));
-            return vendaItem;
+            VendaItem item = new VendaItem();
+            item.setId_venda_item(rs.getLong("id_venda_item"));
+            item.setId_venda(rs.getLong("id_venda"));
+            item.setId_produto(rs.getLong("id_produto"));
+            item.setQuantidade(rs.getInt("quantidade"));
+            item.setPreco_unitario_venda(rs.getBigDecimal("preco_unitario_venda"));
+            item.setDesconto_item(rs.getBigDecimal("desconto_item"));
+            item.setSubtotal(rs.getBigDecimal("subtotal"));
+            return item;
         };
     }
 }
