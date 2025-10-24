@@ -130,6 +130,7 @@ public class VendaService {
             VendaItem vendaItem = new VendaItem();
             vendaItem.setId_venda(venda.getId_venda());
             vendaItem.setId_produto(itemDTO.getId_produto());
+            vendaItem.setId_promocao(itemDTO.getId_promocao());
             vendaItem.setQuantidade(itemDTO.getQuantidade());
             vendaItem.setPreco_unitario_venda(itemDTO.getPreco_unitario_venda());
             vendaItem.setDesconto_item(descontoItem);

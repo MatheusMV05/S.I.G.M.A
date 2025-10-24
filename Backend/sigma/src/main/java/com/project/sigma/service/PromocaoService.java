@@ -18,6 +18,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 @Service
 public class PromocaoService {
 
@@ -46,7 +49,27 @@ public class PromocaoService {
 
         promocao.setProdutos(produtos);
 
-        return PromocaoDTO.fromEntity(promocao);
+        // <<<<<< INÍCIO DA MODIFICAÇÃO (Substituir 'return PromocaoDTO.fromEntity(promocao);') >>>>>>
+
+        // Converter para DTO
+        PromocaoDTO dto = PromocaoDTO.fromEntity(promocao);
+
+        // Buscar e adicionar estatísticas
+        Map<String, Object> stats = promocaoRepository.getPromocaoStats(id);
+        dto.setApplicationsCount((Long) stats.getOrDefault("applicationsCount", 0L));
+
+        // O JDBC pode retornar Double ou BigDecimal dependendo do driver
+        Object totalSalesObj = stats.getOrDefault("totalSales", BigDecimal.ZERO);
+        if (totalSalesObj instanceof BigDecimal) {
+            dto.setTotalSales((BigDecimal) totalSalesObj);
+        } else if (totalSalesObj instanceof Number) {
+            dto.setTotalSales(BigDecimal.valueOf(((Number) totalSalesObj).doubleValue()));
+        } else {
+            dto.setTotalSales(BigDecimal.ZERO);
+        }
+
+        return dto; // Retorna o DTO populado com estatísticas
+        // <<<<<< FIM DA MODIFICAÇÃO >>>>>>
     }
 
     public PaginatedResponseDTO<PromocaoDTO> findAll(String search, String status, int page, int size) {
@@ -73,34 +96,49 @@ public class PromocaoService {
 
         // 3. Mapeia para DTO
         List<PromocaoDTO> dtoList;
+
+        // Helper lambda para popular o DTO com estatísticas
+        java.util.function.Function<Promocao, PromocaoDTO> mapToDtoWithStats = (promo) -> {
+            // Popula produtos (lógica que já existia)
+            List<Long> produtoIds = promocaoProdutoRepository.findProdutoIdsByPromocaoId(promo.getId_promocao());
+            List<Produto> produtos = produtoIds.stream()
+                    .map(produtoId -> produtoRepository.findById(produtoId).orElse(null))
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList());
+            promo.setProdutos(produtos);
+
+            // Converte para DTO
+            PromocaoDTO dto = PromocaoDTO.fromEntity(promo);
+
+            // Busca estatísticas
+            Map<String, Object> stats = promocaoRepository.getPromocaoStats(promo.getId_promocao());
+            dto.setApplicationsCount((Long) stats.getOrDefault("applicationsCount", 0L));
+
+            Object totalSalesObj = stats.getOrDefault("totalSales", BigDecimal.ZERO);
+            if (totalSalesObj instanceof BigDecimal) {
+                dto.setTotalSales((BigDecimal) totalSalesObj);
+            } else if (totalSalesObj instanceof Number) {
+                dto.setTotalSales(BigDecimal.valueOf(((Number) totalSalesObj).doubleValue()));
+            } else {
+                dto.setTotalSales(BigDecimal.ZERO);
+            }
+
+            return dto;
+        };
+
         if (statusEnum == null) {
             // Se NÃO há filtro de status, verifica e atualiza cada um
+
             dtoList = promocoes.stream()
                     .peek(this::updateStatusIfNeeded) // Atualiza o status se necessário
-                    .map(promo -> {
-                        // Popula produtos
-                        List<Long> produtoIds = promocaoProdutoRepository.findProdutoIdsByPromocaoId(promo.getId_promocao());
-                        List<Produto> produtos = produtoIds.stream()
-                                .map(produtoId -> produtoRepository.findById(produtoId).orElse(null))
-                                .filter(java.util.Objects::nonNull)
-                                .collect(Collectors.toList());
-                        promo.setProdutos(produtos);
-                        return PromocaoDTO.fromEntity(promo);
-                    })
+                    .map(mapToDtoWithStats) // Usa o helper
                     .collect(Collectors.toList());
+
         } else {
             // Se HÁ filtro de status, confia no resultado do DB e NÃO atualiza
+
             dtoList = promocoes.stream()
-                    .map(promo -> {
-                        // Popula produtos
-                        List<Long> produtoIds = promocaoProdutoRepository.findProdutoIdsByPromocaoId(promo.getId_promocao());
-                        List<Produto> produtos = produtoIds.stream()
-                                .map(produtoId -> produtoRepository.findById(produtoId).orElse(null))
-                                .filter(java.util.Objects::nonNull)
-                                .collect(Collectors.toList());
-                        promo.setProdutos(produtos);
-                        return PromocaoDTO.fromEntity(promo);
-                    })
+                    .map(mapToDtoWithStats) // Usa o helper
                     .collect(Collectors.toList());
         }
 
@@ -147,7 +185,7 @@ public class PromocaoService {
         }
 
         // Retorna o DTO completo
-        return findById(promocaoId);
+        return findById(promocaoId); // findById agora inclui as estatísticas (que serão 0)
     }
 
     @Transactional
@@ -175,7 +213,7 @@ public class PromocaoService {
             }
         }
 
-        return findById(id);
+        return findById(id); // findById agora inclui as estatísticas
     }
 
     @Transactional

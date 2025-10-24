@@ -23,8 +23,8 @@ public class PromocaoDTO {
     // Lista completa dos objetos Produto
     private List<Produto> produtos;
 
-    // Campos de Analytics (a ser implementado depois)
-    private Integer applicationsCount;
+    // Campos de Analytics
+    private Long applicationsCount;
     private BigDecimal totalSales;
 
     // Método helper para mapear da Entidade para o DTO
@@ -39,10 +39,6 @@ public class PromocaoDTO {
         dto.setData_fim(promocao.getData_fim());
         dto.setStatus(promocao.getStatus());
         dto.setProdutos(promocao.getProdutos()); // Assumindo que foi populado pelo Service
-
-        // Mock de dados de analytics por enquanto
-        dto.setApplicationsCount(0);
-        dto.setTotalSales(BigDecimal.ZERO);
 
         return dto;
     }

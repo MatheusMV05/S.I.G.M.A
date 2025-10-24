@@ -32,5 +32,6 @@ public class VendaRequestDTO {
         private Integer quantidade;
         private BigDecimal preco_unitario_venda;
         private BigDecimal desconto_item;
+        private Long id_promocao;
     }
 }

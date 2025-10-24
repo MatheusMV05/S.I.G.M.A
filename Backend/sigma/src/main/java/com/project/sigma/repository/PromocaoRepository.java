@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 @Repository
 public class PromocaoRepository {
 
@@ -33,6 +36,23 @@ public class PromocaoRepository {
         promocao.setStatus(Promocao.StatusPromocao.valueOf(rs.getString("status")));
         return promocao;
     };
+
+    // Método para buscar estatísticas de vendas de uma promoção
+    public Map<String, Object> getPromocaoStats(Long promocaoId) {
+        String sql = "SELECT " +
+                "  COUNT(DISTINCT v.id_venda) as applicationsCount, " +
+                "  COALESCE(SUM(vi.subtotal), 0) as totalSales " +
+                "FROM VendaItem vi " +
+                "JOIN Venda v ON vi.id_venda = v.id_venda " +
+                "WHERE vi.id_promocao = ? AND v.status = 'CONCLUIDA'";
+        try {
+            // queryForMap pode falhar se não houver resultados
+            return jdbcTemplate.queryForMap(sql, promocaoId);
+        } catch (Exception e) {
+            // Retorna um mapa zerado em caso de erro ou nenhum resultado
+            return Map.of("applicationsCount", 0L, "totalSales", BigDecimal.ZERO);
+        }
+    }
 
     public Optional<Promocao> findById(Long id) {
         String sql = "SELECT * FROM PROMOCAO WHERE id_promocao = ?";

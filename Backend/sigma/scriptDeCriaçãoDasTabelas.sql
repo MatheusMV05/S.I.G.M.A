@@ -336,18 +336,36 @@ CREATE TABLE Venda (
                        CONSTRAINT chk_venda_troco CHECK (troco IS NULL OR troco >= 0)
 ) COMMENT 'Registro de vendas realizadas.';
 
+-- Tabela de Promoções
+CREATE TABLE PROMOCAO (
+                          id_promocao BIGINT AUTO_INCREMENT PRIMARY KEY,
+                          nome VARCHAR(255) NOT NULL,
+                          descricao TEXT,
+                          tipo_desconto ENUM('PERCENTUAL', 'FIXO') NOT NULL,
+                          valor_desconto DECIMAL(10, 2) NOT NULL,
+                          data_inicio DATE NOT NULL,
+                          data_fim DATE NOT NULL,
+                          status ENUM('ATIVA', 'INATIVA', 'AGENDADA') NOT NULL DEFAULT 'AGENDADA',
+                          data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                          CONSTRAINT chk_promocao_datas CHECK (data_fim >= data_inicio),
+                          CONSTRAINT chk_promocao_desconto_positivo CHECK (valor_desconto > 0)
+) COMMENT 'Promoções aplicáveis a produtos.';
+
 -- Tabela de Itens da Venda
 CREATE TABLE VendaItem (
                            id_venda_item BIGINT AUTO_INCREMENT PRIMARY KEY,
                            id_venda BIGINT NOT NULL,
                            id_produto BIGINT NOT NULL,
+                           id_promocao BIGINT NULL,
                            quantidade INT NOT NULL,
                            preco_unitario_venda DECIMAL(10, 2) NOT NULL,
                            desconto_item DECIMAL(10, 2) DEFAULT 0.00,
                            subtotal DECIMAL(10, 2) NOT NULL,
 
                            FOREIGN KEY (id_venda) REFERENCES Venda(id_venda) ON DELETE CASCADE,
-                           FOREIGN KEY (id_produto) REFERENCES Produto(id_produto) ON DELETE RESTRICT
+                           FOREIGN KEY (id_produto) REFERENCES Produto(id_produto) ON DELETE RESTRICT,
+                           FOREIGN KEY (id_promocao) REFERENCES PROMOCAO(id_promocao) ON DELETE SET NULL
 ) COMMENT 'Itens individuais de cada venda.';
 
 -- =================================================================
@@ -373,22 +391,6 @@ CREATE TABLE MovimentacaoEstoque (
 -- =================================================================
 -- TABELAS DE PROMOÇÕES
 -- =================================================================
-
--- Tabela de Promoções
-CREATE TABLE PROMOCAO (
-                          id_promocao BIGINT AUTO_INCREMENT PRIMARY KEY,
-                          nome VARCHAR(255) NOT NULL,
-                          descricao TEXT,
-                          tipo_desconto ENUM('PERCENTUAL', 'FIXO') NOT NULL,
-                          valor_desconto DECIMAL(10, 2) NOT NULL,
-                          data_inicio DATE NOT NULL,
-                          data_fim DATE NOT NULL,
-                          status ENUM('ATIVA', 'INATIVA', 'AGENDADA') NOT NULL DEFAULT 'AGENDADA',
-                          data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-                          CONSTRAINT chk_promocao_datas CHECK (data_fim >= data_inicio),
-                          CONSTRAINT chk_promocao_desconto_positivo CHECK (valor_desconto > 0)
-) COMMENT 'Promoções aplicáveis a produtos.';
 
 -- Tabela de relacionamento Promoção-Produto
 CREATE TABLE PROMOCAO_PRODUTO (

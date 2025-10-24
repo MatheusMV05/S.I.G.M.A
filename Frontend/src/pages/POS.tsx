@@ -3,7 +3,7 @@
  * Endpoint correto: /api/products (não /api/produto)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ShoppingCart, Trash2, Plus, Minus, X, CheckCircle, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+import { promotionService } from '@/services/promotionService';
 
 // Tipos
 interface Product {
@@ -57,10 +59,24 @@ interface SalePayload {
     quantidade: number;
     preco_unitario_venda: number;
     desconto_item: number;
+    id_promocao: number | null;
   }[];
   metodo_pagamento: string;
   desconto: number;
   observacoes?: string;
+}
+
+interface PromoProduct {
+  id_produto: number;
+  nome: string; 
+  // ...outros campos que o backend enviar, mas id_produto é o essencial
+}
+
+interface Promotion {
+  id_promocao: number;
+  tipo_desconto: 'PERCENTUAL' | 'FIXO';
+  valor_desconto: number;
+  produtos: PromoProduct[]; // << Usando nossa interface 'PromoProduct'
 }
 
 export default function POS() {
@@ -72,14 +88,117 @@ export default function POS() {
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>('DINHEIRO');
   const [saleDiscount, setSaleDiscount] = useState(0);
+  const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
+  const [loadingPromos, setLoadingPromos] = useState(false);
 
   // URL da API
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
+  const promotionMap = useMemo(() => {
+    const map = new Map<number, Promotion>(); 
+    if (activePromotions.length > 0) {
+      for (const promo of activePromotions) { 
+
+        if (promo.produtos) { 
+          for (const product of promo.produtos) { 
+            map.set(product.id_produto, promo); 
+          }
+        }
+      }
+    }
+    return map;
+  }, [activePromotions]);
+
+  const loadActivePromotions = async () => {
+    try {
+      setLoadingPromos(true);
+      // Assumindo que o Objetivo 1 (filtro) foi corrigido
+      const response = await promotionService.getPromotions({
+        status: 'ATIVA',
+        page: 0,
+        size: 1000, // Pegar todas as promoções ativas
+      });
+      
+      if (response.content) {
+        setActivePromotions(response.content as any[]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar promoções ativas:', error);
+      toast({
+        title: 'Erro ao carregar promoções',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingPromos(false);
+    }
+  };
+
   // Carregar produtos do backend
   useEffect(() => {
     loadProducts();
+    loadActivePromotions();
   }, []);
+
+  const getItemPriceDetails = (item: CartItem) => {
+    // Verificação de segurança: previne "crash" se o item ou produto for nulo
+    if (!item || !item.product) {
+      return {
+        originalPrice: 0,
+        discountedPrice: 0,
+        discountPerItem: 0,
+        totalDiscount: 0,
+        subtotal: 0,
+        promotionId: null
+      };
+    }
+
+    const originalPrice = item.product.preco_venda || 0;
+    const promotion = promotionMap.get(item.product.id_produto);
+    
+    if (promotion) {
+      let discountAmount = 0;
+      if (promotion.tipo_desconto === 'FIXO') {
+        discountAmount = promotion.valor_desconto;
+      } else if (promotion.tipo_desconto === 'PERCENTUAL') {
+        discountAmount = originalPrice * (promotion.valor_desconto / 100);
+      }
+      
+      const discountedPrice = Math.max(0, originalPrice - discountAmount);
+      const totalDiscount = discountAmount * item.quantity;
+      const subtotal = discountedPrice * item.quantity;
+
+      return {
+        originalPrice,
+        discountedPrice,
+        discountPerItem: discountAmount,
+        totalDiscount,
+        subtotal,
+        promotionId: promotion.id_promocao
+      };
+    }
+    
+    // Se não houver promoção, retorna os valores normais
+    return {
+      originalPrice,
+      discountedPrice: originalPrice,
+      discountPerItem: 0,
+      totalDiscount: 0,
+      subtotal: originalPrice * item.quantity,
+      promotionId: null
+    };
+  };
+
+  const originalSubtotal = cart.reduce(
+    (sum, item) => sum + item.product.preco_venda * item.quantity,
+    0
+  );
+
+  const totalPromotionDiscount = cart.reduce(
+    (sum, item) => sum + getItemPriceDetails(item).totalDiscount,
+    0
+  );
+
+  const totalAmount = originalSubtotal - totalPromotionDiscount - saleDiscount;
 
   const loadProducts = async () => {
     try {
@@ -135,13 +254,6 @@ export default function POS() {
       product.codigo_barras?.toLowerCase().includes(searchLower)
     );
   });
-
-  // Calcular totais
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.product.preco_venda * item.quantity,
-    0
-  );
-  const totalAmount = subtotal - saleDiscount;
 
   // Adicionar produto ao carrinho
   const addToCart = (product: Product) => {
@@ -262,16 +374,20 @@ export default function POS() {
 
       // Preparar dados da venda
       const salePayload: SalePayload = {
-        id_funcionario: 1, // TODO: Pegar do contexto de autenticação
+        id_funcionario: 1, // TODO: Pegar do contexto
         id_cliente: null,
-        itens: cart.map(item => ({
-          id_produto: item.product.id_produto,
-          quantidade: item.quantity,
-          preco_unitario_venda: item.product.preco_venda,
-          desconto_item: 0
-        })),
+        itens: cart.map(item => {
+          const details = getItemPriceDetails(item);
+          return {
+            id_produto: item.product.id_produto,
+            quantidade: item.quantity,
+            preco_unitario_venda: details.originalPrice, // Preço original
+            desconto_item: details.totalDiscount,       // Desconto total (preço * qtd)
+            id_promocao: details.promotionId            // ID da promoção aplicada
+          };
+        }),
         metodo_pagamento: paymentMethod,
-        desconto: saleDiscount,
+        desconto: saleDiscount, // Desconto manual adicional sobre a venda
         observacoes: `Venda PDV - ${new Date().toLocaleString()}`
       };
 
@@ -449,58 +565,86 @@ export default function POS() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {cart.map((item) => (
-                      <Card key={item.product.id_produto}>
-                        <CardContent className="p-3">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-sm">{item.product.nome}</h4>
+                    {cart.map((item) => {
+                  // Pega os detalhes de preço de forma segura
+                  const details = getItemPriceDetails(item);
+
+                  return (
+                    <Card key={item.product.id_produto}>
+                      <CardContent className="p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm">{item.product.nome}</h4>
+                            
+                            {/* --- LÓGICA DE PREÇO ATUALIZADA --- */}
+                            {details.promotionId ? (
+                              <>
+                                <p className="text-xs text-muted-foreground line-through">
+                                  R$ {details.originalPrice.toFixed(2)} cada
+                                </p>
+                                <p className="text-sm font-medium text-success">
+                                  R$ {details.discountedPrice.toFixed(2)} cada (Promo!)
+                                </p>
+                              </>
+                            ) : (
                               <p className="text-xs text-muted-foreground">
-                                R$ {item.product.preco_venda.toFixed(2)} cada
+                                R$ {details.originalPrice.toFixed(2)} cada
                               </p>
-                            </div>
+                            )}
+                            {/* --- FIM DA LÓGICA DE PREÇO --- */}
+                          </div>
+
+                          {/* --- BOTÃO DE REMOVER (RESTAURADO) --- */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFromCart(item.product.id_produto)}
+                            className="text-destructive h-6 w-6 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          {/* --- FIM DO BOTÃO DE REMOVER --- */}
+                        </div>
+                        <div className="flex items-center justify-between">
+
+                          {/* --- BOTÕES +/- (RESTAURADOS) --- */}
+                          <div className="flex items-center gap-2">
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              onClick={() => removeFromCart(item.product.id_produto)}
-                              className="text-destructive h-6 w-6 p-0"
+                              onClick={() =>
+                                updateQuantity(item.product.id_produto, item.quantity - 1)
+                              }
+                              disabled={item.quantity <= 1}
                             >
-                              <X className="h-4 w-4" />
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center font-medium">
+                              {item.quantity}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                updateQuantity(item.product.id_produto, item.quantity + 1)
+                              }
+                              disabled={item.quantity >= item.product.estoque}
+                            >
+                              <Plus className="h-3 w-3" />
                             </Button>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  updateQuantity(item.product.id_produto, item.quantity - 1)
-                                }
-                                disabled={item.quantity <= 1}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-8 text-center font-medium">
-                                {item.quantity}
-                              </span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  updateQuantity(item.product.id_produto, item.quantity + 1)
-                                }
-                                disabled={item.quantity >= item.product.estoque}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            <span className="font-bold">
-                              R$ {(item.product.preco_venda * item.quantity).toFixed(2)}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          {/* --- FIM DOS BOTÕES +/- --- */}
+                          
+                          {/* --- LÓGICA DE SUBTOTAL ATUALIZADA --- */}
+                          <span className="font-bold">
+                            R$ {details.subtotal.toFixed(2)}
+                          </span>
+                          {/* --- FIM DA LÓGICA DE SUBTOTAL --- */}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
                   </div>
                 )}
               </CardContent>
@@ -510,12 +654,20 @@ export default function POS() {
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="space-y-2">
+
+                  {/* --- LÓGICA DE TOTAIS ATUALIZADA --- */}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium">R$ {subtotal.toFixed(2)}</span>
+                    <span className="font-medium">R$ {originalSubtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Desconto:</span>
+                    <span className="text-muted-foreground">Desconto (Promoções):</span>
+                    <span className="font-medium text-destructive">
+                      - R$ {totalPromotionDiscount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Desconto (Manual):</span>
                     <span className="font-medium text-destructive">
                       - R$ {saleDiscount.toFixed(2)}
                     </span>
@@ -528,8 +680,10 @@ export default function POS() {
                       </span>
                     </div>
                   </div>
+                  {/* --- FIM DA LÓGICA DE TOTAIS --- */}
                 </div>
 
+                {/* --- BOTÃO FINALIZAR (RESTAURADO) --- */}
                 <Button
                   className="w-full"
                   size="lg"
@@ -539,6 +693,7 @@ export default function POS() {
                   <CheckCircle className="mr-2 h-5 w-5" />
                   Finalizar Venda
                 </Button>
+                {/* --- FIM DO BOTÃO FINALIZAR --- */}
               </CardContent>
             </Card>
           </div>
@@ -575,7 +730,7 @@ export default function POS() {
                 <Input
                   type="number"
                   min="0"
-                  max={subtotal}
+                  max={originalSubtotal}
                   step="0.01"
                   value={saleDiscount}
                   onChange={(e) => setSaleDiscount(parseFloat(e.target.value) || 0)}

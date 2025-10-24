@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Types; // <<<< MODIFICADO (Adicionada importação)
 import java.util.List;
 import java.util.Optional;
 
@@ -20,9 +21,10 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    // <<<< MODIFICADO (Adicionado id_promocao e ?) >>>>
     private static final String INSERT_SQL =
-            "INSERT INTO VendaItem (id_venda, id_produto, quantidade, preco_unitario_venda, desconto_item, subtotal) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO VendaItem (id_venda, id_produto, id_promocao, quantidade, preco_unitario_venda, desconto_item, subtotal) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SELECT_BY_ID_SQL =
             "SELECT * FROM VendaItem WHERE id_venda_item = ?";
@@ -33,8 +35,9 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
     private static final String SELECT_BY_VENDA_SQL =
             "SELECT * FROM VendaItem WHERE id_venda = ?";
 
+    // <<<< MODIFICADO (Adicionado id_promocao = ?) >>>>
     private static final String UPDATE_SQL =
-            "UPDATE VendaItem SET id_venda = ?, id_produto = ?, quantidade = ?, preco_unitario_venda = ?, desconto_item = ?, subtotal = ? " +
+            "UPDATE VendaItem SET id_venda = ?, id_produto = ?, id_promocao = ?, quantidade = ?, preco_unitario_venda = ?, desconto_item = ?, subtotal = ? " +
                     "WHERE id_venda_item = ?";
 
     private static final String DELETE_SQL =
@@ -59,10 +62,20 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
             PreparedStatement ps = connection.prepareStatement(INSERT_SQL, new String[]{"id_venda_item"});
             ps.setLong(1, vendaItem.getId_venda());
             ps.setLong(2, vendaItem.getId_produto());
-            ps.setInt(3, vendaItem.getQuantidade());
-            ps.setBigDecimal(4, vendaItem.getPreco_unitario_venda());
-            ps.setBigDecimal(5, vendaItem.getDesconto_item());
-            ps.setBigDecimal(6, vendaItem.getSubtotal());
+
+            // <<<< MODIFICADO (Bloco para salvar id_promocao ou NULL) >>>>
+            if (vendaItem.getId_promocao() != null) {
+                ps.setLong(3, vendaItem.getId_promocao());
+            } else {
+                ps.setNull(3, Types.BIGINT);
+            }
+
+            // <<<< MODIFICADO (Índices reordenados de 3-6 para 4-7) >>>>
+            ps.setInt(4, vendaItem.getQuantidade());
+            ps.setBigDecimal(5, vendaItem.getPreco_unitario_venda());
+            ps.setBigDecimal(6, vendaItem.getDesconto_item());
+            ps.setBigDecimal(7, vendaItem.getSubtotal());
+
             return ps;
         }, keyHolder);
 
@@ -71,9 +84,11 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
     }
 
     private VendaItem update(VendaItem vendaItem) {
+        // <<<< MODIFICADO (Adicionado getId_promocao() e reordenado o final) >>>>
         jdbcTemplate.update(UPDATE_SQL,
                 vendaItem.getId_venda(),
                 vendaItem.getId_produto(),
+                vendaItem.getId_promocao(), // Adicionado
                 vendaItem.getQuantidade(),
                 vendaItem.getPreco_unitario_venda(),
                 vendaItem.getDesconto_item(),
@@ -121,6 +136,13 @@ public class VendaItemRepository implements BaseRepository<VendaItem, Long> {
             item.setId_venda_item(rs.getLong("id_venda_item"));
             item.setId_venda(rs.getLong("id_venda"));
             item.setId_produto(rs.getLong("id_produto"));
+
+            // <<<< MODIFICADO (Bloco para ler id_promocao, tratando NULL) >>>>
+            long idPromocao = rs.getLong("id_promocao");
+            if (!rs.wasNull()) {
+                item.setId_promocao(idPromocao);
+            }
+
             item.setQuantidade(rs.getInt("quantidade"));
             item.setPreco_unitario_venda(rs.getBigDecimal("preco_unitario_venda"));
             item.setDesconto_item(rs.getBigDecimal("desconto_item"));

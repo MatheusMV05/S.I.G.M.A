@@ -13,6 +13,7 @@ public class VendaItem {
     private Long id_venda_item;
     private Long id_venda;
     private Long id_produto;
+    private Long id_promocao;
     private Integer quantidade;
     private BigDecimal preco_unitario_venda;
     private BigDecimal desconto_item;
