@@ -26,18 +26,28 @@ class PromotionService {
     type?: PromotionType;
     active?: boolean;
     current?: boolean; // apenas promoções vigentes
+    status?: string;
   }): Promise<PaginatedResponse<Promotion>> {
     const queryParams = new URLSearchParams();
     
     if (params?.page !== undefined) queryParams.set('page', params.page.toString());
     if (params?.size !== undefined) queryParams.set('size', params.size.toString());
     if (params?.search) queryParams.set('search', params.search);
-    if (params?.type) queryParams.set('type', params.type);
-    if (params?.active !== undefined) queryParams.set('active', params.active.toString());
+    
+    // Adicionar o parâmetro de status se ele existir e não for 'all'
+    if (params?.status && params.status !== 'all') {
+      queryParams.set('status', params.status);
+    }
+
+    // Manter ou remover estas linhas dependendo se 'status' substitui 'type' e 'active'
+    // Pela análise do backend, 'status' substitui ambos.
+    // if (params?.type) queryParams.set('type', params.type);
+    // if (params?.active !== undefined) queryParams.set('active', params.active.toString());
+    
     if (params?.current !== undefined) queryParams.set('current', params.current.toString());
 
     const queryString = queryParams.toString();
-    const endpoint = `/promotions${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/promotions${queryString ? `?${queryString}` : ''}`; // O backend usa /api/promotions, 'api' é adicionado pelo apiRequest
 
     return await apiRequest<PaginatedResponse<Promotion>>(endpoint);
   }
