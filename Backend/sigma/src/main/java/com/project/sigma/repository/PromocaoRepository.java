@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 @Repository
 public class PromocaoRepository {
@@ -42,9 +43,88 @@ public class PromocaoRepository {
         }
     }
 
-    public List<Promocao> findAll() {
-        String sql = "SELECT * FROM PROMOCAO";
-        return jdbcTemplate.query(sql, rowMapper);
+    // Método 'findAll' antigo (sem paginação/filtro) - mantido para referência se necessário
+    // public List<Promocao> findAll() {
+    //     String sql = "SELECT * FROM PROMOCAO";
+    //     return jdbcTemplate.query(sql, rowMapper);
+    // }
+
+    //findAll com filtros e paginação (é oque o front usa)
+    public List<Promocao> findAll(String search, Promocao.StatusPromocao status, int page, int size) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM PROMOCAO");
+        List<Object> params = new ArrayList<>();
+        List<Integer> types = new ArrayList<>();
+
+        StringBuilder whereClause = new StringBuilder();
+
+        if (search != null && !search.isEmpty()) {
+            whereClause.append(" (LOWER(nome) LIKE ? OR LOWER(descricao) LIKE ?) ");
+            String likeParam = "%" + search.toLowerCase() + "%";
+            params.add(likeParam);
+            params.add(likeParam);
+            types.add(Types.VARCHAR);
+            types.add(Types.VARCHAR);
+        }
+
+        if (status != null) {
+            if (whereClause.length() > 0) {
+                whereClause.append(" AND ");
+            }
+            whereClause.append(" status = ? ");
+            params.add(status.name());
+            types.add(Types.VARCHAR);
+        }
+
+        if (whereClause.length() > 0) {
+            sql.append(" WHERE ").append(whereClause);
+        }
+
+        // Adiciona ordenação e paginação (sintaxe H2/PostgreSQL)
+        sql.append(" ORDER BY data_inicio DESC, id_promocao DESC"); // Ordenação estável
+        sql.append(" LIMIT ? OFFSET ? ");
+        params.add(size);
+        params.add(page * size);
+        types.add(Types.INTEGER);
+        types.add(Types.INTEGER);
+
+        int[] paramTypes = types.stream().mapToInt(i -> i).toArray();
+
+        return jdbcTemplate.query(sql.toString(), params.toArray(), paramTypes, rowMapper);
+    }
+
+    public int countAll(String search, Promocao.StatusPromocao status) {
+        StringBuilder sql = new StringBuilder("SELECT count(*) FROM PROMOCAO");
+        List<Object> params = new ArrayList<>();
+        List<Integer> types = new ArrayList<>();
+
+        StringBuilder whereClause = new StringBuilder();
+
+        if (search != null && !search.isEmpty()) {
+            whereClause.append(" (LOWER(nome) LIKE ? OR LOWER(descricao) LIKE ?) ");
+            String likeParam = "%" + search.toLowerCase() + "%";
+            params.add(likeParam);
+            params.add(likeParam);
+            types.add(Types.VARCHAR);
+            types.add(Types.VARCHAR);
+        }
+
+        if (status != null) {
+            if (whereClause.length() > 0) {
+                whereClause.append(" AND ");
+            }
+            whereClause.append(" status = ? ");
+            params.add(status.name());
+            types.add(Types.VARCHAR);
+        }
+
+        if (whereClause.length() > 0) {
+            sql.append(" WHERE ").append(whereClause);
+        }
+
+        int[] paramTypes = types.stream().mapToInt(i -> i).toArray();
+
+        Integer count = jdbcTemplate.queryForObject(sql.toString(), params.toArray(), paramTypes, Integer.class);
+        return (count != null) ? count : 0;
     }
 
     public Promocao save(Promocao promocao) {

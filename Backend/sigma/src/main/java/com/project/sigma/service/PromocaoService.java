@@ -12,6 +12,7 @@ import com.project.sigma.repository.PromocaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.project.sigma.dto.PaginatedResponseDTO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -48,22 +49,76 @@ public class PromocaoService {
         return PromocaoDTO.fromEntity(promocao);
     }
 
-    // TODO: Implementar getPromotions (com filtros e paginação - mais complexo)
-    public List<PromocaoDTO> findAll() {
-        LocalDate hoje = LocalDate.now();
-        return promocaoRepository.findAll().stream()
-                .peek(this::updateStatusIfNeeded) // Atualiza o status de cada promoção
-                .map(promo -> {
-                    // Popula produtos (pode ser otimizado para não fazer N+1 queries)
-                    List<Long> produtoIds = promocaoProdutoRepository.findProdutoIdsByPromocaoId(promo.getId_promocao());
-                    List<Produto> produtos = produtoIds.stream()
-                            .map(produtoId -> produtoRepository.findById(produtoId).orElse(null))
-                            .filter(java.util.Objects::nonNull)
-                            .collect(Collectors.toList());
-                    promo.setProdutos(produtos);
-                    return PromocaoDTO.fromEntity(promo);
-                })
-                .collect(Collectors.toList());
+    public PaginatedResponseDTO<PromocaoDTO> findAll(String search, String status, int page, int size) {
+        // Mapeia o status string do frontend para o Enum do backend
+        Promocao.StatusPromocao statusEnum = null;
+        if (status != null && !status.equalsIgnoreCase("all")) {
+            if (status.equalsIgnoreCase("ATIVA")) { // <-- CORRIGIDO
+                statusEnum = Promocao.StatusPromocao.ATIVA;
+            } else if (status.equalsIgnoreCase("AGENDADA")) { // <-- CORRIGIDO
+                statusEnum = Promocao.StatusPromocao.AGENDADA;
+            } else if (status.equalsIgnoreCase("INATIVA")) { // <-- CORRIGIDO (representa 'expired')
+                statusEnum = Promocao.StatusPromocao.INATIVA;
+            } else {
+                // Opcional: Logar se um valor inesperado for recebido
+                // log.warn("Status de promoção inválido recebido: {}", status);
+            }
+        }
+
+        // 1. Busca a lista paginada
+        List<Promocao> promocoes = promocaoRepository.findAll(search, statusEnum, page, size);
+
+        // 2. Busca o total de itens (para paginação)
+        long totalPromocoes = (long) promocaoRepository.countAll(search, statusEnum); // Convertido para long
+
+        // 3. Mapeia para DTO
+        List<PromocaoDTO> dtoList;
+        if (statusEnum == null) {
+            // Se NÃO há filtro de status, verifica e atualiza cada um
+            dtoList = promocoes.stream()
+                    .peek(this::updateStatusIfNeeded) // Atualiza o status se necessário
+                    .map(promo -> {
+                        // Popula produtos
+                        List<Long> produtoIds = promocaoProdutoRepository.findProdutoIdsByPromocaoId(promo.getId_promocao());
+                        List<Produto> produtos = produtoIds.stream()
+                                .map(produtoId -> produtoRepository.findById(produtoId).orElse(null))
+                                .filter(java.util.Objects::nonNull)
+                                .collect(Collectors.toList());
+                        promo.setProdutos(produtos);
+                        return PromocaoDTO.fromEntity(promo);
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            // Se HÁ filtro de status, confia no resultado do DB e NÃO atualiza
+            dtoList = promocoes.stream()
+                    .map(promo -> {
+                        // Popula produtos
+                        List<Long> produtoIds = promocaoProdutoRepository.findProdutoIdsByPromocaoId(promo.getId_promocao());
+                        List<Produto> produtos = produtoIds.stream()
+                                .map(produtoId -> produtoRepository.findById(produtoId).orElse(null))
+                                .filter(java.util.Objects::nonNull)
+                                .collect(Collectors.toList());
+                        promo.setProdutos(produtos);
+                        return PromocaoDTO.fromEntity(promo);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // 4. Calcula o total de páginas
+        int totalPages = (size > 0) ? (int) Math.ceil((double) totalPromocoes / size) : 0;
+
+        // 5. Retorna o objeto de paginação (FORMA CORRETA)
+        PaginatedResponseDTO<PromocaoDTO> response = new PaginatedResponseDTO<>();
+        response.setContent(dtoList);
+        response.setTotalElements(totalPromocoes);
+        response.setTotalPages(totalPages);
+        response.setPage(page);
+        response.setSize(size);
+        response.setNumber(page); // 'number' é geralmente o mesmo que 'page'
+        response.setFirst(page == 0);
+        response.setLast(page >= (totalPages - 1));
+
+        return response;
     }
 
     @Transactional

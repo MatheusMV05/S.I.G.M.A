@@ -6,6 +6,7 @@ import com.project.sigma.service.PromocaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.project.sigma.dto.PaginatedResponseDTO;
 
 import java.net.URI;
 import java.util.List;
@@ -32,12 +33,15 @@ public class PromocaoController {
         return ResponseEntity.ok(promocao);
     }
 
-    // Endpoint: GET /api/promotions (Simples por enquanto, sem paginação)
-    // O 'promotionService.ts' espera filtros. Este é um TODO.
+    // Endpoint: GET /api/promotions (Agora com paginação e filtros)
     @GetMapping
-    public ResponseEntity<List<PromocaoDTO>> getAllPromotions() {
-        // TODO: Implementar paginação e filtros (search, status, etc.)
-        List<PromocaoDTO> promocoes = promocaoService.findAll();
+    public ResponseEntity<PaginatedResponseDTO<PromocaoDTO>> getAllPromotions(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status, // 'all', 'active', 'scheduled', 'expired'
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        PaginatedResponseDTO<PromocaoDTO> promocoes = promocaoService.findAll(search, status, page, size);
         return ResponseEntity.ok(promocoes);
     }
 
