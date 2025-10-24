@@ -47,34 +47,36 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Nenhum administrador padrão encontrado. Criando usuário 'admin'...");
 
 
+            // 1. Criar a Pessoa base
             Pessoa adminPessoa = new Pessoa();
             adminPessoa.setNome("Administrador");
             adminPessoa.setEmail("admin@sigma.com");
-
+            // Outros campos de Pessoa (rua, numero, etc.) são nulos conforme o schema permite
 
             // Salva a pessoa e obtém a entidade com o ID gerado pelo banco
             Pessoa pessoaSalva = pessoaRepository.save(adminPessoa);
 
 
+            // 2. Criar o Funcionario vinculado à Pessoa
             Funcionario adminFunc = new Funcionario();
-            adminFunc.setId_pessoa(pessoaSalva.getId_pessoa()); // Usa o ID real
+            adminFunc.setId_pessoa(pessoaSalva.getId_pessoa()); // Usa o ID real da Pessoa
             adminFunc.setMatricula("ADMIN001");
-            adminFunc.setSalario(BigDecimal.ZERO);
+            adminFunc.setSalario(BigDecimal.ONE);
             adminFunc.setCargo("ADMINISTRADOR");
             adminFunc.setSetor("SISTEMAS");
             adminFunc.setData_admissao(LocalDate.now());
-            adminFunc.setStatus(Funcionario.StatusFuncionario.ATIVO);
+            adminFunc.setStatus(Funcionario.StatusFuncionario.ATIVO); // Status não nulo
 
             funcionarioRepository.save(adminFunc);
 
 
-
+            // 3. Criar o Usuario vinculado ao Funcionario (usando o mesmo ID de Pessoa)
             Usuario adminUsuario = new Usuario();
-            adminUsuario.setId_pessoa(pessoaSalva.getId_pessoa());
+            adminUsuario.setId_pessoa(pessoaSalva.getId_pessoa()); // FK para Funcionario (que é o ID da Pessoa)
             adminUsuario.setUsername("admin");
             adminUsuario.setPassword(passwordEncoder.encode("admin")); // Codifica a senha
             adminUsuario.setRole(Usuario.Role.ADMIN);
-            adminUsuario.setStatus(Usuario.StatusUsuario.ATIVO);
+            adminUsuario.setStatus(Usuario.StatusUsuario.ATIVO); // Status não nulo
 
             // Salva o novo administrador
             usuarioRepository.save(adminUsuario);
