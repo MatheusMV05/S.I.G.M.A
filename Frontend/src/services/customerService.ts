@@ -28,7 +28,7 @@ const mapBackendToFrontend = (dto: BackendClienteDTO): Customer => {
   };
 
   // 2. Traduz os tipos e nomes
-  const customerType = dto.tipoCliente === 'PF' ? 'INDIVIDUAL' : 'COMPANY';
+  const customerType = dto.tipoCliente === 'PF' ? 'individual' : 'business';
   
   // Para PJ, o 'name' do frontend é a 'razaoSocial' do backend.
   // Para PF, o 'name' do frontend é o 'nome' do backend.
@@ -43,31 +43,24 @@ const mapBackendToFrontend = (dto: BackendClienteDTO): Customer => {
     name: name,
     email: dto.email,
     phone: dto.telefone,
-    customerType: customerType,
+    type: customerType,
     document: document,
     address: address,
-    active: dto.ativo,
+    status: dto.ativo ? 'active' : 'inactive',
     birthDate: dto.dataNascimento,
+    totalSpent: dto.totalGasto || 0,
+    totalPurchases: 0, // TODO: O backend não retorna esse campo ainda
+    registrationDate: '', // TODO: O backend não retorna esse campo ainda
+    lastPurchase: undefined, // TODO: O backend não retorna esse campo ainda
+    notes: '', // TODO: O backend não retorna esse campo ainda
+    
+    companyInfo: dto.tipoCliente === 'PJ' ? {
+      tradeName: dto.nome, // 'nome' do backend é o Nome Fantasia para PJ
+      stateRegistration: dto.inscricaoEstadual,
+    } : undefined,
     
     createdAt: '', // O DTO não fornece isso
     updatedAt: '', // O DTO não fornece isso
-
-    // === Campos Bônus para Customers.tsx ===
-    ...( {
-      status: dto.ativo ? 'active' : 'inactive',
-      type: dto.tipoCliente === 'PF' ? 'individual' : 'business',
-      totalSpent: dto.totalGasto || 0,
-      
-      companyInfo: dto.tipoCliente === 'PJ' ? {
-        tradeName: dto.nome, // 'nome' do backend é o Nome Fantasia para PJ
-        stateRegistration: dto.inscricaoEstadual,
-      } : undefined,
-
-      totalPurchases: 0, 
-      lastPurchase: undefined, 
-      registrationDate: '', 
-      notes: '', 
-    } as any) 
   };
 
   return customer;
@@ -81,7 +74,7 @@ const mapBackendToFrontend = (dto: BackendClienteDTO): Customer => {
 const mapFrontendToBackend = (customer: Partial<CreateCustomerRequest> | Partial<Customer>): Partial<BackendClienteDTO> => {
   
   const customerData = customer as any; 
-  const tipoCliente = (customerData.type === 'individual' || customerData.customerType === 'INDIVIDUAL') ? 'PF' : 'PJ';
+  const tipoCliente = (customerData.type === 'individual') ? 'PF' : 'PJ';
 
   const dto: Partial<BackendClienteDTO> = {
     id: customerData.id ? Number(customerData.id) : undefined,
@@ -99,11 +92,7 @@ const mapFrontendToBackend = (customer: Partial<CreateCustomerRequest> | Partial
     cidade: customer.address?.city,
     cep: customer.address?.zipCode,
     
-    // --- LINHA CORRIGIDA ---
-    // Se status for 'inactive', ativo é false.
-    // Em todos os outros casos ('active' ou undefined), ativo é true.
     ativo: customerData.status === 'inactive' ? false : true,
-    // --- FIM DA CORREÇÃO ---
     
     cpf: tipoCliente === 'PF' ? customer.document : undefined,
     dataNascimento: tipoCliente === 'PF' ? customer.birthDate : undefined,

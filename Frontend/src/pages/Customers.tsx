@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import {
   Search,
   Plus,
@@ -46,6 +47,7 @@ export default function Customers() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -107,6 +109,7 @@ export default function Customers() {
       
       setCustomers(response.content);
       setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
 
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
@@ -120,9 +123,14 @@ export default function Customers() {
     fetchCustomers();
   }, [fetchCustomers]);
 
+  // Reset page quando os filtros mudam
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm, selectedType, selectedStatus]);
+
   // Estatísticas
   const stats = {
-    total: customers.length,
+    total: totalElements, // Agora usa o total de elementos da API
     active: customers.filter(c => c.status === 'active').length,
     individuals: customers.filter(c => c.type === 'individual').length,
     businesses: customers.filter(c => c.type === 'business').length,
@@ -550,6 +558,44 @@ export default function Customers() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Mostrando {customers.length} de {totalElements} clientes
+          </p>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                  className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              
+              {Array.from({ length: totalPages }, (_, i) => i).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(page)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                  >
+                    {page + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                  className={currentPage === totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       {/* Edit Customer Dialog */}
       {editingCustomer && (
