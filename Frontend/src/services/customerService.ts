@@ -2,8 +2,118 @@ import { apiRequest } from './api';
 import type { 
   Customer, 
   CreateCustomerRequest, 
-  PaginatedResponse 
+  PaginatedResponse,
+  Address // Importa o tipo Address aninhado
 } from './types';
+import type { 
+  BackendClienteDTO, 
+  PaginatedClienteResponse 
+} from './javaApiTypes'; // Importa os tipos do Backend
+
+/**
+ * Converte o DTO "plano" do backend para a interface "aninhada" 
+ * que a página Customers.tsx espera.
+ * * Usado para LER dados (GET).
+ */
+const mapBackendToFrontend = (dto: BackendClienteDTO): Customer => {
+  
+  // 1. Traduz os campos de endereço para um objeto aninhado
+  const address: Address = {
+    street: dto.rua || '',
+    number: dto.numero || '',
+    neighborhood: dto.bairro || '',
+    city: dto.cidade || '',
+    state: '', // 'Estado' não existe no DTO do backend
+    zipCode: dto.cep || '',
+  };
+
+  // 2. Traduz os tipos e nomes
+  const customerType = dto.tipoCliente === 'PF' ? 'INDIVIDUAL' : 'COMPANY';
+  
+  // Para PJ, o 'name' do frontend é a 'razaoSocial' do backend.
+  // Para PF, o 'name' do frontend é o 'nome' do backend.
+  const name = dto.tipoCliente === 'PJ' ? (dto.razaoSocial || dto.nome) : dto.nome;
+  
+  // O 'document' do frontend é 'cpf' ou 'cnpj' dependendo do tipo
+  const document = dto.tipoCliente === 'PF' ? (dto.cpf || '') : (dto.cnpj || '');
+
+  // 3. Monta o objeto final do frontend
+  const customer: Customer = {
+    id: dto.id.toString(),
+    name: name,
+    email: dto.email,
+    phone: dto.telefone,
+    customerType: customerType,
+    document: document,
+    address: address,
+    active: dto.ativo,
+    birthDate: dto.dataNascimento,
+    
+    createdAt: '', // O DTO não fornece isso
+    updatedAt: '', // O DTO não fornece isso
+
+    // === Campos Bônus para Customers.tsx ===
+    ...( {
+      status: dto.ativo ? 'active' : 'inactive',
+      type: dto.tipoCliente === 'PF' ? 'individual' : 'business',
+      totalSpent: dto.totalGasto || 0,
+      
+      companyInfo: dto.tipoCliente === 'PJ' ? {
+        tradeName: dto.nome, // 'nome' do backend é o Nome Fantasia para PJ
+        stateRegistration: dto.inscricaoEstadual,
+      } : undefined,
+
+      totalPurchases: 0, 
+      lastPurchase: undefined, 
+      registrationDate: '', 
+      notes: '', 
+    } as any) 
+  };
+
+  return customer;
+};
+
+/**
+ * Converte o objeto "aninhado" do formulário do frontend para o DTO "plano" do backend.
+ * * Usado para ENVIAR dados (POST, PUT).
+ * @param customer Pode ser o 'Customer' da UI ou 'CreateCustomerRequest' de types.ts
+ */
+const mapFrontendToBackend = (customer: Partial<CreateCustomerRequest> | Partial<Customer>): Partial<BackendClienteDTO> => {
+  
+  const customerData = customer as any; 
+  const tipoCliente = (customerData.type === 'individual' || customerData.customerType === 'INDIVIDUAL') ? 'PF' : 'PJ';
+
+  const dto: Partial<BackendClienteDTO> = {
+    id: customerData.id ? Number(customerData.id) : undefined,
+    
+    nome: tipoCliente === 'PJ' ? customerData.companyInfo?.tradeName : customer.name,
+    razaoSocial: tipoCliente === 'PJ' ? customer.name : undefined,
+
+    email: customer.email,
+    telefone: customer.phone,
+    tipoCliente: tipoCliente,
+    
+    rua: customer.address?.street,
+    numero: customer.address?.number,
+    bairro: (customer.address as any)?.neighborhood,
+    cidade: customer.address?.city,
+    cep: customer.address?.zipCode,
+    
+    // --- LINHA CORRIGIDA ---
+    // Se status for 'inactive', ativo é false.
+    // Em todos os outros casos ('active' ou undefined), ativo é true.
+    ativo: customerData.status === 'inactive' ? false : true,
+    // --- FIM DA CORREÇÃO ---
+    
+    cpf: tipoCliente === 'PF' ? customer.document : undefined,
+    dataNascimento: tipoCliente === 'PF' ? customer.birthDate : undefined,
+    
+    cnpj: tipoCliente === 'PJ' ? customer.document : undefined,
+    inscricaoEstadual: tipoCliente === 'PJ' ? customerData.companyInfo?.stateRegistration : undefined,
+  };
+
+  return dto;
+};
 
 class CustomerService {
   private static instance: CustomerService;
@@ -16,7 +126,7 @@ class CustomerService {
   }
 
   /**
-   * Busca clientes com paginação e filtros
+   * Busca clientes com paginação e filtros (CORRIGIDO)
    */
   async getCustomers(params?: {
     page?: number;
@@ -25,6 +135,7 @@ class CustomerService {
     customerType?: 'INDIVIDUAL' | 'COMPANY';
     active?: boolean;
   }): Promise<PaginatedResponse<Customer>> {
+    
     const queryParams = new URLSearchParams();
     
     if (params?.page !== undefined) queryParams.set('page', params.page.toString());
@@ -36,45 +147,61 @@ class CustomerService {
     const queryString = queryParams.toString();
     const endpoint = `/customers${queryString ? `?${queryString}` : ''}`;
 
-    return await apiRequest<PaginatedResponse<Customer>>(endpoint);
+    const response = await apiRequest<PaginatedClienteResponse>(endpoint);
+    const mappedContent = response.content.map(mapBackendToFrontend);
+
+    return {
+      ...response,
+      content: mappedContent,
+    };
   }
 
   /**
-   * Busca cliente por ID
+   * Busca cliente por ID (CORRIGIDO)
    */
   async getCustomerById(id: string): Promise<Customer> {
-    return await apiRequest<Customer>(`/customers/${id}`);
+    const dto = await apiRequest<BackendClienteDTO>(`/customers/${id}`);
+    return mapBackendToFrontend(dto);
   }
 
   /**
-   * Busca cliente por documento (CPF ou CNPJ)
+   * Busca cliente por documento (CPF ou CNPJ) (CORRIGIDO)
    */
   async getCustomerByDocument(document: string): Promise<Customer> {
-    return await apiRequest<Customer>(`/customers/document/${document}`);
+    const dto = await apiRequest<BackendClienteDTO>(`/customers/document/${document}`);
+    return mapBackendToFrontend(dto);
   }
 
   /**
-   * Cria um novo cliente
+   * Cria um novo cliente (CORRIGIDO)
    */
   async createCustomer(customerData: CreateCustomerRequest): Promise<Customer> {
-    return await apiRequest<Customer>('/customers', {
+    const dto = mapFrontendToBackend(customerData);
+    
+    const responseDto = await apiRequest<BackendClienteDTO>('/customers', {
       method: 'POST',
-      body: JSON.stringify(customerData),
+      body: JSON.stringify(dto),
     });
+
+    return mapBackendToFrontend(responseDto);
   }
 
   /**
-   * Atualiza um cliente existente
+   * Atualiza um cliente existente (CORRIGIDO)
    */
-  async updateCustomer(id: string, customerData: Partial<CreateCustomerRequest>): Promise<Customer> {
-    return await apiRequest<Customer>(`/customers/${id}`, {
+  async updateCustomer(id: string, customerData: Partial<CreateCustomerRequest | Customer>): Promise<Customer> {
+    const dto = mapFrontendToBackend(customerData);
+    
+    const responseDto = await apiRequest<BackendClienteDTO>(`/customers/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(customerData),
+      body: JSON.stringify(dto),
     });
+
+    return mapBackendToFrontend(responseDto);
   }
 
   /**
-   * Exclui um cliente
+   * Exclui um cliente (Não precisa de mapeamento)
    */
   async deleteCustomer(id: string): Promise<void> {
     await apiRequest<void>(`/customers/${id}`, {
@@ -83,20 +210,22 @@ class CustomerService {
   }
 
   /**
-   * Ativa/desativa um cliente
+   * Ativa/desativa um cliente (CORRIGIDO)
    */
   async toggleCustomerStatus(id: string, active: boolean): Promise<Customer> {
-    return await apiRequest<Customer>(`/customers/${id}/status`, {
+    const responseDto = await apiRequest<BackendClienteDTO>(`/customers/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ active }),
     });
+    return mapBackendToFrontend(responseDto);
   }
 
   /**
-   * Busca sugestões de clientes por nome ou documento
+   * Busca sugestões de clientes (CORRIGIDO)
    */
   async getCustomerSuggestions(query: string, limit = 5): Promise<Customer[]> {
-    return await apiRequest<Customer[]>(`/customers/suggestions?q=${encodeURIComponent(query)}&limit=${limit}`);
+    const responseDtos = await apiRequest<BackendClienteDTO[]>(`/customers/suggestions?q=${encodeURIComponent(query)}&limit=${limit}`);
+    return responseDtos.map(mapBackendToFrontend);
   }
 
   /**

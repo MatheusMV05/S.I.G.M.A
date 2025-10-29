@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 @Repository
 public class ClienteRepository implements BaseRepository<Cliente, Long> {
@@ -38,6 +39,99 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
 
     private static final String EXISTS_SQL =
             "SELECT COUNT(*) FROM Cliente WHERE id_pessoa = ?";
+
+    /**
+     * Constrói a cláusula WHERE dinâmica e popula a lista de parâmetros.
+     * Precisamos de JOINs para pesquisar em tabelas relacionadas.
+     */
+    private String buildWhereClause(String searchTerm, String tipoCliente, Boolean status, List<Object> params) {
+        StringBuilder whereSql = new StringBuilder(" WHERE 1=1");
+
+        // Filtro por Tipo de Cliente
+        if (tipoCliente != null && !tipoCliente.isEmpty()) {
+            whereSql.append(" AND c.tipo_pessoa = ?");
+            // Mapeia do frontend ("INDIVIDUAL" / "COMPANY") para o DB ("FISICA" / "JURIDICA")
+            if ("INDIVIDUAL".equalsIgnoreCase(tipoCliente)) {
+                params.add(Cliente.TipoPessoa.FISICA.name());
+            } else if ("COMPANY".equalsIgnoreCase(tipoCliente)) {
+                params.add(Cliente.TipoPessoa.JURIDICA.name());
+            } else {
+                // Fallback para o formato antigo (PF/PJ) se necessário
+                params.add(tipoCliente);
+            }
+        }
+
+        // Filtro por Status
+        if (status != null) {
+            whereSql.append(" AND c.ativo = ?");
+            params.add(status);
+        }
+
+        // Filtro por Termo de Busca (SearchTerm)
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            String likeTerm = "%" + searchTerm.toLowerCase() + "%";
+            whereSql.append(" AND (");
+            whereSql.append("LOWER(p.nome) LIKE ? OR ");
+            whereSql.append("LOWER(p.email) LIKE ? OR ");
+            whereSql.append("t.numero LIKE ? OR ");
+            whereSql.append("cf.cpf LIKE ? OR ");
+            whereSql.append("cj.cnpj LIKE ?");
+            whereSql.append(")");
+
+            params.add(likeTerm); // p.nome
+            params.add(likeTerm); // p.email
+            params.add(likeTerm); // t.numero
+            params.add(likeTerm); // cf.cpf
+            params.add(likeTerm); // cj.cnpj
+        }
+
+        return whereSql.toString();
+    }
+
+    public List<Cliente> findWithFiltersAndPagination(String searchTerm, String tipoCliente, Boolean status, int page, int size) {
+        List<Object> params = new ArrayList<>();
+
+        // O SELECT base precisa dos JOINs para os filtros
+        String baseSql = "SELECT DISTINCT c.*, p.nome " +
+                "FROM Cliente c " +
+                "LEFT JOIN Pessoa p ON c.id_pessoa = p.id_pessoa " +
+                "LEFT JOIN Telefone t ON c.id_pessoa = t.id_pessoa " +
+                "LEFT JOIN ClienteFisico cf ON c.id_pessoa = cf.id_pessoa " +
+                "LEFT JOIN ClienteJuridico cj ON c.id_pessoa = cj.id_pessoa";
+
+        String whereSql = buildWhereClause(searchTerm, tipoCliente, status, params);
+
+        // Ordena por nome da pessoa (Juntado de 'p')
+        String orderBySql = " ORDER BY p.nome ASC";
+
+        // Adiciona paginação
+        String paginationSql = " LIMIT ? OFFSET ?";
+        params.add(size);
+        params.add(page * size);
+
+        String finalSql = baseSql + whereSql + orderBySql + paginationSql;
+
+        return jdbcTemplate.query(finalSql, clienteRowMapper(), params.toArray());
+    }
+
+    public int countWithFilters(String searchTerm, String tipoCliente, Boolean status) {
+        List<Object> params = new ArrayList<>();
+
+        // O SELECT de contagem também precisa dos JOINs para o WHERE
+        String baseSql = "SELECT COUNT(DISTINCT c.id_pessoa) " +
+                "FROM Cliente c " +
+                "LEFT JOIN Pessoa p ON c.id_pessoa = p.id_pessoa " +
+                "LEFT JOIN Telefone t ON c.id_pessoa = t.id_pessoa " +
+                "LEFT JOIN ClienteFisico cf ON c.id_pessoa = cf.id_pessoa " +
+                "LEFT JOIN ClienteJuridico cj ON c.id_pessoa = cj.id_pessoa";
+
+        String whereSql = buildWhereClause(searchTerm, tipoCliente, status, params);
+
+        String finalSql = baseSql + whereSql;
+
+        Integer count = jdbcTemplate.queryForObject(finalSql, Integer.class, params.toArray());
+        return (count != null) ? count : 0;
+    }
 
     @Override
     public Cliente save(Cliente cliente) {

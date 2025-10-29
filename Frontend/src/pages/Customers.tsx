@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; 
+import type { Customer, CreateCustomerRequest, CustomerType } from '@/services/types'; // <--- ADICIONE ESTA IMPORTAÇÃO
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,132 +37,15 @@ import {
   FileText
 } from 'lucide-react';
 
-// Tipos
-type CustomerType = 'individual' | 'business';
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  type: CustomerType;
-  document: string; // CPF ou CNPJ
-  address: {
-    street: string;
-    number: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  registrationDate: string;
-  lastPurchase?: string;
-  totalPurchases: number;
-  totalSpent: number;
-  status: 'active' | 'inactive';
-  notes?: string;
-  birthDate?: string;
-  companyInfo?: {
-    tradeName?: string;
-    stateRegistration?: string;
-    municipalRegistration?: string;
-  };
-}
-
-// Mock data para clientes
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'João Silva Santos',
-    email: 'joao.silva@email.com',
-    phone: '(11) 99999-1234',
-    type: 'individual',
-    document: '123.456.789-01',
-    address: {
-      street: 'Rua das Flores, 123',
-      number: '123',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '01234-567'
-    },
-    registrationDate: '2024-01-15',
-    lastPurchase: '2024-12-18',
-    totalPurchases: 45,
-    totalSpent: 2850.75,
-    status: 'active',
-    birthDate: '1985-03-22',
-    notes: 'Cliente frequente, gosta de promoções'
-  },
-  {
-    id: '2',
-    name: 'Maria Oliveira Costa',
-    email: 'maria.costa@email.com',
-    phone: '(11) 88888-5678',
-    type: 'individual',
-    document: '987.654.321-09',
-    address: {
-      street: 'Av. Principal, 456',
-      number: '456',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '09876-543'
-    },
-    registrationDate: '2024-02-20',
-    lastPurchase: '2024-12-19',
-    totalPurchases: 28,
-    totalSpent: 1650.30,
-    status: 'active',
-    birthDate: '1990-07-15'
-  },
-  {
-    id: '3',
-    name: 'Empresa ABC Comércio Ltda',
-    email: 'contato@empresaabc.com.br',
-    phone: '(11) 3333-4444',
-    type: 'business',
-    document: '12.345.678/0001-90',
-    address: {
-      street: 'Rua Comercial, 789',
-      number: '789',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '12345-678'
-    },
-    registrationDate: '2024-03-10',
-    lastPurchase: '2024-12-15',
-    totalPurchases: 12,
-    totalSpent: 8750.90,
-    status: 'active',
-    companyInfo: {
-      tradeName: 'ABC Comércio',
-      stateRegistration: '123.456.789.012',
-      municipalRegistration: '987654321'
-    },
-    notes: 'Compras mensais de grande volume'
-  },
-  {
-    id: '4',
-    name: 'Pedro Mendes',
-    email: 'pedro.mendes@email.com',
-    phone: '(11) 77777-9999',
-    type: 'individual',
-    document: '555.666.777-88',
-    address: {
-      street: 'Rua Secundária, 321',
-      number: '321',
-      city: 'São Paulo',
-      state: 'SP',
-      zipCode: '54321-987'
-    },
-    registrationDate: '2024-11-05',
-    totalPurchases: 3,
-    totalSpent: 185.50,
-    status: 'active',
-    birthDate: '1978-12-03'
-  }
-];
-
+import { customerService } from '@/services/customerService'; // Importar o serviço
+import { toast } from 'sonner'; // Para mostrar notificações
+  
+// Estados de filtro
 export default function Customers() {
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -179,7 +63,8 @@ export default function Customers() {
       number: '',
       city: '',
       state: '',
-      zipCode: ''
+      zipCode: '',
+      neighborhood: ''
     },
     status: 'active',
     notes: '',
@@ -191,17 +76,49 @@ export default function Customers() {
     }
   });
 
-  // Filtros
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.document.includes(searchTerm.replace(/\D/g, '')) ||
-                         customer.phone.includes(searchTerm.replace(/\D/g, ''));
-    const matchesType = selectedType === 'all' || customer.type === selectedType;
-    const matchesStatus = selectedStatus === 'all' || customer.status === selectedStatus;
-    
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  const fetchCustomers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      
+      const customerTypeFilter: 'INDIVIDUAL' | 'COMPANY' | undefined = 
+        selectedType === 'all' 
+          ? undefined 
+          : (selectedType === 'individual' ? 'INDIVIDUAL' : 'COMPANY');
+          
+      const activeFilter: boolean | undefined = 
+        selectedStatus === 'all' 
+          ? undefined 
+          : (selectedStatus === 'active' ? true : false);
+      
+      const searchFilter: string | undefined = searchTerm || undefined;
+
+      // Agora criamos o objeto 'params'
+      const params = {
+        page: currentPage,
+        size: 10, // Você pode ajustar o tamanho da página
+        search: searchFilter,
+        customerType: customerTypeFilter,
+        active: activeFilter,
+      };
+
+      // O customerService já faz o mapeamento!
+      // Agora 'params' tem o tipo exato que a função espera.
+      const response = await customerService.getCustomers(params);
+      
+      setCustomers(response.content);
+      setTotalPages(response.totalPages);
+
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+      toast.error("Falha ao carregar clientes.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, searchTerm, selectedType, selectedStatus]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   // Estatísticas
   const stats = {
@@ -213,52 +130,56 @@ export default function Customers() {
     averageTicket: customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.reduce((sum, c) => sum + c.totalPurchases, 0) || 0
   };
 
-  const handleAddCustomer = () => {
-    const customer: Customer = {
-      ...newCustomer as Customer,
-      id: Date.now().toString(),
-      registrationDate: new Date().toISOString().split('T')[0],
-      totalPurchases: 0,
-      totalSpent: 0
-    };
-    setCustomers([...customers, customer]);
-    setNewCustomer({
-      name: '',
-      email: '',
-      phone: '',
-      type: 'individual',
-      document: '',
-      address: {
-        street: '',
-        number: '',
-        city: '',
-        state: '',
-        zipCode: ''
-      },
-      status: 'active',
-      notes: '',
-      birthDate: '',
-      companyInfo: {
-        tradeName: '',
-        stateRegistration: '',
-        municipalRegistration: ''
-      }
-    });
-    setIsAddDialogOpen(false);
-  };
-
-  const handleEditCustomer = (customer: Customer) => {
-    const index = customers.findIndex(c => c.id === customer.id);
-    if (index !== -1) {
-      const updatedCustomers = [...customers];
-      updatedCustomers[index] = customer;
-      setCustomers(updatedCustomers);
-      setEditingCustomer(null);
+  const handleAddCustomer = async () => {
+    try {
+      // O customerService já mapeia 'newCustomer' para o formato do backend
+      // Note que o tipo CreateCustomerRequest é esperado pelo serviço
+      await customerService.createCustomer(newCustomer as CreateCustomerRequest);
+      toast.success("Cliente cadastrado com sucesso!");
+      setIsAddDialogOpen(false);
+      // Reseta o formulário
+      setNewCustomer({
+        name: '',
+        email: '',
+        phone: '',
+        type: 'individual',
+        document: '',
+        address: { street: '', number: '', city: '', state: '', zipCode: '', neighborhood: '' },
+        status: 'active',
+        notes: '',
+        birthDate: '',
+        companyInfo: { tradeName: '', stateRegistration: '', municipalRegistration: '' }
+      });
+      fetchCustomers(); // Recarrega a lista
+    } catch (error) {
+      console.error("Erro ao criar cliente:", error);
+      toast.error("Falha ao cadastrar cliente.");
     }
   };
 
-  const handleDeleteCustomer = (customerId: string) => {
-    setCustomers(customers.filter(c => c.id !== customerId));
+  const handleEditCustomer = async (customer: Customer) => {
+    if (!customer) return;
+    try {
+      // O customerService já mapeia 'customer' para o formato do backend
+      await customerService.updateCustomer(customer.id, customer);
+      toast.success("Cliente atualizado com sucesso!");
+      setEditingCustomer(null);
+      fetchCustomers(); // Recarrega a lista
+    } catch (error) {
+      console.error("Erro ao atualizar cliente:", error);
+      toast.error("Falha ao atualizar cliente.");
+    }
+  };
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    try {
+      await customerService.deleteCustomer(customerId);
+      toast.success("Cliente excluído com sucesso!");
+      fetchCustomers(); // Recarrega a lista
+    } catch (error) {
+      console.error("Erro ao excluir cliente:", error);
+      toast.error("Falha ao excluir cliente.");
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -478,135 +399,153 @@ export default function Customers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCustomers.map((customer) => {
-                const tier = getCustomerTier(customer.totalSpent);
-                const daysSinceLastPurchase = customer.lastPurchase 
-                  ? Math.floor((new Date().getTime() - new Date(customer.lastPurchase).getTime()) / (1000 * 60 * 60 * 24))
-                  : null;
-                
-                return (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium">{customer.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Cliente desde {formatDate(customer.registrationDate)}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-3 w-3" />
-                          <span className="truncate">{customer.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          <span>{customer.phone}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-mono text-sm">{formatDocument(customer.document, customer.type)}</p>
-                        {customer.type === 'business' && customer.companyInfo?.tradeName && (
-                          <p className="text-xs text-muted-foreground">{customer.companyInfo.tradeName}</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={customer.type === 'individual' ? 'default' : 'outline'}>
-                        {customer.type === 'individual' ? (
-                          <>
-                            <User className="h-3 w-3 mr-1" />
-                            PF
-                          </>
-                        ) : (
-                          <>
-                            <Building className="h-3 w-3 mr-1" />
-                            PJ
-                          </>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <ShoppingCart className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm font-medium">{customer.totalPurchases} compras</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-success">
-                            {formatCurrency(customer.totalSpent)}
-                          </span>
-                        </div>
-                        {customer.lastPurchase && (
-                          <p className="text-xs text-muted-foreground">
-                            Última compra há {daysSinceLastPurchase} {daysSinceLastPurchase === 1 ? 'dia' : 'dias'}
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    Carregando dados...
+                  </TableCell>
+                </TableRow>
+              ) : (
+                // MUDANÇA: de 'filteredCustomers.map' para 'customers.map'
+                customers.map((customer) => {
+                  const tier = getCustomerTier(customer.totalSpent);
+                  const daysSinceLastPurchase = customer.lastPurchase 
+                    ? Math.floor((new Date().getTime() - new Date(customer.lastPurchase).getTime()) / (1000 * 60 * 60 * 24))
+                    : null;
+                  
+                  return (
+                    <TableRow key={customer.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-medium">{customer.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {/* Cliente desde {formatDate(customer.registrationDate)} */} {/* O DTO não tem registrationDate, pode comentar por enquanto */}
                           </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
-                        {customer.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${tier.color}`}></div>
-                        <Badge variant="outline" className="text-xs">
-                          {tier.tier}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="h-3 w-3" />
+                            <span className="truncate">{customer.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            <span>{customer.phone}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {/* A função formatDocument já existe e deve funcionar */}
+                          <p className="font-mono text-sm">{formatDocument(customer.document, customer.type)}</p>
+                          {customer.type === 'business' && customer.companyInfo?.tradeName && (
+                            <p className="text-xs text-muted-foreground">{customer.companyInfo.tradeName}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={customer.type === 'individual' ? 'default' : 'outline'}>
+                          {customer.type === 'individual' ? (
+                            <>
+                              <User className="h-3 w-3 mr-1" />
+                              PF
+                            </>
+                          ) : (
+                            <>
+                              <Building className="h-3 w-3 mr-1" />
+                              PJ
+                            </>
+                          )}
                         </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedCustomer(customer)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingCustomer(customer)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir o cliente "{customer.name}"? 
-                                Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteCustomer(customer.id)}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <ShoppingCart className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm font-medium">{customer.totalPurchases} compras</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm font-semibold text-success">
+                              {formatCurrency(customer.totalSpent)}
+                            </span>
+                          </div>
+                          {customer.lastPurchase && (
+                            <p className="text-xs text-muted-foreground">
+                              Última compra há {daysSinceLastPurchase} {daysSinceLastPurchase === 1 ? 'dia' : 'dias'}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
+                          {customer.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${tier.color}`}></div>
+                          <Badge variant="outline" className="text-xs">
+                            {tier.tier}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedCustomer(customer)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingCustomer(customer)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir o cliente "{customer.name}"? 
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteCustomer(customer.id)} // <-- Esta chamada já está correta
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+              {/* ADICIONADO: Mensagem para quando não há dados */}
+              {!isLoading && customers.length === 0 && (
+                 <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    Nenhum cliente encontrado.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -625,7 +564,7 @@ export default function Customers() {
             <CustomerForm
               customer={editingCustomer}
               onChange={(customer) => setEditingCustomer(customer as Customer)}
-              onSubmit={() => handleEditCustomer(editingCustomer)}
+              onSubmit={() => handleEditCustomer(editingCustomer)} // <--- MUDANÇA AQUI
               onCancel={() => setEditingCustomer(null)}
               isEditing={true}
             />

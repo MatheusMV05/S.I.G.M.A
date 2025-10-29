@@ -157,28 +157,48 @@ export interface CreateSupplierRequest {
 }
 
 // ============== TYPES DE CLIENTES ==============
+export type CustomerType = 'individual' | 'business';
+
 export interface Customer {
   id: string;
   name: string;
+  email: string;
+  phone: string;
+  type: CustomerType;
   document: string; // CPF ou CNPJ
-  email?: string;
-  phone?: string;
-  address?: Address;
+  address: Address; // Tornamos obrigatório, pois a UI espera
+  registrationDate: string;
+  lastPurchase?: string;
+  totalPurchases: number;
+  totalSpent: number;
+  status: 'active' | 'inactive';
+  notes?: string;
   birthDate?: string;
-  customerType: 'INDIVIDUAL' | 'COMPANY';
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
+  companyInfo?: {
+    tradeName?: string;
+    stateRegistration?: string;
+    municipalRegistration?: string;
+  };
+  // Campos que a API de lista não retorna, mas getById pode retornar
+  createdAt?: string; 
+  updatedAt?: string;
 }
 
 export interface CreateCustomerRequest {
   name: string;
+  email: string;
+  phone: string;
+  type: CustomerType;
   document: string;
-  email?: string;
-  phone?: string;
-  address?: Address;
+  address: Address;
+  status: 'active' | 'inactive';
+  notes?: string;
   birthDate?: string;
-  customerType: 'INDIVIDUAL' | 'COMPANY';
+  companyInfo?: {
+    tradeName?: string;
+    stateRegistration?: string;
+    municipalRegistration?: string;
+  };
 }
 
 // ============== TYPES DE VENDAS ==============

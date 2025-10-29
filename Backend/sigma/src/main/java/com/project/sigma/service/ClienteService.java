@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import com.project.sigma.dto.PaginatedResponseDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,18 +45,54 @@ public class ClienteService {
     }
 
     /**
-     * Busca clientes com base em filtros opcionais. Se nenhum filtro for fornecido, retorna todos os clientes.
+     * MUDANÇA AQUI: Altera a assinatura para 5 argumentos e o tipo de retorno
+     *
+     * Busca clientes com base em filtros e paginação.
      * @param searchTerm Termo para buscar em nome, email, documento ou telefone.
-     * @param tipoCliente "PF" ou "PJ".
-     * @param status "ativo" ou "inativo".
-     * @return Uma lista de ClienteDTO.
+     * @param tipoCliente "INDIVIDUAL" ou "COMPANY" (vem do frontend).
+     * @param status true (ativo) ou false (inativo).
+     * @param page Número da página.
+     * @param size Tamanho da página.
+     * @return Um PaginatedResponseDTO com os ClienteDTOs.
      */
-    public List<ClienteDTO> buscarClientes(String searchTerm, String tipoCliente, String status) {
-        // For now, return all clients and implement search logic later
-        List<Cliente> clientes = clienteRepository.findAll();
-        return clientes.stream()
+    public PaginatedResponseDTO<ClienteDTO> buscarClientes(
+            String searchTerm, String tipoCliente, Boolean status, int page, int size) {
+
+        // 1. Buscar a lista de clientes da página atual
+        List<Cliente> clientes = clienteRepository.findWithFiltersAndPagination(searchTerm, tipoCliente, status, page, size);
+
+        // 2. Converter para DTOs
+        List<ClienteDTO> clienteDTOs = clientes.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+        // 3. Obter a contagem total de elementos
+        int totalClientes = clienteRepository.countWithFilters(searchTerm, tipoCliente, status);
+
+        // 4. Calcular o total de páginas
+        int totalPages = (totalClientes + size - 1) / size;
+        if (totalClientes == 0) {
+            totalPages = 0;
+        }
+
+        // 5. Construir e retornar o DTO de resposta paginada
+        PaginatedResponseDTO<ClienteDTO> response = new PaginatedResponseDTO<>();
+        response.setContent(clienteDTOs);
+        response.setTotalElements(totalClientes);
+        response.setTotalPages(totalPages);
+
+        // --- CORREÇÃO AQUI ---
+        // O DTO usa 'number' para o número da página e 'size' para o tamanho.
+        response.setNumber(page); // Em vez de setPageNumber
+        response.setSize(size);   // Em vez de setPageSize
+
+        // Também vamos preencher os outros campos do DTO para o frontend
+        response.setPage(page); // O DTO também tem 'page'
+        response.setFirst(page == 0);
+        response.setLast(page == (totalPages - 1) || totalPages == 0);
+        // Assumindo que PaginatedResponseDTO tem os setters apropriados
+
+        return response;
     }
 
     public List<Cliente> buscarPorTipo(Cliente.TipoPessoa tipo) {
@@ -204,6 +241,38 @@ public class ClienteService {
             pessoa.setCidade(clienteDTO.getCidade());
             pessoa.setCep(clienteDTO.getCep());
             pessoaRepository.save(pessoa);
+
+            // ATUALIZAR TELEFONE
+            List<Telefone> telefones = telefoneRepository.findByPessoa(id);
+            if (!telefones.isEmpty()) {
+                Telefone telefone = telefones.get(0);
+                telefone.setNumero(clienteDTO.getTelefone());
+                telefoneRepository.save(telefone);
+            } // Adicionar lógica 'else' se necessário
+
+            // ATUALIZAR DADOS PF/PJ
+            if ("PF".equals(clienteDTO.getTipoCliente())) {
+                Optional<ClienteFisico> cfOpt = clienteFisicoRepository.findById(id);
+                if (cfOpt.isPresent()) {
+                    ClienteFisico cf = cfOpt.get();
+                    cf.setCpf(clienteDTO.getCpf());
+                    cf.setData_nascimento(clienteDTO.getDataNascimento());
+                    clienteFisicoRepository.save(cf);
+                }
+            } else {
+                Optional<ClienteJuridico> cjOpt = clienteJuridicaRepository.findById(id);
+                if (cjOpt.isPresent()) {
+                    ClienteJuridico cj = cjOpt.get();
+                    cj.setCnpj(clienteDTO.getCnpj());
+                    cj.setRazao_social(clienteDTO.getRazaoSocial());
+                    cj.setInscricao_estadual(clienteDTO.getInscricaoEstadual());
+                    clienteJuridicaRepository.save(cj);
+                }
+            }
+
+            // ATUALIZAR STATUS DO CLIENTE (Exemplo)
+            cliente.setAtivo(clienteDTO.getAtivo());
+            clienteRepository.save(cliente);
         }
 
         return convertToDTO(cliente);
@@ -236,6 +305,8 @@ public class ClienteService {
 
     private ClienteDTO convertToDTO(Cliente cliente) {
         ClienteDTO dto = new ClienteDTO();
+
+        dto.setId(cliente.getId_pessoa());
 
         // Get Pessoa data
         Optional<Pessoa> pessoaOpt = pessoaRepository.findById(cliente.getId_pessoa());

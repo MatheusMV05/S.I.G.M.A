@@ -211,3 +211,28 @@ export interface CategoryAPI {
   createdAt: string;
   updatedAt: string;
 }
+
+import { PaginatedResponse } from './types';
+
+export interface BackendClienteDTO {
+  id: number;
+  nome: string;
+  email: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  cep: string;
+  telefone: string;
+  tipoCliente: 'PF' | 'PJ';
+  ativo: boolean;
+  ranking: number;
+  totalGasto: number;
+  cpf?: string;
+  dataNascimento?: string; // O backend envia LocalDate, que o JSON converte para string
+  cnpj?: string;
+  razaoSocial?: string;
+  inscricaoEstadual?: string;
+}
+
+export type PaginatedClienteResponse = PaginatedResponse<BackendClienteDTO>;

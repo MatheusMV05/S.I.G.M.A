@@ -16,6 +16,7 @@ public class ClienteDTO {
     private String cidade;
     private String cep;
     private String telefone;
+    private Long id;
 
     // Cliente fields
     private String tipoCliente; // "PF" ou "PJ"
