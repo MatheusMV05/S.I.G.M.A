@@ -25,7 +25,12 @@ public class MovimentacaoEstoque {
     private Usuario usuario;
 
     public enum TipoMovimentacao {
-        ENTRADA, SAIDA_VENDA, AJUSTE_POSITIVO, AJUSTE_NEGATIVO, DEVOLUCAO
+        IN, // Entrada por compra, reposição
+        OUT, // Saída manual (não é venda)
+        ADJUSTMENT, // Ajuste de inventário (10 caracteres, cabe)
+        LOSS, // Perda, roubo, vencimento
+        RETURN, // Devolução de cliente
+        SALE // Saída por Venda
     }
 
     public MovimentacaoEstoque(Long id_produto, Long id_usuario, TipoMovimentacao tipo,

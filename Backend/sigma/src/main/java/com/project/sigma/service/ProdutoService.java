@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.project.sigma.dto.PaginatedResponseDTO;
+
 @Service
 public class ProdutoService {
 
@@ -90,6 +92,65 @@ public class ProdutoService {
     public Optional<ProdutoResponseDTO> buscarProdutoCompletoPorId(Long id) {
         return produtoRepository.findByIdWithCategory(id)
                 .map(this::convertToResponseDTO);
+    }
+
+    /**
+     * Obtém produtos de forma paginada com filtros.
+     */
+    public PaginatedResponseDTO<ProdutoResponseDTO> getProdutosPaginados(
+            String nome, String status, Long categoriaId, Integer page, Integer size) {
+
+        int pageNum = (page != null && page >= 0) ? page : 0;
+        int pageSize = (size != null && size > 0) ? size : 10;
+
+        // 1. Chame o repositório (agora retorna PaginatedResponseDTO<Produto>)
+        PaginatedResponseDTO<Produto> paginatedResult = produtoRepository.findWithFiltersAndPagination(
+                nome, status, categoriaId, pageNum, pageSize
+        );
+
+        // 2. Converta a lista de Produto para ProdutoResponseDTO
+        // (Assumindo que você tem o método 'converterParaDTO' no seu service)
+        List<ProdutoResponseDTO> dtoList = paginatedResult.getContent().stream()
+                .map(this::converterParaDTO) // Use seu conversor de DTO existente
+                .collect(Collectors.toList());
+
+        // 3. Crie um novo PaginatedResponseDTO com o conteúdo convertido
+        return new PaginatedResponseDTO<ProdutoResponseDTO>(
+                dtoList,                        // 1. content
+                paginatedResult.getPage(),      // 2. page
+                paginatedResult.getSize(),      // 3. size
+                paginatedResult.getTotalPages(), // 4. totalPages
+                paginatedResult.getTotalElements(), // 5. totalElements
+                paginatedResult.isFirst(),      // 6. first
+                paginatedResult.isLast(),       // 7. last
+                paginatedResult.getNumber()     // 8. number (Este era o 'getNumberOfElements')
+        );
+    }
+
+    private ProdutoResponseDTO converterParaDTO(Produto produto) {
+        ProdutoResponseDTO dto = new ProdutoResponseDTO();
+        dto.setId_produto(produto.getId_produto());
+        dto.setNome(produto.getNome());
+        dto.setMarca(produto.getMarca());
+        dto.setDescricao(produto.getDescricao());
+        dto.setPreco_custo(produto.getPreco_custo());
+        dto.setPreco_venda(produto.getPreco_venda());
+        dto.setEstoque(produto.getEstoque());
+        dto.setEstoque_minimo(produto.getEstoque_minimo());
+        dto.setEstoque_maximo(produto.getEstoque_maximo());
+        dto.setStatus(produto.getStatus() != null ? produto.getStatus().name() : "ATIVO");
+        dto.setCodigo_barras(produto.getCodigo_barras());
+        dto.setData_validade(produto.getData_validade());
+
+        // Carregar categoria se disponível
+        if (produto.getCategoria() != null) {
+            ProdutoResponseDTO.CategoriaSimpleDTO categoriaDTO = new ProdutoResponseDTO.CategoriaSimpleDTO();
+            categoriaDTO.setId(produto.getCategoria().getId_categoria());
+            categoriaDTO.setNome(produto.getCategoria().getNome());
+            dto.setCategory(categoriaDTO);
+        }
+
+        return dto;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.project.sigma.repository;
 
+import com.project.sigma.dto.ProdutoResponseDTO;
 import com.project.sigma.model.Categoria;
 import com.project.sigma.model.Produto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,13 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
+import com.project.sigma.dto.PaginatedResponseDTO;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.sql.ResultSet;
+import com.project.sigma.model.Produto;
 
 @Repository
 public class ProdutoRepository implements BaseRepository<Produto, Long> {
@@ -118,6 +126,106 @@ public class ProdutoRepository implements BaseRepository<Produto, Long> {
         } catch (Exception e) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Busca produtos com filtros dinâmicos de nome, status de estoque e categoria, com paginação.
+     * Alimenta a aba "Produtos" da página de Inventário.
+     */
+    public PaginatedResponseDTO<Produto> findWithFiltersAndPagination(
+            String nome, String status, Long categoriaId, int page, int size) {
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.*, c.nome AS nome_categoria " +
+                        "FROM Produto p " +
+                        "LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria "
+        );
+        StringBuilder countSql = new StringBuilder("SELECT COUNT(p.id_produto) FROM Produto p ");
+
+        List<Object> params = new ArrayList<>();
+        StringBuilder whereClause = new StringBuilder(" WHERE p.status = 'ATIVO' ");
+
+        if (nome != null && !nome.isEmpty()) {
+            whereClause.append(" AND p.nome LIKE ? ");
+            params.add("%" + nome + "%");
+        }
+        if (categoriaId != null) {
+            whereClause.append(" AND p.id_categoria = ? ");
+            params.add(categoriaId);
+        }
+        if (status != null && !status.isEmpty() && !status.equals("all")) {
+            // Traduz o "status" do frontend para a lógica do banco de dados
+            if (status.equals("low")) {
+                whereClause.append(" AND (p.estoque <= p.estoque_minimo AND p.estoque > 0) ");
+            } else if (status.equals("out")) {
+                whereClause.append(" AND p.estoque <= 0 ");
+            } else if (status.equals("normal")) {
+                whereClause.append(" AND p.estoque > p.estoque_minimo ");
+            }
+        }
+
+        // 1. Obter contagem total
+        Long totalElements = jdbcTemplate.queryForObject(countSql.toString(), Long.class, params.toArray());
+
+        // 2. Adicionar ordenação e paginação
+        // ... (código da paginação permanece o mesmo) ...
+
+        // 3. Obter o conteúdo da página
+        // ATENÇÃO AQUI: Mude para List<Produto> e use o produtoRowMapper()
+        List<Produto> content = jdbcTemplate.query(
+                sql.toString(),
+                produtoRowMapper(), // Use o row mapper de entidade existente
+                params.toArray()
+        );
+
+        // 4. Construir o DTO de resposta paginada
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        int numberOfElements = content.size();
+        boolean isFirst = (page == 0);
+        boolean isLast = (totalPages == 0) || (page == totalPages - 1);
+
+        // --- INÍCIO DA CORREÇÃO ---
+        // Ajustando a ordem dos argumentos para o @AllArgsConstructor
+        return new PaginatedResponseDTO<Produto>(
+                content,            // 1. content
+                page,               // 2. page
+                size,               // 3. size
+                totalPages,         // 4. totalPages
+                totalElements.longValue(), // 5. totalElements
+                isFirst,            // 6. first
+                isLast,             // 7. last
+                numberOfElements    // 8. number
+        );
+    }
+
+    public List<Produto> findLowStockProducts() {
+        String sql = "SELECT * FROM Produto WHERE estoque <= estoque_minimo AND estoque > 0 AND status = 'ATIVO'";
+        return jdbcTemplate.query(sql, produtoRowMapper());
+    }
+
+    public List<Produto> findOutOfStockProducts() {
+        String sql = "SELECT * FROM Produto WHERE estoque <= 0 AND status = 'ATIVO'";
+        return jdbcTemplate.query(sql, produtoRowMapper());
+    }
+
+    public Long countActiveProducts() {
+        String sql = "SELECT COUNT(*) FROM Produto WHERE status = 'ATIVO'";
+        return jdbcTemplate.queryForObject(sql, Long.class);
+    }
+
+    public BigDecimal findTotalStockValue() {
+        String sql = "SELECT SUM(estoque * preco_custo) FROM Produto WHERE status = 'ATIVO'";
+        return jdbcTemplate.queryForObject(sql, BigDecimal.class);
+    }
+
+    public Long countLowStockProducts() {
+        String sql = "SELECT COUNT(*) FROM Produto WHERE estoque <= estoque_minimo AND estoque > 0 AND status = 'ATIVO'";
+        return jdbcTemplate.queryForObject(sql, Long.class);
+    }
+
+    public Long countOutOfStockProducts() {
+        String sql = "SELECT COUNT(*) FROM Produto WHERE estoque <= 0 AND status = 'ATIVO'";
+        return jdbcTemplate.queryForObject(sql, Long.class);
     }
 
     @Override

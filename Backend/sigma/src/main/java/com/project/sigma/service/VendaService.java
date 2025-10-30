@@ -2,16 +2,8 @@ package com.project.sigma.service;
 
 import com.project.sigma.dto.VendaRequestDTO;
 import com.project.sigma.dto.VendaResponseDTO;
-import com.project.sigma.model.Produto;
-import com.project.sigma.model.Venda;
-import com.project.sigma.model.VendaItem;
-import com.project.sigma.model.Funcionario;
-import com.project.sigma.model.Cliente;
-import com.project.sigma.repository.VendaRepository;
-import com.project.sigma.repository.VendaItemRepository;
-import com.project.sigma.repository.ProdutoRepository;
-import com.project.sigma.repository.FuncionarioRepository;
-import com.project.sigma.repository.ClienteRepository;
+import com.project.sigma.model.*;
+import com.project.sigma.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +37,9 @@ public class VendaService {
 
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private MovimentacaoEstoqueRepository movimentacaoEstoqueRepository;
 
     /**
      * Cria uma nova venda com todos os itens e atualiza o estoque
@@ -140,10 +135,24 @@ public class VendaService {
             System.out.println("  📦 Item adicionado: " + produto.getNome() + " (qtd: " + itemDTO.getQuantidade() + ")");
 
             // Atualizar estoque do produto
-            int novoEstoque = produto.getEstoque() - itemDTO.getQuantidade();
+            int estoqueAnterior = produto.getEstoque(); // Pega o estoque ANTES da mudança
+            int novoEstoque = estoqueAnterior - itemDTO.getQuantidade();
             produto.setEstoque(novoEstoque);
             produtoRepository.save(produto);
-            System.out.println("  📉 Estoque atualizado: " + produto.getNome() + " (novo estoque: " + novoEstoque + ")");
+
+            MovimentacaoEstoque movimentacao = new MovimentacaoEstoque();
+            movimentacao.setId_produto(produto.getId_produto());
+            movimentacao.setId_usuario(venda.getId_funcionario()); // O funcionário que realizou a venda
+            movimentacao.setData_movimentacao(LocalDateTime.now());
+            movimentacao.setTipo(MovimentacaoEstoque.TipoMovimentacao.SALE);
+            movimentacao.setQuantidade(-itemDTO.getQuantidade()); // <-- CORREÇÃO 2 (valor negativo)
+            movimentacao.setEstoque_anterior(estoqueAnterior);
+            movimentacao.setEstoque_atual(novoEstoque); // Use a variável que já calculamos
+            movimentacao.setObservacao("Venda ID: " + venda.getId_venda());
+
+            movimentacaoEstoqueRepository.save(movimentacao);
+
+            System.out.println("  🧾 Movimentação de estoque registrada para Venda ID: " + venda.getId_venda());
         }
 
         System.out.println("✅ Venda processada com sucesso!");
@@ -229,9 +238,24 @@ public class VendaService {
             Optional<Produto> produtoOpt = produtoRepository.findById(item.getId_produto());
             if (produtoOpt.isPresent()) {
                 Produto produto = produtoOpt.get();
-                int novoEstoque = produto.getEstoque() + item.getQuantidade();
+                int estoqueAnterior = produto.getEstoque();
+                int novoEstoque = estoqueAnterior + item.getQuantidade();
                 produto.setEstoque(novoEstoque);
                 produtoRepository.save(produto);
+
+                // Registrar a movimentação de devolução/cancelamento
+                MovimentacaoEstoque movimentacao = new MovimentacaoEstoque();
+                movimentacao.setId_produto(produto.getId_produto());
+                movimentacao.setId_usuario(venda.getId_funcionario()); // Funcionário que processou o cancelamento
+                movimentacao.setData_movimentacao(LocalDateTime.now());
+                movimentacao.setTipo(MovimentacaoEstoque.TipoMovimentacao.RETURN); // Entrada por devolução
+                movimentacao.setQuantidade(item.getQuantidade()); // Positivo, pois é uma entrada
+                movimentacao.setEstoque_anterior(estoqueAnterior);
+                movimentacao.setEstoque_atual(novoEstoque);
+                movimentacao.setObservacao("Cancelamento Venda ID: " + idVenda);
+
+                movimentacaoEstoqueRepository.save(movimentacao);
+
                 System.out.println("  📈 Estoque devolvido: " + produto.getNome() + " (novo estoque: " + novoEstoque + ")");
             }
         }

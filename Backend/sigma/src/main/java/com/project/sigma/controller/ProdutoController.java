@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.project.sigma.dto.PaginatedResponseDTO;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProdutoController {
@@ -18,24 +20,17 @@ public class ProdutoController {
     private ProdutoService produtoService;
 
     @GetMapping
-    public PaginatedResponseDTO<ProdutoResponseDTO> listarProdutos(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(required = false) String search,
-        @RequestParam(required = false) Long categoryId,
-        @RequestParam(required = false) Long categoriaId, // ADICIONADO: para compatibilidade com frontend
-        @RequestParam(required = false) String status
-    ) {
-        // CORRIGIDO: usar categoriaId se categoryId for null
-        Long finalCategoryId = categoryId != null ? categoryId : categoriaId;
+    public ResponseEntity<PaginatedResponseDTO<ProdutoResponseDTO>> getProdutos(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
-        System.out.println("📦 GET /api/products - Listando produtos com paginação");
-        System.out.println("   📄 Parâmetros: page=" + page + ", size=" + size + ", search=" + search + ", categoryId=" + categoryId + ", categoriaId=" + categoriaId + ", finalCategoryId=" + finalCategoryId + ", status=" + status);
-
-        PaginatedResponseDTO<ProdutoResponseDTO> response = produtoService.buscarProdutosComPaginacao(page, size, search, finalCategoryId, status);
-
-        System.out.println("📤 Retornando resposta paginada");
-        return response;
+        PaginatedResponseDTO<ProdutoResponseDTO> response = produtoService.getProdutosPaginados(
+                nome, status, categoriaId, page, size
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/estoque-baixo")
