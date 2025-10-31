@@ -105,8 +105,7 @@ public class StockService {
                 CreateStockMovementRequest adjustmentRequest = new CreateStockMovementRequest();
                 adjustmentRequest.setProductId(item.getProductId());
                 adjustmentRequest.setType("ADJUSTMENT");
-                // Lembre-se que nossa lógica de ADJUSTMENT espera a *nova* quantidade total
-                adjustmentRequest.setQuantity(countedQuantity);
+                adjustmentRequest.setQuantity(discrepancy);
                 adjustmentRequest.setReason("Ajuste de Inventário");
 
                 MovimentacaoEstoque movimentacao = this.createStockMovement(adjustmentRequest);
@@ -172,6 +171,7 @@ public class StockService {
 
             case OUT:
             case LOSS:
+            case SALE:
                 if (estoqueAnterior < quantidade) {
                     throw new IllegalArgumentException("Estoque insuficiente para " + produto.getNome() +
                             ". Disponível: " + estoqueAnterior + ", Solicitado: " + quantidade);
@@ -181,9 +181,9 @@ public class StockService {
                 break;
 
             case ADJUSTMENT:
-                // No frontend, "stockAdjustment" envia a NOVA quantidade total
-                estoqueAtual = quantidade;
-                quantidadeMovimentada = estoqueAtual - estoqueAnterior; // O delta
+                // 'quantidade' agora é o delta (ex: -5 ou +10)
+                estoqueAtual = estoqueAnterior + quantidade;
+                quantidadeMovimentada = quantidade; // Salva o delta
                 break;
 
             default:
