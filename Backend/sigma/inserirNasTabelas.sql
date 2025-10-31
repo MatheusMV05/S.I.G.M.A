@@ -885,47 +885,47 @@ INSERT INTO VendaItem (id_venda, id_produto, quantidade, preco_unitario_venda, d
 
 -- Entradas de estoque (recebimento de fornecedores)
 INSERT INTO MovimentacaoEstoque (id_produto, id_usuario, data_movimentacao, tipo, quantidade, estoque_anterior, estoque_atual, observacao) VALUES
-                                                                                                                                               (1, 3, '2025-10-01 08:00:00', 'ENTRADA', 200, 50, 250, 'Recebimento fornecedor Grãos Brasil'),
-                                                                                                                                               (2, 3, '2025-10-01 08:00:00', 'ENTRADA', 250, 100, 350, 'Recebimento fornecedor Grãos Brasil'),
-                                                                                                                                               (11, 3, '2025-10-02 09:00:00', 'ENTRADA', 300, 100, 400, 'Recebimento fornecedor Bebidas Brasil'),
-                                                                                                                                               (21, 3, '2025-10-02 09:00:00', 'ENTRADA', 400, 200, 600, 'Recebimento fornecedor Higiene Total'),
-                                                                                                                                               (31, 3, '2025-10-03 08:30:00', 'ENTRADA', 500, 200, 700, 'Recebimento fornecedor Higiene Total'),
-                                                                                                                                               (41, 3, '2025-10-04 10:00:00', 'ENTRADA', 50, 10, 60, 'Recebimento fornecedor Eletrônicos Mega'),
+                                                                                                                                               (1, 3, '2025-10-01 08:00:00', 'IN', 200, 50, 250, 'Recebimento fornecedor Grãos Brasil'),
+                                                                                                                                               (2, 3, '2025-10-01 08:00:00', 'IN', 250, 100, 350, 'Recebimento fornecedor Grãos Brasil'),
+                                                                                                                                               (11, 3, '2025-10-02 09:00:00', 'IN', 300, 100, 400, 'Recebimento fornecedor Bebidas Brasil'),
+                                                                                                                                               (21, 3, '2025-10-02 09:00:00', 'IN', 400, 200, 600, 'Recebimento fornecedor Higiene Total'),
+                                                                                                                                               (31, 3, '2025-10-03 08:30:00', 'IN', 500, 200, 700, 'Recebimento fornecedor Higiene Total'),
+                                                                                                                                               (41, 3, '2025-10-04 10:00:00', 'IN', 50, 10, 60, 'Recebimento fornecedor Eletrônicos Mega'),
 
 -- Saídas por vendas (últimas vendas)
-                                                                                                                                               (1, 1, '2025-10-01 09:30:00', 'SAIDA_VENDA', 2, 250, 248, 'Venda #1'),
-                                                                                                                                               (11, 1, '2025-10-01 09:30:00', 'SAIDA_VENDA', 3, 400, 397, 'Venda #1'),
-                                                                                                                                               (21, 1, '2025-10-01 09:30:00', 'SAIDA_VENDA', 10, 600, 590, 'Venda #1'),
-                                                                                                                                               (31, 1, '2025-10-01 09:30:00', 'SAIDA_VENDA', 5, 700, 695, 'Venda #1'),
+                                                                                                                                               (1, 1, '2025-10-01 09:30:00', 'SALE', -2, 250, 248, 'Venda #1'),
+                                                                                                                                               (11, 1, '2025-10-01 09:30:00', 'SALE', -3, 400, 397, 'Venda #1'),
+                                                                                                                                               (21, 1, '2025-10-01 09:30:00', 'SALE', -10, 600, 590, 'Venda #1'),
+                                                                                                                                               (31, 1, '2025-10-01 09:30:00', 'SALE', -5, 700, 695, 'Venda #1'),
 
-                                                                                                                                               (41, 1, '2025-10-01 11:15:00', 'SAIDA_VENDA', 1, 60, 59, 'Venda #2'),
-                                                                                                                                               (42, 1, '2025-10-01 11:15:00', 'SAIDA_VENDA', 2, 50, 48, 'Venda #2'),
-                                                                                                                                               (43, 1, '2025-10-01 11:15:00', 'SAIDA_VENDA', 3, 80, 77, 'Venda #2'),
-                                                                                                                                               (51, 1, '2025-10-01 11:15:00', 'SAIDA_VENDA', 10, 150, 140, 'Venda #2'),
+                                                                                                                                               (41, 1, '2025-10-01 11:15:00', 'SALE', -1, 60, 59, 'Venda #2'),
+                                                                                                                                               (42, 1, '2025-10-01 11:15:00', 'SALE', -2, 50, 48, 'Venda #2'),
+                                                                                                                                               (43, 1, '2025-10-01 11:15:00', 'SALE', -3, 80, 77, 'Venda #2'),
+                                                                                                                                               (51, 1, '2025-10-01 11:15:00', 'SALE', -10, 150, 140, 'Venda #2'),
 
 -- Saídas de venda grande (PJ)
-                                                                                                                                               (1, 1, '2025-10-02 10:00:00', 'SAIDA_VENDA', 50, 248, 198, 'Venda #3 - PJ'),
-                                                                                                                                               (2, 1, '2025-10-02 10:00:00', 'SAIDA_VENDA', 50, 350, 300, 'Venda #3 - PJ'),
-                                                                                                                                               (3, 1, '2025-10-02 10:00:00', 'SAIDA_VENDA', 100, 180, 80, 'Venda #3 - PJ'),
-                                                                                                                                               (4, 1, '2025-10-02 10:00:00', 'SAIDA_VENDA', 80, 220, 140, 'Venda #3 - PJ'),
-                                                                                                                                               (11, 1, '2025-10-02 10:00:00', 'SAIDA_VENDA', 200, 397, 197, 'Venda #3 - PJ'),
-                                                                                                                                               (21, 1, '2025-10-02 10:00:00', 'SAIDA_VENDA', 150, 590, 440, 'Venda #3 - PJ'),
+                                                                                                                                               (1, 1, '2025-10-02 10:00:00', 'SALE', -50, 248, 198, 'Venda #3 - PJ'),
+                                                                                                                                               (2, 1, '2025-10-02 10:00:00', 'SALE', -50, 350, 300, 'Venda #3 - PJ'),
+                                                                                                                                               (3, 1, '2025-10-02 10:00:00', 'SALE', -100, 180, 80, 'Venda #3 - PJ'),
+                                                                                                                                               (4, 1, '2025-10-02 10:00:00', 'SALE', -80, 220, 140, 'Venda #3 - PJ'),
+                                                                                                                                               (11, 1, '2025-10-02 10:00:00', 'SALE', -200, 397, 197, 'Venda #3 - PJ'),
+                                                                                                                                               (21, 1, '2025-10-02 10:00:00', 'SALE', -150, 590, 440, 'Venda #3 - PJ'),
 
 -- Ajustes de estoque
-                                                                                                                                               (15, 3, '2025-10-05 10:00:00', 'AJUSTE_NEGATIVO', 3, 150, 147, 'Produtos vencidos descartados'),
-                                                                                                                                               (35, 3, '2025-10-08 09:00:00', 'AJUSTE_POSITIVO', 20, 200, 220, 'Correção inventário'),
-                                                                                                                                               (55, 3, '2025-10-10 11:00:00', 'AJUSTE_NEGATIVO', 5, 150, 145, 'Produtos danificados'),
+                                                                                                                                               (15, 3, '2025-10-05 10:00:00', 'ADJUSTMENT', -3, 150, 147, 'Produtos vencidos descartados'),
+                                                                                                                                               (35, 3, '2025-10-08 09:00:00', 'ADJUSTMENT', 20, 200, 220, 'Correção inventário'),
+                                                                                                                                               (55, 3, '2025-10-10 11:00:00', 'LOSS', -5, 150, 145, 'Produtos danificados'),
 
 -- Devoluções
-                                                                                                                                               (41, 1, '2025-10-12 15:00:00', 'DEVOLUCAO', 1, 59, 60, 'Devolução cliente - defeito'),
-                                                                                                                                               (71, 1, '2025-10-15 14:00:00', 'DEVOLUCAO', 2, 78, 80, 'Devolução cliente - arrependimento'),
+                                                                                                                                               (41, 1, '2025-10-12 15:00:00', 'RETURN', 1, 59, 60, 'Devolução cliente - defeito'),
+                                                                                                                                               (71, 1, '2025-10-15 14:00:00', 'RETURN', 2, 78, 80, 'Devolução cliente - arrependimento'),
 
 -- Mais saídas recentes
-                                                                                                                                               (1, 1, '2025-10-23 09:15:00', 'SAIDA_VENDA', 2, 198, 196, 'Venda #24'),
-                                                                                                                                               (2, 1, '2025-10-23 10:30:00', 'SAIDA_VENDA', 80, 300, 220, 'Venda #25 - PJ'),
-                                                                                                                                               (11, 1, '2025-10-23 10:30:00', 'SAIDA_VENDA', 194, 197, 3, 'Venda #25 - ESTOQUE CRÍTICO!'),
-                                                                                                                                               (41, 1, '2025-10-23 09:15:00', 'SAIDA_VENDA', 1, 60, 59, 'Venda #24'),
-                                                                                                                                               (42, 1, '2025-10-23 09:15:00', 'SAIDA_VENDA', 1, 48, 47, 'Venda #24');
+                                                                                                                                               (1, 1, '2025-10-23 09:15:00', 'SALE', -2, 198, 196, 'Venda #24'),
+                                                                                                                                               (2, 1, '2025-10-23 10:30:00', 'SALE', -80, 300, 220, 'Venda #25 - PJ'),
+                                                                                                                                               (11, 1, '2025-10-23 10:30:00', 'SALE', -194, 197, 3, 'Venda #25 - ESTOQUE CRÍTICO!'),
+                                                                                                                                               (41, 1, '2025-10-23 09:15:00', 'SALE', -1, 60, 59, 'Venda #24'),
+                                                                                                                                               (42, 1, '2025-10-23 09:15:00', 'SALE', -1, 48, 47, 'Venda #24');
 
 -- =================================================================
 -- 17. METAS DE VENDAS (5 registros)

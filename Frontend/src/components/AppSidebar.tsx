@@ -72,7 +72,7 @@ const menuItems = [
     roles: ['ADMIN', 'MANAGER', 'STOCK'] as UserRole[],
   },
   {
-    title: 'Estoque',
+    title: 'Movimentações',
     url: '/inventory',
     icon: Warehouse,
     roles: ['ADMIN', 'MANAGER', 'SUPERVISOR', 'STOCK'] as UserRole[],

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,177 +8,79 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
 import {
-  Package,
-  AlertTriangle,
   TrendingUp,
   TrendingDown,
   Plus,
-  Minus,
   Search,
-  Filter,
   Download,
-  Upload,
-  Edit,
-  Trash2,
-  Eye,
-  BarChart3,
-  ShoppingCart,
-  Truck,
-  Clock,
-  CheckCircle,
-  XCircle,
+  Calendar as CalendarIcon,
   RefreshCw,
-  Calendar,
-  DollarSign,
-  Archive,
-  PackageCheck,
-  PackageX
+  User,
+  FileText,
+  ArrowUpDown,
+  BarChart3,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { stockService } from '@/services/stockService';
+import { productBackendService } from '@/services/productBackendService';
 
-// Mock data para produtos do inventário
-const inventoryProducts = [
-  {
-    id: '7891234567890',
-    name: 'Arroz Branco Tio João 5kg',
-    category: 'Grãos e Cereais',
-    currentStock: 45,
-    minStock: 20,
-    maxStock: 100,
-    avgConsumption: 8, // por dia
-    lastMovement: '2024-12-08',
-    location: 'A-01-003',
-    supplier: 'Distribuidora Alimentos Ltda',
-    costPrice: 12.50,
-    sellPrice: 18.90,
-    status: 'normal'
-  },
-  {
-    id: '7891234567891',
-    name: 'Açúcar Cristal União 1kg',
-    category: 'Grãos e Cereais',
-    currentStock: 8,
-    minStock: 25,
-    maxStock: 80,
-    avgConsumption: 12,
-    lastMovement: '2024-12-07',
-    location: 'A-02-001',
-    supplier: 'Distribuidora Alimentos Ltda',
-    costPrice: 3.20,
-    sellPrice: 4.99,
-    status: 'low'
-  },
-  {
-    id: '7891234567892',
-    name: 'Óleo de Soja Soya 900ml',
-    category: 'Óleos e Gorduras',
-    currentStock: 0,
-    minStock: 15,
-    maxStock: 50,
-    avgConsumption: 6,
-    lastMovement: '2024-12-05',
-    location: 'B-01-002',
-    supplier: 'Distribuidora Alimentos Ltda',
-    costPrice: 6.80,
-    sellPrice: 9.90,
-    status: 'out'
-  },
-  {
-    id: '7891234567893',
-    name: 'Leite Integral Parmalat 1L',
-    category: 'Laticínios',
-    currentStock: 67,
-    minStock: 30,
-    maxStock: 80,
-    avgConsumption: 15,
-    lastMovement: '2024-12-08',
-    location: 'C-01-001',
-    supplier: 'Laticínios Sul',
-    costPrice: 4.20,
-    sellPrice: 6.50,
-    status: 'normal'
-  },
-  {
-    id: '7891234567894',
-    name: 'Detergente Ypê 500ml',
-    category: 'Limpeza',
-    currentStock: 12,
-    minStock: 20,
-    maxStock: 60,
-    avgConsumption: 4,
-    lastMovement: '2024-12-06',
-    location: 'D-01-003',
-    supplier: 'Produtos de Limpeza Ltda',
-    costPrice: 2.80,
-    sellPrice: 4.25,
-    status: 'low'
-  }
-];
+interface Product {
+  id_produto: number;
+  nome: string;
+  estoque: number;
+}
 
-// Mock data para movimentações
-const movements = [
-  {
-    id: '1',
-    productId: '7891234567890',
-    productName: 'Arroz Branco Tio João 5kg',
-    type: 'entrada',
-    quantity: 24,
-    date: '2024-12-08T10:30:00',
-    user: 'João Silva',
-    reason: 'Recebimento de fornecedor',
-    reference: 'NF-001234'
-  },
-  {
-    id: '2',
-    productId: '7891234567891',
-    productName: 'Açúcar Cristal União 1kg',
-    type: 'saida',
-    quantity: 15,
-    date: '2024-12-08T14:22:00',
-    user: 'Maria Costa',
-    reason: 'Venda no PDV',
-    reference: 'VENDA-5678'
-  },
-  {
-    id: '3',
-    productId: '7891234567892',
-    productName: 'Óleo de Soja Soya 900ml',
-    type: 'saida',
-    quantity: 8,
-    date: '2024-12-07T16:45:00',
-    user: 'Pedro Lima',
-    reason: 'Venda no PDV',
-    reference: 'VENDA-5679'
-  },
-  {
-    id: '4',
-    productId: '7891234567893',
-    productName: 'Leite Integral Parmalat 1L',
-    type: 'entrada',
-    quantity: 36,
-    date: '2024-12-07T09:15:00',
-    user: 'João Silva',
-    reason: 'Recebimento de fornecedor',
-    reference: 'NF-001235'
-  }
-];
-
-type InventoryTab = 'products' | 'movements' | 'alerts' | 'reports';
+interface Movement {
+  id_movimentacao: number;
+  id_produto: number;
+  produto?: { nome: string; };
+  id_usuario: number | null;
+  data_movimentacao: string;
+  tipo: 'IN' | 'OUT' | 'ADJUSTMENT' | 'LOSS' | 'RETURN' | 'SALE';
+  quantidade: number;
+  estoque_anterior: number;
+  estoque_atual: number;
+  observacao: string | null;
+  usuario?: { nome: string; };
+}
 
 export default function Inventory() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<InventoryTab>('products');
+  const { toast } = useToast();
+  
+  // Estados
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  
+  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedProduct, setSelectedProduct] = useState<typeof inventoryProducts[0] | null>(null);
-  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [reasonFilter, setReasonFilter] = useState('all');
+  const [userFilter, setUserFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<'date' | 'product' | 'quantity'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(50);
+  const [totalPages, setTotalPages] = useState(0);
+  
+  // Modal
   const [isNewMovementOpen, setIsNewMovementOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newMovement, setNewMovement] = useState({
     productId: '',
     type: '',
@@ -186,17 +88,58 @@ export default function Inventory() {
     reason: '',
     reference: ''
   });
-  const [quickActionProduct, setQuickActionProduct] = useState<typeof inventoryProducts[0] | null>(null);
-  const [quickActionType, setQuickActionType] = useState<'add' | 'remove' | 'restock'>('add');
-  const [quickActionQuantity, setQuickActionQuantity] = useState('');
-  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+  // Carregar movimentações
+  const fetchMovements = async () => {
+    try {
+      setIsLoading(true);
+      const response = await stockService.getStockMovements({
+        page: currentPage,
+        size: pageSize,
+        startDate: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
+        endDate: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined
+      });
+      
+      setMovements(response.content || []);
+      setTotalPages(response.totalPages || 0);
+    } catch (error) {
+      console.error('Erro ao carregar movimentações:', error);
+      toast?.({
+        title: 'Erro',
+        description: 'Não foi possível carregar as movimentações.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Carregar produtos
+  const fetchProducts = async () => {
+    try {
+      setIsLoadingProducts(true);
+      const response = await productBackendService.getProducts({ 
+        page: 0, 
+        size: 1000,
+        active: true 
+      }) as any;
+      setProducts(response.content || []);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovements();
+  }, [currentPage, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (isNewMovementOpen) {
+      fetchProducts();
+    }
+  }, [isNewMovementOpen]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -208,996 +151,519 @@ export default function Inventory() {
     });
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      normal: { label: 'Normal', variant: 'default' as const },
-      low: { label: 'Estoque Baixo', variant: 'secondary' as const },
-      out: { label: 'Em Falta', variant: 'destructive' as const },
-      excess: { label: 'Excesso', variant: 'outline' as const }
+  const getMovementTypeLabel = (tipo: string) => {
+    const types: Record<string, string> = {
+      'IN': 'Entrada',
+      'OUT': 'Saída',
+      'ADJUSTMENT': 'Ajuste',
+      'LOSS': 'Perda',
+      'RETURN': 'Devolução',
+      'SALE': 'Venda'
     };
+    return types[tipo] || tipo;
+  };
+
+  const getMovementIcon = (tipo: string) => {
+    if (tipo === 'IN' || tipo === 'RETURN' || tipo === 'ADJUSTMENT') {
+      return <TrendingUp className="h-3 w-3 mr-1" />;
+    }
+    return <TrendingDown className="h-3 w-3 mr-1" />;
+  };
+
+  const getMovementVariant = (tipo: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (tipo === 'IN' || tipo === 'RETURN' || tipo === 'ADJUSTMENT') {
+      return 'default';
+    }
+    return 'secondary';
+  };
+
+  // Filtrar localmente
+  const filteredMovements = movements.filter((movement) => {
+    const productName = movement.produto?.nome || '';
+    const matchesSearch = 
+      productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      movement.id_produto.toString().includes(searchTerm);
     
-    return statusConfig[status as keyof typeof statusConfig] || statusConfig.normal;
-  };
-
-  const getStockPercentage = (current: number, min: number, max: number) => {
-    return ((current - min) / (max - min)) * 100;
-  };
-
-  const handleSaveMovement = () => {
-    if (!newMovement.productId || !newMovement.type || !newMovement.quantity) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    const product = inventoryProducts.find(p => p.id === newMovement.productId);
-    if (!product) {
-      alert('Produto não encontrado.');
-      return;
-    }
-
-    const movement = {
-      id: (movements.length + 1).toString(),
-      productId: newMovement.productId,
-      productName: product.name,
-      type: newMovement.type as 'entrada' | 'saida',
-      quantity: parseInt(newMovement.quantity),
-      date: new Date().toISOString(),
-      user: user?.name || 'Usuário',
-      reason: newMovement.reason || 'Movimentação manual',
-      reference: newMovement.reference || 'REF-' + Date.now()
-    };
-
-    console.log('Nova movimentação criada:', movement);
+    const matchesType = typeFilter === 'all' || movement.tipo === typeFilter;
+    const matchesReason = reasonFilter === 'all' || (movement.observacao && movement.observacao.includes(reasonFilter));
+    const userName = movement.usuario?.nome || '';
+    const matchesUser = userFilter === 'all' || userName === userFilter;
     
-    setIsNewMovementOpen(false);
-    setNewMovement({
-      productId: '',
-      type: '',
-      quantity: '',
-      reason: '',
-      reference: ''
-    });
+    return matchesSearch && matchesType && matchesReason && matchesUser;
+  });
+
+  // Ordenar
+  const sortedMovements = [...filteredMovements].sort((a, b) => {
+    let comparison = 0;
     
-    alert('Movimentação registrada com sucesso!');
-  };
-
-  const handleQuickAddStock = (product: typeof inventoryProducts[0]) => {
-    setQuickActionProduct(product);
-    setQuickActionType('add');
-    setQuickActionQuantity('');
-    setIsQuickActionOpen(true);
-  };
-
-  const handleQuickRemoveStock = (product: typeof inventoryProducts[0]) => {
-    setQuickActionProduct(product);
-    setQuickActionType('remove');
-    setQuickActionQuantity('');
-    setIsQuickActionOpen(true);
-  };
-
-  const handleQuickRestock = (product: typeof inventoryProducts[0]) => {
-    setQuickActionProduct(product);
-    setQuickActionType('restock');
-    const suggestedQuantity = Math.max(0, product.maxStock - product.currentStock);
-    setQuickActionQuantity(suggestedQuantity.toString());
-    setIsQuickActionOpen(true);
-  };
-
-  const handleConfirmQuickAction = () => {
-    if (!quickActionProduct || !quickActionQuantity) {
-      alert('Por favor, informe a quantidade.');
-      return;
-    }
-
-    const quantity = parseInt(quickActionQuantity);
-    if (quantity <= 0) {
-      alert('A quantidade deve ser maior que zero.');
-      return;
-    }
-
-    let type: 'entrada' | 'saida' = 'entrada';
-    let reason = '';
-
-    switch (quickActionType) {
-      case 'add':
-        type = 'entrada';
-        reason = 'Entrada manual de estoque';
+    switch (sortBy) {
+      case 'date':
+        comparison = new Date(a.data_movimentacao).getTime() - new Date(b.data_movimentacao).getTime();
         break;
-      case 'remove':
-        type = 'saida';
-        reason = 'Saída manual de estoque';
-        if (quantity > quickActionProduct.currentStock) {
-          alert(`Quantidade indisponível. Estoque atual: ${quickActionProduct.currentStock}`);
-          return;
-        }
+      case 'product':
+        comparison = (a.produto?.nome || '').localeCompare(b.produto?.nome || '');
         break;
-      case 'restock':
-        type = 'entrada';
-        reason = 'Reposição de estoque';
+      case 'quantity':
+        comparison = a.quantidade - b.quantidade;
         break;
     }
-
-    const movement = {
-      id: (movements.length + 1).toString(),
-      productId: quickActionProduct.id,
-      productName: quickActionProduct.name,
-      type: type,
-      quantity: quantity,
-      date: new Date().toISOString(),
-      user: user?.name || 'Usuário',
-      reason: reason,
-      reference: 'REF-' + Date.now()
-    };
-
-    console.log('Ação rápida executada:', movement);
-
-    setIsQuickActionOpen(false);
-    setQuickActionProduct(null);
-    setQuickActionQuantity('');
-
-    const actionText = quickActionType === 'add' ? 'Adição' : 
-                      quickActionType === 'remove' ? 'Remoção' : 'Reposição';
-    alert(`${actionText} de estoque registrada com sucesso!`);
-  };
-
-  const getDaysToStockOut = (currentStock: number, avgConsumption: number) => {
-    if (avgConsumption === 0) return '∞';
-    const days = Math.floor(currentStock / avgConsumption);
-    return days <= 0 ? '0' : days.toString();
-  };
-
-  // Filtrar produtos
-  const filteredProducts = inventoryProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.id.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
     
-    return matchesSearch && matchesStatus && matchesCategory;
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
 
   // Estatísticas
-  const totalProducts = inventoryProducts.length;
-  const lowStockProducts = inventoryProducts.filter(p => p.status === 'low').length;
-  const outOfStockProducts = inventoryProducts.filter(p => p.status === 'out').length;
-  const totalValue = inventoryProducts.reduce((sum, p) => sum + (p.currentStock * p.costPrice), 0);
+  const totalEntradas = filteredMovements.filter(m => 
+    m.tipo === 'IN' || m.tipo === 'RETURN' || m.tipo === 'ADJUSTMENT'
+  ).length;
+  
+  const totalSaidas = filteredMovements.filter(m => 
+    m.tipo === 'OUT' || m.tipo === 'SALE' || m.tipo === 'LOSS'
+  ).length;
+  
+  const quantityEntered = filteredMovements
+    .filter(m => m.tipo === 'IN' || m.tipo === 'RETURN' || m.tipo === 'ADJUSTMENT')
+    .reduce((sum, m) => sum + m.quantidade, 0);
+  
+  const quantityExited = filteredMovements
+    .filter(m => m.tipo === 'OUT' || m.tipo === 'SALE' || m.tipo === 'LOSS')
+    .reduce((sum, m) => sum + Math.abs(m.quantidade), 0);
 
-  // Função para abrir inspeção do produto
-  const openProductInspection = (product: typeof inventoryProducts[0]) => {
-    setSelectedProduct(product);
-    setIsInspectionOpen(true);
+  const uniqueUsers = Array.from(new Set(movements.map(m => m.usuario?.nome).filter(Boolean)));
+  const uniqueReasons = Array.from(new Set(movements.map(m => m.observacao).filter(Boolean)));
+
+  const handleSaveMovement = async () => {
+    if (!newMovement.productId || !newMovement.type || !newMovement.quantity) {
+      toast?.({
+        title: 'Campos obrigatórios',
+        description: 'Por favor, preencha todos os campos obrigatórios.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const quantity = parseInt(newMovement.quantity);
+    if (quantity <= 0) {
+      toast?.({
+        title: 'Quantidade inválida',
+        description: 'A quantidade deve ser maior que zero.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      await stockService.createStockMovement({
+        productId: parseInt(newMovement.productId),
+        type: newMovement.type as any,
+        quantity: quantity,
+        reason: newMovement.reason || 'Movimentação manual'
+      });
+
+      toast?.({
+        title: 'Sucesso',
+        description: 'Movimentação registrada com sucesso!',
+        variant: 'default'
+      });
+      
+      setIsNewMovementOpen(false);
+      setNewMovement({
+        productId: '',
+        type: '',
+        quantity: '',
+        reason: '',
+        reference: ''
+      });
+      
+      fetchMovements();
+    } catch (error: any) {
+      console.error('Erro ao salvar movimentação:', error);
+      toast?.({
+        title: 'Erro',
+        description: error.message || 'Não foi possível registrar a movimentação.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Função para fechar inspeção
-  const closeProductInspection = () => {
-    setIsInspectionOpen(false);
-    setSelectedProduct(null);
+  const handleExport = () => {
+    const csvContent = [
+      ['Data/Hora', 'Produto', 'Tipo', 'Quantidade', 'Estoque Anterior', 'Estoque Novo', 'Usuário', 'Observação'],
+      ...sortedMovements.map(m => [
+        formatDate(m.data_movimentacao),
+        m.produto?.nome || '',
+        getMovementTypeLabel(m.tipo),
+        m.quantidade,
+        m.estoque_anterior,
+        m.estoque_atual,
+        m.usuario?.nome || '',
+        m.observacao || ''
+      ])
+    ].map(row => row.join(';')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `movimentacoes_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
   };
 
-  // Calcular histórico de movimentações do produto selecionado
-  const getProductMovements = (productId: string) => {
-    return movements.filter(m => m.productId === productId);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setTypeFilter('all');
+    setReasonFilter('all');
+    setUserFilter('all');
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
+
+  const toggleSort = (field: typeof sortBy) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
   };
 
   return (
     <DesktopOnlyPage
-      title="Controle de Estoque"
-      description="Sistema completo de controle e gestão de estoque com alertas automáticos e relatórios detalhados."
+      title="Movimentações de Estoque"
+      description="Controle completo de todas as entradas e saídas de produtos do estoque com rastreabilidade total."
       features={[
-        "Controle de estoque em tempo real",
-        "Alertas de estoque baixo e produtos vencidos",
-        "Movimentações de entrada e saída",
-        "Relatórios de giro de estoque",
-        "Análise de investimento por produto",
-        "Previsão de reposição automática",
-        "Controle de lotes e validades"
+        "Histórico completo de movimentações",
+        "Filtros avançados por data, tipo, produto e usuário",
+        "Registro de entrada e saída de produtos",
+        "Rastreabilidade de estoque anterior e novo",
+        "Exportação de relatórios em CSV",
+        "Integração em tempo real com o estoque"
       ]}
     >
       <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Gestão de Inventário</h1>
-          <p className="text-muted-foreground mt-1">
-            Controle de estoque em tempo real com alertas automáticos e relatórios detalhados.
-            Controle completo do estoque e movimentações
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            Importar
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-          <Button 
-            className="bg-primary hover:bg-primary-hover"
-            onClick={() => setIsNewMovementOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Movimentação
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total de Produtos</p>
-                <p className="text-2xl font-bold">{totalProducts}</p>
-              </div>
-              <Package className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Estoque Baixo</p>
-                <p className="text-2xl font-bold text-warning">{lowStockProducts}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-warning" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Em Falta</p>
-                <p className="text-2xl font-bold text-destructive">{outOfStockProducts}</p>
-              </div>
-              <PackageX className="h-8 w-8 text-destructive" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
-                <p className="text-xl font-bold text-success">{formatCurrency(totalValue)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-success" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InventoryTab)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="products" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Produtos
-          </TabsTrigger>
-          <TabsTrigger value="movements" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Movimentações
-          </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Alertas
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Relatórios
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Produtos */}
-        <TabsContent value="products" className="space-y-6">
-          {/* Filtros */}
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[300px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos por nome ou código..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Status</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="low">Estoque Baixo</SelectItem>
-                <SelectItem value="out">Em Falta</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas Categorias</SelectItem>
-                <SelectItem value="Grãos e Cereais">Grãos e Cereais</SelectItem>
-                <SelectItem value="Laticínios">Laticínios</SelectItem>
-                <SelectItem value="Limpeza">Limpeza</SelectItem>
-                <SelectItem value="Óleos e Gorduras">Óleos e Gorduras</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Movimentações de Estoque</h1>
+            <p className="text-muted-foreground mt-1">
+              Histórico completo de entradas e saídas com rastreabilidade total
+            </p>
           </div>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+            <Button 
+              className="bg-primary hover:bg-primary-hover"
+              onClick={() => setIsNewMovementOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Movimentação
+            </Button>
+          </div>
+        </div>
 
-          {/* Tabela de Produtos */}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Estoque</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Previsão</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => {
-                    const statusBadge = getStatusBadge(product.status);
-                    const stockPercentage = getStockPercentage(product.currentStock, product.minStock, product.maxStock);
-                    const daysToStockOut = getDaysToStockOut(product.currentStock, product.avgConsumption);
-                    
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="font-medium">{product.name}</p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {product.category}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {product.id}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">{product.currentStock}</span>
-                              <span className="text-sm text-muted-foreground">
-                                / {product.maxStock}
-                              </span>
-                            </div>
-                            <Progress 
-                              value={Math.max(0, Math.min(100, stockPercentage))} 
-                              className="h-1.5 w-24" 
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Min: {product.minStock}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusBadge.variant}>
-                            {statusBadge.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-mono text-sm font-medium">
-                              {product.location}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="text-sm">
-                              {daysToStockOut} dias
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {product.avgConsumption}/dia
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <p className="font-semibold text-success">
-                              {formatCurrency(product.currentStock * product.costPrice)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatCurrency(product.costPrice)} /un
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => openProductInspection(product)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleQuickAddStock(product)}
-                              title="Adicionar ao estoque"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleQuickRemoveStock(product)}
-                              title="Remover do estoque"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total de Movimentações</p>
+                  <p className="text-2xl font-bold">{sortedMovements.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    de {movements.length} no total
+                  </p>
+                </div>
+                <RefreshCw className="h-8 w-8 text-primary" />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Movimentações */}
-        <TabsContent value="movements" className="space-y-6">
+          
           <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Movimentações</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Entradas</p>
+                  <p className="text-2xl font-bold text-success">{totalEntradas}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +{quantityEntered} unidades
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-success" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Saídas</p>
+                  <p className="text-2xl font-bold text-warning">{totalSaidas}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    -{quantityExited} unidades
+                  </p>
+                </div>
+                <TrendingDown className="h-8 w-8 text-warning" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Saldo Líquido</p>
+                  <p className={`text-2xl font-bold ${
+                    (quantityEntered - quantityExited) >= 0 ? 'text-success' : 'text-destructive'
+                  }`}>
+                    {quantityEntered - quantityExited > 0 ? '+' : ''}
+                    {quantityEntered - quantityExited}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    unidades no período
+                  </p>
+                </div>
+                <BarChart3 className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Filtros
+              </CardTitle>
+              {(searchTerm || typeFilter !== 'all' || reasonFilter !== 'all' || userFilter !== 'all' || dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Buscar</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Produto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Tipos</SelectItem>
+                    <SelectItem value="IN">Entrada</SelectItem>
+                    <SelectItem value="OUT">Saída</SelectItem>
+                    <SelectItem value="SALE">Venda</SelectItem>
+                    <SelectItem value="ADJUSTMENT">Ajuste</SelectItem>
+                    <SelectItem value="LOSS">Perda</SelectItem>
+                    <SelectItem value="RETURN">Devolução</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data De</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data Até</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabela de Movimentações */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Movimentações</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : sortedMovements.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Data/Hora</TableHead>
-                    <TableHead>Produto</TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => toggleSort('date')}>
+                      <div className="flex items-center gap-2">
+                        Data/Hora
+                        <ArrowUpDown className="h-4 w-4" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => toggleSort('product')}>
+                      <div className="flex items-center gap-2">
+                        Produto
+                        <ArrowUpDown className="h-4 w-4" />
+                      </div>
+                    </TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Quantidade</TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => toggleSort('quantity')}>
+                      <div className="flex items-center gap-2">
+                        Quantidade
+                        <ArrowUpDown className="h-4 w-4" />
+                      </div>
+                    </TableHead>
+                    <TableHead>Estoque</TableHead>
                     <TableHead>Usuário</TableHead>
-                    <TableHead>Motivo</TableHead>
-                    <TableHead>Referência</TableHead>
+                    <TableHead>Observação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movements.map((movement) => (
-                    <TableRow key={movement.id}>
+                  {sortedMovements.map((movement) => (
+                    <TableRow key={movement.id_movimentacao}>
+                      <TableCell>
+                        <p className="text-sm font-medium">
+                          {formatDate(movement.data_movimentacao)}
+                        </p>
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <p className="text-sm font-medium">
-                            {formatDate(movement.date)}
+                          <p className="font-medium">{movement.produto?.nome || 'Produto não encontrado'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {movement.id_produto}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-medium">{movement.productName}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            {movement.productId}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={movement.type === 'entrada' ? 'default' : 'secondary'}>
-                          {movement.type === 'entrada' ? (
-                            <><TrendingUp className="h-3 w-3 mr-1" /> Entrada</>
-                          ) : (
-                            <><TrendingDown className="h-3 w-3 mr-1" /> Saída</>
-                          )}
+                        <Badge variant={getMovementVariant(movement.tipo)}>
+                          {getMovementIcon(movement.tipo)}
+                          {getMovementTypeLabel(movement.tipo)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className={`font-semibold ${
-                          movement.type === 'entrada' ? 'text-success' : 'text-warning'
+                        <span className={`font-semibold text-lg ${
+                          movement.tipo === 'IN' || movement.tipo === 'RETURN' || movement.tipo === 'ADJUSTMENT'
+                            ? 'text-success' 
+                            : 'text-warning'
                         }`}>
-                          {movement.type === 'entrada' ? '+' : '-'}{movement.quantity}
+                          {movement.quantidade > 0 ? '+' : ''}{movement.quantidade}
                         </span>
                       </TableCell>
-                      <TableCell>{movement.user}</TableCell>
                       <TableCell>
-                        <span className="text-sm">{movement.reason}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Anterior:</span>
+                            <span className="font-semibold">{movement.estoque_anterior}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Novo:</span>
+                            <span className="font-semibold text-primary">{movement.estoque_atual}</span>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-xs">{movement.reference}</span>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{movement.usuario?.nome || 'Sistema'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">{movement.observacao || '-'}</span>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Alertas */}
-        <TabsContent value="alerts" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Produtos em Falta */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PackageX className="h-5 w-5 text-destructive" />
-                  Produtos em Falta
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {inventoryProducts.filter(p => p.status === 'out').map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 border border-destructive/20 rounded-lg bg-destructive/5">
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Última movimentação: {new Date(product.lastMovement).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        className="bg-primary hover:bg-primary-hover"
-                        onClick={() => handleQuickRestock(product)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Repor
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Estoque Baixo */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                  Estoque Baixo
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {inventoryProducts.filter(p => p.status === 'low').map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 border border-warning/20 rounded-lg bg-warning/5">
-                      <div className="flex-1">
-                        <p className="font-medium">{product.name}</p>
-                        <div className="flex items-center gap-4 mt-1">
-                          <p className="text-sm text-muted-foreground">
-                            Atual: <span className="font-semibold">{product.currentStock}</span>
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Mínimo: <span className="font-semibold">{product.minStock}</span>
-                          </p>
-                        </div>
-                        <Progress 
-                          value={(product.currentStock / product.minStock) * 100} 
-                          className="mt-2 h-1.5" 
-                        />
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleQuickRestock(product)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Repor
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Produtos próximos ao vencimento (exemplo) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-orange-500" />
-                Produtos Próximos ao Vencimento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border border-orange-300 rounded-lg bg-orange-100 dark:bg-orange-900/30 dark:border-orange-700">
-                  <div>
-                    <p className="font-medium text-orange-900 dark:text-orange-100">Leite Integral Parmalat 1L</p>
-                    <p className="text-sm text-orange-700 dark:text-orange-300">
-                      Vencimento: 15/12/2024 (7 dias) • Estoque: 15 unidades
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-orange-700 border-orange-600 dark:text-orange-300 dark:border-orange-400">
-                    Urgente
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border border-orange-300 rounded-lg bg-orange-100 dark:bg-orange-900/30 dark:border-orange-700">
-                  <div>
-                    <p className="font-medium text-orange-900 dark:text-orange-100">Iogurte Natural Vigor 170g</p>
-                    <p className="text-sm text-orange-700 dark:text-orange-300">
-                      Vencimento: 18/12/2024 (10 dias) • Estoque: 8 unidades
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-orange-700 border-orange-600 dark:text-orange-300 dark:border-orange-400">
-                    Atenção
-                  </Badge>
-                </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-muted-foreground mb-2">
+                  Nenhuma movimentação encontrada
+                </p>
+                <Button onClick={clearFilters} variant="outline">
+                  Limpar Filtros
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Relatórios */}
-        <TabsContent value="reports" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Giro de Estoque */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Giro de Estoque por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { category: 'Grãos e Cereais', turnover: 8.5, status: 'good' },
-                    { category: 'Laticínios', turnover: 12.3, status: 'excellent' },
-                    { category: 'Bebidas', turnover: 6.2, status: 'average' },
-                    { category: 'Limpeza', turnover: 4.1, status: 'low' }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{item.category}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.turnover} vezes/mês
-                        </p>
-                      </div>
-                      <Badge variant={
-                        item.status === 'excellent' ? 'default' :
-                        item.status === 'good' ? 'secondary' :
-                        item.status === 'average' ? 'outline' : 'destructive'
-                      }>
-                        {item.status === 'excellent' ? 'Excelente' :
-                         item.status === 'good' ? 'Bom' :
-                         item.status === 'average' ? 'Médio' : 'Baixo'}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Investimento por Categoria */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Investimento por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { category: 'Grãos e Cereais', value: 15400, percentage: 35 },
-                    { category: 'Laticínios', value: 12200, percentage: 28 },
-                    { category: 'Bebidas', value: 8900, percentage: 20 },
-                    { category: 'Limpeza', value: 7500, percentage: 17 }
-                  ].map((item, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{item.category}</span>
-                        <span className="font-semibold text-success">
-                          {formatCurrency(item.value)}
-                        </span>
-                      </div>
-                      <Progress value={item.percentage} className="h-2" />
-                      <p className="text-xs text-muted-foreground">
-                        {item.percentage}% do total investido
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+            >
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Página {currentPage + 1} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Próxima
+            </Button>
           </div>
-
-          {/* Produtos com Maior Investimento */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Produtos com Maior Investimento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Estoque</TableHead>
-                    <TableHead>Custo Unit.</TableHead>
-                    <TableHead>Investimento</TableHead>
-                    <TableHead>% do Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventoryProducts
-                    .sort((a, b) => (b.currentStock * b.costPrice) - (a.currentStock * a.costPrice))
-                    .slice(0, 5)
-                    .map((product) => {
-                      const investment = product.currentStock * product.costPrice;
-                      const percentage = (investment / totalValue) * 100;
-                      
-                      return (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">{product.category}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{product.currentStock}</TableCell>
-                          <TableCell>{formatCurrency(product.costPrice)}</TableCell>
-                          <TableCell className="font-semibold text-success">
-                            {formatCurrency(investment)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Progress value={percentage} className="w-16 h-2" />
-                              <span className="text-sm">{percentage.toFixed(1)}%</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Dialog de Inspeção de Produto */}
-      <Dialog open={isInspectionOpen} onOpenChange={setIsInspectionOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedProduct && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <Package className="h-6 w-6 text-primary" />
-                  Inspeção de Produto
-                </DialogTitle>
-                <DialogDescription>
-                  Informações detalhadas e histórico completo do produto selecionado.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6">
-                {/* Informações Básicas */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Informações do Produto</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Nome</Label>
-                          <p className="font-semibold">{selectedProduct.name}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Código</Label>
-                          <p className="font-mono text-sm">{selectedProduct.id}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Categoria</Label>
-                          <Badge variant="outline" className="mt-1">{selectedProduct.category}</Badge>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Status</Label>
-                          <Badge 
-                            variant={getStatusBadge(selectedProduct.status).variant}
-                            className="mt-1"
-                          >
-                            {getStatusBadge(selectedProduct.status).label}
-                          </Badge>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Localização</Label>
-                          <p className="font-mono">{selectedProduct.location}</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Fornecedor</Label>
-                          <p>{selectedProduct.supplier}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Controle de Estoque</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div className="p-3 border rounded-lg">
-                          <p className="text-sm text-muted-foreground">Estoque Atual</p>
-                          <p className="text-2xl font-bold text-primary">{selectedProduct.currentStock}</p>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <p className="text-sm text-muted-foreground">Estoque Mínimo</p>
-                          <p className="text-xl font-semibold text-warning">{selectedProduct.minStock}</p>
-                        </div>
-                        <div className="p-3 border rounded-lg">
-                          <p className="text-sm text-muted-foreground">Estoque Máximo</p>
-                          <p className="text-xl font-semibold text-success">{selectedProduct.maxStock}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">Nível de Estoque</span>
-                          <span className="text-sm text-muted-foreground">
-                            {Math.round(getStockPercentage(selectedProduct.currentStock, selectedProduct.minStock, selectedProduct.maxStock))}%
-                          </span>
-                        </div>
-                        <Progress 
-                          value={Math.max(0, Math.min(100, getStockPercentage(selectedProduct.currentStock, selectedProduct.minStock, selectedProduct.maxStock)))} 
-                          className="h-3" 
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Consumo Médio</Label>
-                          <p className="text-lg font-semibold">{selectedProduct.avgConsumption}/dia</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Previsão de Estoque</Label>
-                          <p className="text-lg font-semibold">
-                            {getDaysToStockOut(selectedProduct.currentStock, selectedProduct.avgConsumption)} dias
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Informações Financeiras */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-success" />
-                      Informações Financeiras
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="p-4 border rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Preço de Custo</p>
-                        <p className="text-xl font-bold text-destructive">
-                          {formatCurrency(selectedProduct.costPrice)}
-                        </p>
-                      </div>
-                      <div className="p-4 border rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Preço de Venda</p>
-                        <p className="text-xl font-bold text-success">
-                          {formatCurrency(selectedProduct.sellPrice)}
-                        </p>
-                      </div>
-                      <div className="p-4 border rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Margem de Lucro</p>
-                        <p className="text-xl font-bold text-primary">
-                          {(((selectedProduct.sellPrice - selectedProduct.costPrice) / selectedProduct.costPrice) * 100).toFixed(1)}%
-                        </p>
-                      </div>
-                      <div className="p-4 border rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Valor Investido</p>
-                        <p className="text-xl font-bold text-warning">
-                          {formatCurrency(selectedProduct.currentStock * selectedProduct.costPrice)}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Histórico de Movimentações */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <RefreshCw className="h-5 w-5 text-primary" />
-                      Histórico de Movimentações
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {getProductMovements(selectedProduct.id).length > 0 ? (
-                      <div className="space-y-3">
-                        {getProductMovements(selectedProduct.id)
-                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                          .map((movement) => (
-                            <div 
-                              key={movement.id} 
-                              className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
-                            >
-                              <div className="flex items-center gap-3">
-                                {movement.type === 'entrada' ? (
-                                  <TrendingUp className="h-5 w-5 text-success" />
-                                ) : (
-                                  <TrendingDown className="h-5 w-5 text-warning" />
-                                )}
-                                <div>
-                                  <p className="font-medium">
-                                    {movement.type === 'entrada' ? 'Entrada' : 'Saída'} de {movement.quantity} unidades
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {formatDate(movement.date)} • {movement.user}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {movement.reason} • Ref: {movement.reference}
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge variant={movement.type === 'entrada' ? 'default' : 'secondary'}>
-                                {movement.type === 'entrada' ? '+' : '-'}{movement.quantity}
-                              </Badge>
-                            </div>
-                          ))
-                        }
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <RefreshCw className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground">
-                          Nenhuma movimentação encontrada para este produto
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Ações Rápidas */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Ações Rápidas</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-3">
-                      <Button className="bg-primary hover:bg-primary-hover">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Estoque
-                      </Button>
-                      <Button variant="outline">
-                        <Minus className="h-4 w-4 mr-2" />
-                        Remover Estoque
-                      </Button>
-                      <Button variant="outline">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar Produto
-                      </Button>
-                      <Button variant="outline">
-                        <Truck className="h-4 w-4 mr-2" />
-                        Solicitar Reposição
-                      </Button>
-                      <Button variant="outline">
-                        <BarChart3 className="h-4 w-4 mr-2" />
-                        Ver Relatórios
-                      </Button>
-                      <Button variant="outline">
-                        <Download className="h-4 w-4 mr-2" />
-                        Exportar Dados
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
 
       {/* Modal Nova Movimentação */}
       <Dialog open={isNewMovementOpen} onOpenChange={setIsNewMovementOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nova Movimentação</DialogTitle>
+            <DialogTitle>Nova Movimentação de Estoque</DialogTitle>
             <DialogDescription>
               Registre uma nova movimentação de entrada ou saída no estoque.
             </DialogDescription>
@@ -1214,71 +680,63 @@ export default function Inventory() {
                   <SelectValue placeholder="Selecione um produto" />
                 </SelectTrigger>
                 <SelectContent>
-                  {inventoryProducts.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
-                    </SelectItem>
-                  ))}
+                  {isLoadingProducts ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    products.map((product) => (
+                      <SelectItem key={product.id_produto} value={product.id_produto.toString()}>
+                        {product.nome} (Estoque: {product.estoque})
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo de Movimentação *</Label>
-              <Select
-                value={newMovement.type}
-                onValueChange={(value) => setNewMovement(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="entrada">Entrada</SelectItem>
-                  <SelectItem value="saida">Saída</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Tipo *</Label>
+                <Select
+                  value={newMovement.type}
+                  onValueChange={(value) => setNewMovement(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IN">Entrada</SelectItem>
+                    <SelectItem value="OUT">Saída</SelectItem>
+                    <SelectItem value="SALE">Venda</SelectItem>
+                    <SelectItem value="ADJUSTMENT">Ajuste</SelectItem>
+                    <SelectItem value="LOSS">Perda</SelectItem>
+                    <SelectItem value="RETURN">Devolução</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantidade *</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={newMovement.quantity}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, quantity: e.target.value }))}
+                  placeholder="Ex: 10"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="quantity">Quantidade *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={newMovement.quantity}
-                onChange={(e) => setNewMovement(prev => ({ ...prev, quantity: e.target.value }))}
-                placeholder="Digite a quantidade"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reason">Motivo</Label>
-              <Select
+              <Label htmlFor="reason">Observação</Label>
+              <Textarea
+                id="reason"
                 value={newMovement.reason}
-                onValueChange={(value) => setNewMovement(prev => ({ ...prev, reason: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o motivo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Recebimento de fornecedor">Recebimento de fornecedor</SelectItem>
-                  <SelectItem value="Venda no PDV">Venda no PDV</SelectItem>
-                  <SelectItem value="Devolução de cliente">Devolução de cliente</SelectItem>
-                  <SelectItem value="Transferência">Transferência</SelectItem>
-                  <SelectItem value="Ajuste de inventário">Ajuste de inventário</SelectItem>
-                  <SelectItem value="Perda/Avaria">Perda/Avaria</SelectItem>
-                  <SelectItem value="Outros">Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reference">Referência</Label>
-              <Input
-                id="reference"
-                value={newMovement.reference}
-                onChange={(e) => setNewMovement(prev => ({ ...prev, reference: e.target.value }))}
-                placeholder="Ex: NF-001234, VENDA-5678"
+                onChange={(e) => setNewMovement(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Motivo da movimentação..."
+                rows={3}
               />
             </div>
           </div>
@@ -1287,106 +745,30 @@ export default function Inventory() {
             <Button
               variant="outline"
               onClick={() => setIsNewMovementOpen(false)}
+              disabled={isSaving}
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSaveMovement}
               className="bg-primary hover:bg-primary-hover"
+              disabled={isSaving}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Registrar Movimentação
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Ação Rápida */}
-      <Dialog open={isQuickActionOpen} onOpenChange={setIsQuickActionOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {quickActionType === 'add' ? 'Adicionar Estoque' : 
-               quickActionType === 'remove' ? 'Remover Estoque' : 
-               'Repor Estoque'}
-            </DialogTitle>
-            <DialogDescription>
-              {quickActionProduct && (
+              {isSaving ? (
                 <>
-                  <span className="font-medium">{quickActionProduct.name}</span>
-                  <br />
-                  <span className="text-sm">Estoque atual: {quickActionProduct.currentStock}</span>
-                  {quickActionType === 'restock' && (
-                    <span className="text-sm block">Estoque máximo: {quickActionProduct.maxStock}</span>
-                  )}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="quick-quantity">
-                Quantidade {quickActionType === 'remove' ? 'a remover' : 'a adicionar'} *
-              </Label>
-              <Input
-                id="quick-quantity"
-                type="number"
-                min="1"
-                max={quickActionType === 'remove' ? quickActionProduct?.currentStock : undefined}
-                value={quickActionQuantity}
-                onChange={(e) => setQuickActionQuantity(e.target.value)}
-                placeholder="Digite a quantidade"
-              />
-              {quickActionType === 'remove' && quickActionProduct && (
-                <p className="text-sm text-muted-foreground">
-                  Máximo disponível: {quickActionProduct.currentStock}
-                </p>
-              )}
-              {quickActionType === 'restock' && quickActionProduct && (
-                <p className="text-sm text-muted-foreground">
-                  Sugerido para atingir estoque máximo: {Math.max(0, quickActionProduct.maxStock - quickActionProduct.currentStock)}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsQuickActionOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmQuickAction}
-              className={
-                quickActionType === 'remove' 
-                  ? "bg-destructive hover:bg-destructive/90" 
-                  : "bg-primary hover:bg-primary-hover"
-              }
-            >
-              {quickActionType === 'add' ? (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar
-                </>
-              ) : quickActionType === 'remove' ? (
-                <>
-                  <Minus className="h-4 w-4 mr-2" />
-                  Remover
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Repor
+                  Registrar
                 </>
               )}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  </DesktopOnlyPage>
-);
+    </DesktopOnlyPage>
+  );
 }

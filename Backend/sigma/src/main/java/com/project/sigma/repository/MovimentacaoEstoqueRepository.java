@@ -201,7 +201,7 @@ public class MovimentacaoEstoqueRepository implements BaseRepository<Movimentaca
                 "GROUP BY tipo";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            MovimentacaoEstoque.TipoMovimentacao tipo = MovimentacaoEstoque.TipoMovimentacao.valueOf(rs.getString("tipo"));
+            MovimentacaoEstoque.TipoMovimentacao tipo = mapTipoMovimentacao(rs.getString("tipo"));
             long count = rs.getLong("count");
             long totalQuantity = rs.getLong("totalQuantity");
             return Map.entry(tipo, new MovementSummaryDTO(count, totalQuantity));
@@ -311,7 +311,7 @@ public class MovimentacaoEstoqueRepository implements BaseRepository<Movimentaca
                 movimentacao.setData_movimentacao(timestamp.toLocalDateTime());
             }
 
-            movimentacao.setTipo(MovimentacaoEstoque.TipoMovimentacao.valueOf(rs.getString("tipo")));
+            movimentacao.setTipo(mapTipoMovimentacao(rs.getString("tipo")));
             movimentacao.setQuantidade(rs.getInt("quantidade"));
             movimentacao.setEstoque_anterior(rs.getInt("estoque_anterior"));
             movimentacao.setEstoque_atual(rs.getInt("estoque_atual"));
@@ -319,5 +319,40 @@ public class MovimentacaoEstoqueRepository implements BaseRepository<Movimentaca
 
             return movimentacao;
         };
+    }
+
+    /**
+     * Mapeia valores antigos do enum para os novos valores
+     * Mantém compatibilidade com dados existentes no banco
+     */
+    private MovimentacaoEstoque.TipoMovimentacao mapTipoMovimentacao(String tipo) {
+        if (tipo == null) {
+            return null;
+        }
+        
+        // Mapeamento de valores antigos para novos
+        switch (tipo.toUpperCase()) {
+            case "ENTRADA":
+                return MovimentacaoEstoque.TipoMovimentacao.IN;
+            case "SAIDA_VENDA":
+                return MovimentacaoEstoque.TipoMovimentacao.SALE;
+            case "AJUSTE_POSITIVO":
+                return MovimentacaoEstoque.TipoMovimentacao.ADJUSTMENT;
+            case "AJUSTE_NEGATIVO":
+                return MovimentacaoEstoque.TipoMovimentacao.ADJUSTMENT;
+            case "DEVOLUCAO":
+                return MovimentacaoEstoque.TipoMovimentacao.RETURN;
+            // Valores novos (padrão)
+            case "IN":
+            case "OUT":
+            case "ADJUSTMENT":
+            case "LOSS":
+            case "RETURN":
+            case "SALE":
+                return MovimentacaoEstoque.TipoMovimentacao.valueOf(tipo.toUpperCase());
+            default:
+                // Fallback para valores desconhecidos
+                return MovimentacaoEstoque.TipoMovimentacao.ADJUSTMENT;
+        }
     }
 }

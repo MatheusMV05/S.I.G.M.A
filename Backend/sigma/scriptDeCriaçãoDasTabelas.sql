@@ -378,7 +378,7 @@ CREATE TABLE MovimentacaoEstoque (
                                      id_produto BIGINT NOT NULL,
                                      id_usuario BIGINT,
                                      data_movimentacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-                                     tipo ENUM('ENTRADA', 'SAIDA_VENDA', 'AJUSTE_POSITIVO', 'AJUSTE_NEGATIVO', 'DEVOLUCAO') NOT NULL,
+                                     tipo ENUM('IN', 'OUT', 'ADJUSTMENT', 'LOSS', 'RETURN', 'SALE') NOT NULL,
                                      quantidade INT NOT NULL,
                                      estoque_anterior INT NOT NULL,
                                      estoque_atual INT NOT NULL,
@@ -386,7 +386,7 @@ CREATE TABLE MovimentacaoEstoque (
 
                                      FOREIGN KEY (id_produto) REFERENCES Produto(id_produto) ON DELETE CASCADE,
                                      FOREIGN KEY (id_usuario) REFERENCES Usuario(id_pessoa) ON DELETE SET NULL
-) COMMENT 'Log completo de movimentações de estoque.';
+) COMMENT 'Log de movimentações: IN=Entrada, OUT=Saída, ADJUSTMENT=Ajuste, LOSS=Perda, RETURN=Devolução, SALE=Venda';
 
 -- =================================================================
 -- TABELAS DE PROMOÇÕES

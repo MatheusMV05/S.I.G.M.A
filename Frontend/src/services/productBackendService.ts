@@ -17,21 +17,21 @@ export interface ProductBackendRequest {
 }
 
 export interface ProductBackendResponse {
-  idProduto: number;
+  id_produto: number;
   nome: string;
   marca: string;
   descricao: string;
-  precoCusto: number;
-  precoVenda: number;
+  preco_custo: number;
+  preco_venda: number;
   estoque: number;
-  estoqueMinimo: number;
+  estoque_minimo: number;
   status: 'ATIVO' | 'INATIVO';
   categoria: { id: number; nome: string; };
-  codigoBarras?: string;
+  codigo_barras?: string;
   unidade?: string;
   peso?: number;
-  dataCriacao?: string;
-  dataAtualizacao?: string;
+  data_criacao?: string;
+  data_atualizacao?: string;
 }
 
 class ProductBackendService {
