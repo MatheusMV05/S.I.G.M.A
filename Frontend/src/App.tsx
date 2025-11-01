@@ -25,8 +25,6 @@ import PromotionsManagement from "@/pages/PromotionsManagement";
 import UserManagement from "@/pages/UserManagement";
 import Charts from "@/pages/Charts";
 import POS from "@/pages/POS";
-import AdvancedQueries from "@/pages/AdvancedQueries";
-import DatabaseFeatures from "@/pages/DatabaseFeatures";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -111,10 +109,6 @@ function AppRoutes() {
       <Route path="/categories" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><CategoriesManagementBackend /></ProtectedRoute>} />
       <Route path="/promotions" element={<ProtectedRoute requiredRoles={['ADMIN']}><PromotionsManagement /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute requiredRoles={['ADMIN']}><UserManagement /></ProtectedRoute>} />
-
-      {/* Database Features Routes */}
-      <Route path="/consultas-avancadas" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><AdvancedQueries /></ProtectedRoute>} />
-      <Route path="/database-features" element={<ProtectedRoute requiredRoles={['ADMIN']}><DatabaseFeatures /></ProtectedRoute>} />
 
       {/* Páginas de erro */}
       <Route
