@@ -121,5 +121,37 @@ public class StockController {
         return ResponseEntity.ok(stockService.validateStockAvailability(request));
     }
 
+    /**
+     * Endpoint GET /produtos-criticos
+     * Gera relatório completo de produtos críticos utilizando a procedure sp_relatorio_produtos_criticos
+     * Retorna lista de produtos + resumo estatístico
+     */
+    @GetMapping("/produtos-criticos")
+    public ResponseEntity<Map<String, Object>> getRelatorioProdutosCriticos() {
+        System.out.println("🚨 GET /api/stock/produtos-criticos - Gerando relatório de produtos críticos");
+        
+        try {
+            Map<String, Object> relatorio = stockService.gerarRelatorioProdutosCriticos();
+            
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> produtos = (List<Map<String, Object>>) relatorio.get("produtos");
+            
+            System.out.println("✅ Relatório gerado: " + produtos.size() + " produtos críticos encontrados");
+            
+            return ResponseEntity.ok(relatorio);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao gerar relatório de produtos críticos: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Retornar resposta vazia em caso de erro
+            Map<String, Object> emptyResponse = new java.util.HashMap<>();
+            emptyResponse.put("produtos", new java.util.ArrayList<>());
+            emptyResponse.put("resumo", null);
+            emptyResponse.put("erro", e.getMessage());
+            
+            return ResponseEntity.ok(emptyResponse);
+        }
+    }
+
     // TODO: Endpoint GET /export
 }

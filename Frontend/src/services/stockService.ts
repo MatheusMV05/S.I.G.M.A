@@ -26,6 +26,31 @@ export interface CreateStockMovementRequest {
   reason?: string;
 }
 
+export interface ProdutoCritico {
+  idProduto: number;
+  nomeProduto: string;
+  categoria: string;
+  estoqueAtual: number;
+  estoqueMinimo: number;
+  deficit: number;
+  fornecedor: string;
+  telefoneFornecedor: string;
+}
+
+export interface ResumoProdutosCriticos {
+  totalProdutosCriticos: number;
+  criticos: number;
+  urgentes: number;
+  atencao: number;
+  valorTotalReposicao: number;
+  dataHoraRelatorio: string;
+}
+
+export interface RelatorioProdutosCriticos {
+  produtos: ProdutoCritico[];
+  resumo: ResumoProdutosCriticos | null;
+}
+
 export interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;
@@ -109,6 +134,14 @@ class StockService {
       ...params,
       productId: productId.toString()
     });
+  }
+
+  /**
+   * Gera relatório de produtos críticos
+   * Utiliza a procedure sp_relatorio_produtos_criticos
+   */
+  async getRelatorioProdutosCriticos(): Promise<RelatorioProdutosCriticos> {
+    return await apiRequest<RelatorioProdutosCriticos>('/stock/produtos-criticos');
   }
 }
 

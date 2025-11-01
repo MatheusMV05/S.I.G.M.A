@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -179,24 +180,25 @@ public class ProdutoController {
         System.out.println("💰 GET /api/products/calcular-desconto-progressivo - Valor: R$ " + valorTotal);
         
         try {
-            BigDecimal desconto = produtoService.calcularDescontoProgressivo(valorTotal);
-            BigDecimal valorFinal = valorTotal.subtract(desconto);
+            // A função SQL retorna o PERCENTUAL (0.05, 0.10, 0.15)
+            BigDecimal percentualDecimal = produtoService.calcularDescontoProgressivo(valorTotal);
             
-            // Calcula o percentual de desconto
-            BigDecimal percentual = BigDecimal.ZERO;
-            if (valorTotal.compareTo(BigDecimal.ZERO) > 0) {
-                percentual = desconto.divide(valorTotal, 4, BigDecimal.ROUND_HALF_UP)
-                                    .multiply(new BigDecimal("100"));
-            }
+            // Converter percentual para valor absoluto
+            BigDecimal descontoAplicado = valorTotal.multiply(percentualDecimal);
+            BigDecimal valorFinal = valorTotal.subtract(descontoAplicado);
+            
+            // Converter percentual decimal para porcentagem (0.05 -> 5.0)
+            BigDecimal percentualPorcentagem = percentualDecimal.multiply(new BigDecimal("100"));
             
             Map<String, Object> response = new HashMap<>();
             response.put("valorOriginal", valorTotal);
-            response.put("descontoAplicado", desconto);
-            response.put("percentualDesconto", percentual);
-            response.put("valorFinal", valorFinal);
-            response.put("economizado", desconto);
+            response.put("descontoAplicado", descontoAplicado.setScale(2, RoundingMode.HALF_UP));
+            response.put("percentualDesconto", percentualPorcentagem.setScale(2, RoundingMode.HALF_UP));
+            response.put("valorFinal", valorFinal.setScale(2, RoundingMode.HALF_UP));
+            response.put("economizado", descontoAplicado.setScale(2, RoundingMode.HALF_UP));
             
-            System.out.println("✅ Desconto calculado: R$ " + desconto + " (" + percentual.setScale(2, BigDecimal.ROUND_HALF_UP) + "%)");
+            System.out.println("✅ Desconto calculado: R$ " + descontoAplicado.setScale(2, RoundingMode.HALF_UP) 
+                + " (" + percentualPorcentagem.setScale(1, RoundingMode.HALF_UP) + "%)");
             
             return ResponseEntity.ok(response);
         } catch (SQLException e) {

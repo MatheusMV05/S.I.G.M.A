@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useDashboardKPIs } from '@/hooks/useReports';
 import { useLowStockProducts } from '@/hooks/useProducts';
+import { useProdutosCriticos } from '@/hooks/useProdutosCriticos';
 import {
   TrendingUp,
   TrendingDown,
@@ -105,37 +106,6 @@ const hourlyData = [
   { hour: '19h', sales: 44 }
 ];
 
-// Alertas e notificações
-const alerts = [
-  { 
-    id: 1, 
-    type: 'stock', 
-    icon: Package, 
-    title: 'Estoque Baixo', 
-    message: '15 produtos estão abaixo do nível mínimo', 
-    priority: 'high',
-    time: '5 min atrás'
-  },
-  { 
-    id: 2, 
-    type: 'expiry', 
-    icon: Clock, 
-    title: 'Produtos Próximos do Vencimento', 
-    message: '23 itens vencem nos próximos 5 dias', 
-    priority: 'medium',
-    time: '1 hora atrás'
-  },
-  { 
-    id: 3, 
-    type: 'promotion', 
-    icon: Target, 
-    title: 'Promoção Ativa', 
-    message: 'Promoção "Black Week" com 78% de adesão', 
-    priority: 'low',
-    time: '2 horas atrás'
-  }
-];
-
 // Componente KPI Card
 const KPICard = ({ 
   title, 
@@ -208,13 +178,17 @@ const KPICard = ({
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [selectedAlert, setSelectedAlert] = useState<typeof alerts[0] | null>(null);
   
   // Buscar KPIs do dashboard
   const { data: dashboardKPIs, isLoading: isLoadingKPIs, error: kpisError } = useDashboardKPIs();
   
-  // Buscar produtos com estoque baixo
+  // Buscar produtos com estoque baixo (método antigo - será substituído)
   const { data: lowStockProducts, isLoading: isLoadingLowStock } = useLowStockProducts();
+
+  // 🆕 Buscar produtos críticos com procedure SQL
+  const { data: produtosCriticos, isLoading: isLoadingCriticos, error: criticosError } = useProdutosCriticos({
+    refetchInterval: 30000 // Atualiza a cada 30 segundos
+  });
 
   // Dados fallback para desenvolvimento (caso a API não esteja disponível)
   const fallbackKPIs = {
@@ -245,25 +219,6 @@ export default function Dashboard() {
   const handleNewProduct = () => navigate('/products');
   const handleNewCustomer = () => navigate('/customers');
   const handleViewInventory = () => navigate('/inventory');
-
-  // Função para lidar com alertas
-  const handleAlertAction = (alert: typeof alerts[0]) => {
-    setSelectedAlert(alert);
-    
-    switch (alert.type) {
-      case 'stock':
-        navigate('/inventory');
-        break;
-      case 'expiry':
-        navigate('/products');
-        break;
-      case 'promotion':
-        navigate('/promotions');
-        break;
-      default:
-        break;
-    }
-  };
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 bg-background min-h-screen">
@@ -550,53 +505,118 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Alertas e Notificações */}
+            {/* Alertas de Produtos Críticos - Tempo Real */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                  Alertas
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-warning" />
+                    Produtos Críticos
+                    {produtosCriticos && produtosCriticos.resumo && (
+                      <Badge variant="destructive" className="ml-2">
+                        {produtosCriticos.resumo.totalProdutosCriticos}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  {isLoadingCriticos && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="animate-spin">⏳</div>
+                      <span>Atualizando...</span>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {alerts.map((alert) => {
-                    const Icon = alert.icon;
-                    const priorityColors = {
-                      high: 'text-destructive bg-destructive/10',
-                      medium: 'text-warning bg-warning/10',
-                      low: 'text-primary bg-primary/10'
-                    };
-                    
-                    return (
-                      <div 
-                        key={alert.id} 
-                        className="flex gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-all duration-200 hover:scale-[1.02] group"
-                        onClick={() => handleAlertAction(alert)}
-                      >
-                        <div className={`p-2 rounded-lg transition-all duration-200 group-hover:scale-110 ${priorityColors[alert.priority as keyof typeof priorityColors]}`}>
-                          <Icon className="h-4 w-4 group-hover:animate-pulse" />
+                {criticosError ? (
+                  <div className="text-center py-8">
+                    <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">Erro ao carregar produtos críticos</p>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+                      Tentar Novamente
+                    </Button>
+                  </div>
+                ) : isLoadingCriticos ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/30 animate-pulse">
+                        <div className="w-10 h-10 rounded-lg bg-muted" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-muted rounded w-3/4" />
+                          <div className="h-3 bg-muted rounded w-1/2" />
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium text-sm group-hover:text-foreground transition-colors">{alert.title}</p>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                ) : produtosCriticos && produtosCriticos.produtos && produtosCriticos.produtos.length > 0 ? (
+                  <div className="space-y-3">
+                    {produtosCriticos.produtos.slice(0, 5).map((produto, index) => (
+                      <div 
+                        key={index} 
+                        className="flex gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-all duration-200 hover:scale-[1.02] group border-l-4 border-destructive"
+                        onClick={() => navigate('/inventory')}
+                      >
+                        <div className="p-2 rounded-lg transition-all duration-200 group-hover:scale-110 text-destructive bg-destructive/10">
+                          <Package className="h-4 w-4 group-hover:animate-pulse" />
+                        </div>
+                        <div className="flex-1 space-y-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm group-hover:text-foreground transition-colors truncate">
+                              {produto.nomeProduto}
+                            </p>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                           </div>
-                          <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">{alert.message}</p>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">{alert.time}</p>
-                            <Badge 
-                              variant={alert.priority === 'high' ? 'destructive' : alert.priority === 'medium' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {alert.priority === 'high' ? 'Urgente' : alert.priority === 'medium' ? 'Médio' : 'Baixo'}
+                          <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">
+                            {produto.categoria} • Estoque: {produto.estoqueAtual} / Mínimo: {produto.estoqueMinimo}
+                          </p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-muted-foreground truncate">{produto.fornecedor}</p>
+                            <Badge variant="destructive" className="text-xs flex-shrink-0">
+                              Déficit: {produto.deficit}
                             </Badge>
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                    
+                    {produtosCriticos.produtos.length > 5 && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full mt-2"
+                        onClick={() => navigate('/inventory')}
+                      >
+                        Ver Todos ({produtosCriticos.produtos.length} produtos)
+                      </Button>
+                    )}
+                    
+                    {/* Resumo Estatístico */}
+                    {produtosCriticos.resumo && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="flex items-center justify-between p-2 rounded bg-destructive/10">
+                            <span className="text-muted-foreground">Críticos:</span>
+                            <span className="font-bold text-destructive">{produtosCriticos.resumo.criticos}</span>
+                          </div>
+                          <div className="flex items-center justify-between p-2 rounded bg-warning/10">
+                            <span className="text-muted-foreground">Urgentes:</span>
+                            <span className="font-bold text-warning">{produtosCriticos.resumo.urgentes}</span>
+                          </div>
+                          <div className="flex items-center justify-between p-2 rounded bg-primary/10 col-span-2">
+                            <span className="text-muted-foreground">Valor Total Reposição:</span>
+                            <span className="font-bold text-primary">
+                              R$ {produtosCriticos.resumo.valorTotalReposicao?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 text-success mx-auto mb-4" />
+                    <p className="text-sm font-medium text-success">Nenhum produto crítico!</p>
+                    <p className="text-xs text-muted-foreground mt-2">Todos os produtos estão com estoque adequado</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
