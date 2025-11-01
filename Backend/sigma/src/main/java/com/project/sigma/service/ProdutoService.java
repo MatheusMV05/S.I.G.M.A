@@ -150,6 +150,9 @@ public class ProdutoService {
             categoriaDTO.setId(produto.getCategoria().getId_categoria());
             categoriaDTO.setNome(produto.getCategoria().getNome());
             dto.setCategory(categoriaDTO);
+            System.out.println("✅ Categoria mapeada para produto " + produto.getId_produto() + ": " + categoriaDTO.getNome() + " (ID: " + categoriaDTO.getId() + ")");
+        } else {
+            System.out.println("⚠️ Produto " + produto.getId_produto() + " sem categoria! id_categoria=" + produto.getId_categoria());
         }
 
         return dto;

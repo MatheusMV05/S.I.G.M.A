@@ -136,7 +136,7 @@ public class ProdutoRepository implements BaseRepository<Produto, Long> {
             String nome, String status, Long categoriaId, int page, int size) {
 
         StringBuilder sql = new StringBuilder(
-                "SELECT p.*, c.nome AS nome_categoria " +
+                "SELECT p.*, c.nome AS categoria_nome, c.descricao AS categoria_descricao, c.status AS categoria_status " +
                         "FROM Produto p " +
                         "LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria "
         );
@@ -181,7 +181,7 @@ public class ProdutoRepository implements BaseRepository<Produto, Long> {
         
         List<Produto> content = jdbcTemplate.query(
                 sql.toString(),
-                produtoRowMapper(),
+                produtoWithCategoryRowMapper(),
                 params.toArray()
         );
 
