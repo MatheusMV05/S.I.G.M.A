@@ -8,6 +8,7 @@ import com.project.sigma.model.Produto;
 import com.project.sigma.repository.LogAuditoriaRepository;
 import com.project.sigma.repository.ProdutoRepository;
 import com.project.sigma.service.ProdutoService;
+import com.project.sigma.service.VendaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +27,9 @@ public class ProdutoController {
 
     @Autowired
     private ProdutoService produtoService;
+
+    @Autowired
+    private VendaService vendaService;
 
     @Autowired
     private LogAuditoriaRepository logAuditoriaRepository;
@@ -206,7 +209,7 @@ public class ProdutoController {
         
         try {
             // A função SQL retorna o PERCENTUAL (0.05, 0.10, 0.15)
-            BigDecimal percentualDecimal = produtoService.calcularDescontoProgressivo(valorTotal);
+            BigDecimal percentualDecimal = vendaService.calcularDescontoProgressivo(valorTotal);
             
             // Converter percentual para valor absoluto
             BigDecimal descontoAplicado = valorTotal.multiply(percentualDecimal);
@@ -226,7 +229,7 @@ public class ProdutoController {
                 + " (" + percentualPorcentagem.setScale(1, RoundingMode.HALF_UP) + "%)");
             
             return ResponseEntity.ok(response);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("❌ Erro ao calcular desconto progressivo: " + e.getMessage());
             e.printStackTrace();
             
@@ -277,15 +280,6 @@ public class ProdutoController {
             System.out.println("✅ Reajuste aplicado com sucesso!");
             
             return ResponseEntity.ok(resultado);
-        } catch (SQLException e) {
-            System.err.println("❌ Erro SQL ao reajustar preços: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("erro", e.getMessage());
-            errorResponse.put("mensagem", "Erro ao reajustar preços da categoria");
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         } catch (Exception e) {
             System.err.println("❌ Erro ao reajustar preços: " + e.getMessage());
             e.printStackTrace();

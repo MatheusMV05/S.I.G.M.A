@@ -10,17 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import com.project.sigma.dto.PaginatedResponseDTO;
 
 @Service
 public class ProdutoService {
@@ -30,9 +26,6 @@ public class ProdutoService {
 
     @Autowired
     private CategoriaRepository categoriaRepository;
-
-    @Autowired
-    private DataSource dataSource;
 
     // Novo método para paginação com DTO
     public PaginatedResponseDTO<ProdutoResponseDTO> buscarProdutosComPaginacao(
@@ -285,53 +278,24 @@ public class ProdutoService {
     // ================================================================
 
     /**
-     * Calcula desconto progressivo baseado no valor total
-     * Utiliza a função fn_calcular_desconto_progressivo do banco
-     */
-    public BigDecimal calcularDescontoProgressivo(BigDecimal valorTotal) throws SQLException {
-        String sql = "SELECT fn_calcular_desconto_progressivo(?) AS desconto";
-        
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setBigDecimal(1, valorTotal);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal("desconto");
-                }
-            }
-        }
-        
-        return BigDecimal.ZERO;
-    }
-
-    /**
-     * Reajusta preços de produtos de uma categoria
-     * Utiliza o procedimento sp_reajustar_precos_categoria do banco
+     * Feature #4: Reajusta preços de produtos de uma categoria
+     * Utiliza o procedimento sp_reajustar_precos_categoria do banco via Repository
      */
     public Map<String, Object> reajustarPrecosCategoria(Long idCategoria, BigDecimal percentual, 
-                                                        boolean reajustarCusto) throws SQLException {
-        String sql = "{CALL sp_reajustar_precos_categoria(?, ?, ?)}";
+                                                        boolean reajustarCusto) {
+        System.out.println("💰 Service: Reajustando preços da categoria " + idCategoria + 
+                          " - Percentual: " + percentual + "%");
         
-        try (Connection conn = dataSource.getConnection();
-             CallableStatement stmt = conn.prepareCall(sql)) {
-            
-            stmt.setLong(1, idCategoria);
-            stmt.setBigDecimal(2, percentual);
-            stmt.setBoolean(3, reajustarCusto);
-            
-            stmt.execute();
-            
-            // Retornar informações do reajuste
-            Map<String, Object> resultado = new HashMap<>();
-            resultado.put("idCategoria", idCategoria);
-            resultado.put("percentualAplicado", percentual);
-            resultado.put("reajustouCusto", reajustarCusto);
-            resultado.put("dataHora", LocalDateTime.now());
-            resultado.put("mensagem", "Preços reajustados com sucesso");
-            
-            return resultado;
-        }
+        produtoRepository.reajustarPrecosCategoria(idCategoria, percentual, reajustarCusto);
+        
+        // Retornar informações do reajuste
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("idCategoria", idCategoria);
+        resultado.put("percentualAplicado", percentual);
+        resultado.put("reajustouCusto", reajustarCusto);
+        resultado.put("dataHora", LocalDateTime.now());
+        resultado.put("mensagem", "Preços reajustados com sucesso");
+        
+        return resultado;
     }
 }

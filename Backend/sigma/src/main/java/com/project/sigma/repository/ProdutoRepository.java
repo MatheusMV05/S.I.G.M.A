@@ -305,6 +305,14 @@ public class ProdutoRepository implements BaseRepository<Produto, Long> {
         }
     }
 
+    /**
+     * Feature #4: Reajusta preços de categoria usando stored procedure
+     */
+    public void reajustarPrecosCategoria(Long idCategoria, BigDecimal percentual, Boolean reajustarCusto) {
+        String sql = "{CALL sp_reajustar_precos_categoria(?, ?, ?)}";
+        jdbcTemplate.update(sql, idCategoria, percentual, reajustarCusto);
+    }
+
     private RowMapper<Produto> produtoRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             Produto produto = new Produto();

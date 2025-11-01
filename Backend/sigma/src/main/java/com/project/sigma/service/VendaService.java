@@ -347,4 +347,15 @@ public class VendaService {
 
         return dto;
     }
+
+    /**
+     * 🎯 Feature #1: Desconto Progressivo usando Função SQL
+     * Calcula desconto baseado no valor total usando fn_calcular_desconto_progressivo
+     */
+    public BigDecimal calcularDescontoProgressivo(BigDecimal valorTotal) {
+        System.out.println("💰 Service: Calculando desconto para R$ " + valorTotal);
+        BigDecimal desconto = vendaRepository.calcularDescontoProgressivo(valorTotal);
+        System.out.println("✅ Desconto calculado: " + desconto + "%");
+        return desconto;
+    }
 }

@@ -209,6 +209,18 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
                 totalGasto, Date.valueOf(dataUltimaCompra), idCliente);
     }
 
+    /**
+     * Feature #3: Classifica cliente VIP usando função SQL
+     */
+    public String classificarCliente(Long idCliente) {
+        String sql = """
+            SELECT fn_classificar_cliente(
+                (SELECT COALESCE(total_gasto, 0) FROM Cliente WHERE id_pessoa = ?)
+            ) AS classificacao
+            """;
+        return jdbcTemplate.queryForObject(sql, String.class, idCliente);
+    }
+
     private RowMapper<Cliente> clienteRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             Cliente cliente = new Cliente();

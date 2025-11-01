@@ -142,6 +142,14 @@ public class VendaRepository implements BaseRepository<Venda, Long> {
             Timestamp.valueOf(fim));
     }
 
+    /**
+     * Feature #1: Calcula desconto progressivo usando função SQL
+     */
+    public BigDecimal calcularDescontoProgressivo(BigDecimal valorTotal) {
+        String sql = "SELECT fn_calcular_desconto_progressivo(?) AS desconto";
+        return jdbcTemplate.queryForObject(sql, BigDecimal.class, valorTotal);
+    }
+
     private RowMapper<Venda> vendaRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             Venda venda = new Venda();
