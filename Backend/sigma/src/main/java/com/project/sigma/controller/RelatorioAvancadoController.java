@@ -6,9 +6,12 @@ import com.project.sigma.dto.ProdutoNuncaVendidoDTO;
 import com.project.sigma.service.RelatorioAvancadoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/relatorios")
@@ -16,6 +19,65 @@ public class RelatorioAvancadoController {
 
     @Autowired
     private RelatorioAvancadoService relatorioService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    /**
+     * 🔍 DIAGNÓSTICO: Verificar estatísticas de produtos e vendas
+     * Endpoint: GET /api/relatorios/diagnostico-produtos
+     */
+    @GetMapping("/diagnostico-produtos")
+    public ResponseEntity<Map<String, Object>> getDiagnosticoProdutos() {
+        System.out.println("🔍 GET /api/relatorios/diagnostico-produtos - Executando diagnóstico");
+        
+        Map<String, Object> diagnostico = new HashMap<>();
+        
+        // 1. Total de produtos ativos
+        Integer totalProdutosAtivos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM Produto WHERE status = 'ATIVO'", 
+            Integer.class
+        );
+        
+        // 2. Produtos que já foram vendidos (distintos)
+        Integer produtosJaVendidos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(DISTINCT vi.id_produto) FROM VendaItem vi INNER JOIN Produto p ON vi.id_produto = p.id_produto WHERE p.status = 'ATIVO'",
+            Integer.class
+        );
+        
+        // 3. Produtos NUNCA vendidos (usando NOT EXISTS - mais confiável)
+        Integer produtosNuncaVendidos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM Produto p WHERE p.status = 'ATIVO' AND NOT EXISTS (SELECT 1 FROM VendaItem vi WHERE vi.id_produto = p.id_produto)",
+            Integer.class
+        );
+        
+        // 4. Total de vendas
+        Integer totalVendas = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM Venda",
+            Integer.class
+        );
+        
+        // 5. Total de itens vendidos
+        Integer totalItensVendidos = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM VendaItem",
+            Integer.class
+        );
+        
+        diagnostico.put("totalProdutosAtivos", totalProdutosAtivos);
+        diagnostico.put("produtosJaVendidos", produtosJaVendidos);
+        diagnostico.put("produtosNuncaVendidos", produtosNuncaVendidos);
+        diagnostico.put("totalVendas", totalVendas);
+        diagnostico.put("totalItensVendidos", totalItensVendidos);
+        diagnostico.put("percentualProdutosNuncaVendidos", 
+            totalProdutosAtivos > 0 ? (produtosNuncaVendidos * 100.0 / totalProdutosAtivos) : 0);
+        
+        System.out.println("✅ Diagnóstico completo:");
+        System.out.println("   - Produtos ativos: " + totalProdutosAtivos);
+        System.out.println("   - Produtos já vendidos: " + produtosJaVendidos);
+        System.out.println("   - Produtos NUNCA vendidos: " + produtosNuncaVendidos);
+        
+        return ResponseEntity.ok(diagnostico);
+    }
 
     /**
      * Feature #6: Produtos que nunca foram vendidos (ANTI JOIN)

@@ -624,9 +624,9 @@ export default function Reports() {
 // Feature #6: Componente de Insights
 // ================================================================
 function InsightsTab() {
-  const { data: produtosNuncaVendidos, isLoading: loadingNuncaVendidos, refetch: refetchNuncaVendidos } = useProdutosNuncaVendidos(5);
-  const { data: produtosAcimaMedia, isLoading: loadingAcimaMedia, refetch: refetchAcimaMedia } = useProdutosAcimaMedia(5);
-  const { data: clientesVIP, isLoading: loadingVIP, refetch: refetchVIP } = useClientesVIP(5);
+  const { data: produtosNuncaVendidos, isLoading: loadingNuncaVendidos, refetch: refetchNuncaVendidos } = useProdutosNuncaVendidos(20);
+  const { data: produtosAcimaMedia, isLoading: loadingAcimaMedia, refetch: refetchAcimaMedia } = useProdutosAcimaMedia(15);
+  const { data: clientesVIP, isLoading: loadingVIP, refetch: refetchVIP } = useClientesVIP(15);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -672,7 +672,7 @@ function InsightsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Card 1: Produtos Nunca Vendidos (ANTI JOIN) */}
-        <Card className="border-orange-200">
+        <Card className="border-orange-200 flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <PackageX className="h-5 w-5 text-orange-600" />
@@ -682,13 +682,13 @@ function InsightsTab() {
               Produtos em estoque que nunca geraram receita
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-hidden">
             {loadingNuncaVendidos ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
               </div>
             ) : produtosNuncaVendidos && produtosNuncaVendidos.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-orange-300 scrollbar-track-orange-50">
                 {produtosNuncaVendidos.map((produto) => (
                   <div key={produto.idProduto} className="p-3 border rounded-lg hover:bg-orange-50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
@@ -721,7 +721,7 @@ function InsightsTab() {
         </Card>
 
         {/* Card 2: Produtos Acima da Média (SUBCONSULTA) */}
-        <Card className="border-blue-200">
+        <Card className="border-blue-200 flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ArrowUpCircle className="h-5 w-5 text-blue-600" />
@@ -731,13 +731,13 @@ function InsightsTab() {
               Produtos com preços acima da média da categoria
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-hidden">
             {loadingAcimaMedia ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
               </div>
             ) : produtosAcimaMedia && produtosAcimaMedia.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-blue-50">
                 {produtosAcimaMedia.map((produto) => (
                   <div key={produto.idProduto} className="p-3 border rounded-lg hover:bg-blue-50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
@@ -772,7 +772,7 @@ function InsightsTab() {
         </Card>
 
         {/* Card 3: Clientes VIP (SUBCONSULTA) */}
-        <Card className="border-purple-200">
+        <Card className="border-purple-200 flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Crown className="h-5 w-5 text-purple-600" />
@@ -782,13 +782,13 @@ function InsightsTab() {
               Clientes com gastos acima da média geral
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-hidden">
             {loadingVIP ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
               </div>
             ) : clientesVIP && clientesVIP.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-50">
                 {clientesVIP.map((cliente) => (
                   <div key={cliente.idCliente} className="p-3 border rounded-lg hover:bg-purple-50 transition-colors">
                     <div className="flex items-start justify-between mb-2">

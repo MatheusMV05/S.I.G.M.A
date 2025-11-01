@@ -25,27 +25,65 @@ public class RelatorioAvancadoRepository {
     // CONSULTA 1: ANTI JOIN - Produtos que NUNCA foram vendidos
     // ================================================================
     public List<ProdutoNuncaVendidoDTO> buscarProdutosNuncaVendidos(Integer limit) {
+        // Query corrigida: usa subquery para garantir que o produto NUNCA apareceu em VendaItem
         String sql = "SELECT " +
             "p.id_produto, " +
             "p.nome AS produto_nome, " +
             "p.marca, " +
             "p.preco_venda, " +
-            "p.estoque_atual AS estoque, " +
-            "c.nome AS categoria_nome, " +
-            "f.nome_fantasia AS fornecedor_nome, " +
-            "(p.preco_custo * p.estoque_atual) AS valor_investido, " +
-            "(p.preco_venda * p.estoque_atual) AS valor_potencial_venda, " +
+            "p.estoque AS estoque, " +
+            "COALESCE(c.nome, 'Sem Categoria') AS categoria_nome, " +
+            "COALESCE(f.nome_fantasia, 'Sem Fornecedor') AS fornecedor_nome, " +
+            "COALESCE(p.preco_custo * p.estoque, 0) AS valor_investido, " +
+            "COALESCE(p.preco_venda * p.estoque, 0) AS valor_potencial_venda, " +
             "DATEDIFF(CURDATE(), p.data_cadastro) AS dias_sem_venda " +
             "FROM Produto p " +
-            "LEFT JOIN VendaItem vi ON p.id_produto = vi.id_produto " +
             "LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria " +
             "LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor " +
-            "WHERE vi.id_venda_item IS NULL " +
-            "AND p.status = 'ATIVO' " +
+            "WHERE p.status = 'ATIVO' " +
+            "AND NOT EXISTS ( " +
+            "    SELECT 1 FROM VendaItem vi WHERE vi.id_produto = p.id_produto " +
+            ") " +
             "ORDER BY valor_investido DESC, dias_sem_venda DESC " +
             "LIMIT ?";
 
-        return jdbcTemplate.query(sql, produtoNuncaVendidoRowMapper(), limit);
+        System.out.println("🔍 Repository: Executando SQL - ANTI JOIN produtos nunca vendidos");
+        System.out.println("📝 SQL: " + sql);
+        System.out.println("🔢 Limit: " + limit);
+        
+        try {
+            List<ProdutoNuncaVendidoDTO> resultado = jdbcTemplate.query(sql, produtoNuncaVendidoRowMapper(), limit);
+            
+            System.out.println("✅ Repository: Query executada com sucesso!");
+            System.out.println("📊 Retornando " + resultado.size() + " produtos nunca vendidos");
+            
+            if (resultado.isEmpty()) {
+                System.out.println("⚠️ ATENÇÃO: Query retornou 0 resultados! Verificar se há produtos que nunca foram vendidos.");
+            } else {
+                System.out.println("📦 IDs dos produtos encontrados:");
+                resultado.forEach(p -> {
+                    System.out.println("   - ID: " + p.getIdProduto() + " | " + p.getProdutoNome());
+                    
+                    // VALIDAÇÃO: Verificar se realmente nunca foi vendido
+                    Integer vendas = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM VendaItem WHERE id_produto = ?",
+                        Integer.class,
+                        p.getIdProduto()
+                    );
+                    if (vendas > 0) {
+                        System.err.println("      ❌ ERRO! Este produto TEM " + vendas + " vendas! Query com bug!");
+                    } else {
+                        System.out.println("      ✅ Validado: 0 vendas");
+                    }
+                });
+            }
+            
+            return resultado;
+        } catch (Exception e) {
+            System.err.println("❌ ERRO ao executar query: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     // ================================================================
@@ -131,12 +169,23 @@ public class RelatorioAvancadoRepository {
     private RowMapper<ProdutoNuncaVendidoDTO> produtoNuncaVendidoRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             ProdutoNuncaVendidoDTO dto = new ProdutoNuncaVendidoDTO();
-            dto.setIdProduto(rs.getInt("id_produto"));
-            dto.setProdutoNome(rs.getString("produto_nome"));
-            dto.setPrecoVenda(rs.getBigDecimal("preco_venda"));
-            dto.setQuantidadeEstoque(rs.getInt("estoque"));
-            dto.setCategoriaNome(rs.getString("categoria_nome"));
-            dto.setValorEstoqueParado(rs.getBigDecimal("valor_potencial_venda"));
+            
+            try {
+                dto.setIdProduto(rs.getInt("id_produto"));
+                dto.setProdutoNome(rs.getString("produto_nome"));
+                dto.setPrecoVenda(rs.getBigDecimal("preco_venda"));
+                dto.setQuantidadeEstoque(rs.getInt("estoque"));
+                dto.setCategoriaNome(rs.getString("categoria_nome"));
+                dto.setValorEstoqueParado(rs.getBigDecimal("valor_potencial_venda"));
+                
+                System.out.println("📦 Mapeado produto: " + dto.getProdutoNome() + 
+                    " (ID: " + dto.getIdProduto() + ", Estoque: " + dto.getQuantidadeEstoque() + ")");
+            } catch (Exception e) {
+                System.err.println("❌ Erro ao mapear produto: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
+            
             return dto;
         };
     }

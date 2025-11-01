@@ -133,6 +133,36 @@ Paleta baseada no logo Sigma: Preto profundo, branco puro, roxo vibrante e magen
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
   }
+  
+  /* Thin Scrollbars for Insights */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thumb-orange-300::-webkit-scrollbar-thumb {
+    @apply bg-orange-300;
+  }
+  
+  .scrollbar-track-orange-50::-webkit-scrollbar-track {
+    @apply bg-orange-50;
+  }
+  
+  .scrollbar-thumb-blue-300::-webkit-scrollbar-thumb {
+    @apply bg-blue-300;
+  }
+  
+  .scrollbar-track-blue-50::-webkit-scrollbar-track {
+    @apply bg-blue-50;
+  }
+  
+  .scrollbar-thumb-purple-300::-webkit-scrollbar-thumb {
+    @apply bg-purple-300;
+  }
+  
+  .scrollbar-track-purple-50::-webkit-scrollbar-track {
+    @apply bg-purple-50;
+  }
 }
 
 @layer components {
