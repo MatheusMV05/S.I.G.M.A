@@ -120,8 +120,8 @@ public class ReportsController {
                 "   COALESCE(SUM(v.valor_total), 0) as revenue " +
                 "FROM Venda v " +
                 "WHERE v.data_venda >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
-                "  AND v.status IN ('FINALIZADA', 'PAGA') " +
-                "GROUP BY DATE(v.data_venda) " +
+                "  AND v.status = 'CONCLUIDA' " +
+                "GROUP BY DATE(v.data_venda), DATE_FORMAT(v.data_venda, '%d/%m'), DATE_FORMAT(v.data_venda, '%Y-%m-%d') " +
                 "ORDER BY DATE(v.data_venda) ASC " +
                 "LIMIT ?";
 
@@ -161,11 +161,11 @@ public class ReportsController {
                 "   p.nome as name, " +
                 "   p.id_produto as productId, " +
                 "   COALESCE(SUM(vi.quantidade), 0) as sales, " +
-                "   COALESCE(SUM(vi.quantidade * vi.preco_unitario), 0) as totalRevenue " +
+                "   COALESCE(SUM(vi.quantidade * vi.preco_unitario_venda), 0) as totalRevenue " +
                 "FROM Produto p " +
                 "LEFT JOIN VendaItem vi ON p.id_produto = vi.id_produto " +
                 "LEFT JOIN Venda v ON vi.id_venda = v.id_venda " +
-                "WHERE v.status IN ('FINALIZADA', 'PAGA') " +
+                "WHERE v.status = 'CONCLUIDA' " +
                 "  AND v.data_venda >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) " +
                 "GROUP BY p.id_produto, p.nome " +
                 "HAVING sales > 0 " +
@@ -215,8 +215,8 @@ public class ReportsController {
                 "   COALESCE(SUM(v.valor_total), 0) as revenue " +
                 "FROM Venda v " +
                 "WHERE DATE(v.data_venda) = CURDATE() " +
-                "  AND v.status IN ('FINALIZADA', 'PAGA') " +
-                "GROUP BY HOUR(v.data_venda) " +
+                "  AND v.status = 'CONCLUIDA' " +
+                "GROUP BY HOUR(v.data_venda), CONCAT(LPAD(HOUR(v.data_venda), 2, '0'), 'h') " +
                 "ORDER BY HOUR(v.data_venda) ASC";
 
             List<Map<String, Object>> results = jdbcTemplate.query(query, 
@@ -253,7 +253,7 @@ public class ReportsController {
             // Faturamento hoje
             String todayRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
-                "WHERE DATE(data_venda) = CURDATE() AND status IN ('FINALIZADA', 'PAGA')";
+                "WHERE DATE(data_venda) = CURDATE() AND status = 'CONCLUIDA'";
             Double todayRevenue = jdbcTemplate.queryForObject(todayRevenueQuery, Double.class);
             kpis.put("todayRevenue", todayRevenue != null ? todayRevenue : 0.0);
 
@@ -261,14 +261,14 @@ public class ReportsController {
             String yesterdayRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
                 "WHERE DATE(data_venda) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) " +
-                "AND status IN ('FINALIZADA', 'PAGA')";
+                "AND status = 'CONCLUIDA'";
             Double yesterdayRevenue = jdbcTemplate.queryForObject(yesterdayRevenueQuery, Double.class);
             kpis.put("yesterdayRevenue", yesterdayRevenue != null ? yesterdayRevenue : 0.0);
 
             // Vendas hoje (quantidade)
             String todaySalesQuery = 
                 "SELECT COUNT(*) FROM Venda " +
-                "WHERE DATE(data_venda) = CURDATE() AND status IN ('FINALIZADA', 'PAGA')";
+                "WHERE DATE(data_venda) = CURDATE() AND status = 'CONCLUIDA'";
             Integer todaySales = jdbcTemplate.queryForObject(todaySalesQuery, Integer.class);
             kpis.put("todaySales", todaySales != null ? todaySales : 0);
 
@@ -276,7 +276,7 @@ public class ReportsController {
             String yesterdaySalesQuery = 
                 "SELECT COUNT(*) FROM Venda " +
                 "WHERE DATE(data_venda) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) " +
-                "AND status IN ('FINALIZADA', 'PAGA')";
+                "AND status = 'CONCLUIDA'";
             Integer yesterdaySales = jdbcTemplate.queryForObject(yesterdaySalesQuery, Integer.class);
             kpis.put("yesterdaySales", yesterdaySales != null ? yesterdaySales : 0);
 
@@ -314,7 +314,7 @@ public class ReportsController {
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
                 "WHERE MONTH(data_venda) = MONTH(CURDATE()) " +
                 "  AND YEAR(data_venda) = YEAR(CURDATE()) " +
-                "  AND status IN ('FINALIZADA', 'PAGA')";
+                "  AND status = 'CONCLUIDA'";
             Double monthRevenue = jdbcTemplate.queryForObject(monthRevenueQuery, Double.class);
             kpis.put("monthRevenue", monthRevenue != null ? monthRevenue : 0.0);
 
@@ -323,7 +323,7 @@ public class ReportsController {
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
                 "WHERE MONTH(data_venda) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) " +
                 "  AND YEAR(data_venda) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) " +
-                "  AND status IN ('FINALIZADA', 'PAGA')";
+                "  AND status = 'CONCLUIDA'";
             Double lastMonthRevenue = jdbcTemplate.queryForObject(lastMonthRevenueQuery, Double.class);
             kpis.put("lastMonthRevenue", lastMonthRevenue != null ? lastMonthRevenue : 0.0);
 
@@ -337,7 +337,7 @@ public class ReportsController {
             String weekRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
                 "WHERE YEARWEEK(data_venda, 1) = YEARWEEK(CURDATE(), 1) " +
-                "  AND status IN ('FINALIZADA', 'PAGA')";
+                "  AND status = 'CONCLUIDA'";
             Double weekRevenue = jdbcTemplate.queryForObject(weekRevenueQuery, Double.class);
             kpis.put("weekRevenue", weekRevenue != null ? weekRevenue : 0.0);
 
@@ -345,7 +345,7 @@ public class ReportsController {
             String lastWeekRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
                 "WHERE YEARWEEK(data_venda, 1) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL 1 WEEK), 1) " +
-                "  AND status IN ('FINALIZADA', 'PAGA')";
+                "  AND status = 'CONCLUIDA'";
             Double lastWeekRevenue = jdbcTemplate.queryForObject(lastWeekRevenueQuery, Double.class);
             kpis.put("lastWeekRevenue", lastWeekRevenue != null ? lastWeekRevenue : 0.0);
 
@@ -371,13 +371,13 @@ public class ReportsController {
                 "    SELECT DISTINCT id_cliente FROM Venda " +
                 "    WHERE MONTH(data_venda) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) " +
                 "      AND YEAR(data_venda) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) " +
-                "      AND status IN ('FINALIZADA', 'PAGA')" +
+                "      AND status = 'CONCLUIDA'" +
                 ") c2 " +
                 "LEFT JOIN (" +
                 "    SELECT DISTINCT id_cliente FROM Venda " +
                 "    WHERE MONTH(data_venda) = MONTH(CURDATE()) " +
                 "      AND YEAR(data_venda) = YEAR(CURDATE()) " +
-                "      AND status IN ('FINALIZADA', 'PAGA')" +
+                "      AND status = 'CONCLUIDA'" +
                 ") c1 ON c2.id_cliente = c1.id_cliente";
             
             Double customerRetention = jdbcTemplate.queryForObject(retentionQuery, Double.class);
@@ -432,13 +432,13 @@ public class ReportsController {
                 "   c.id_categoria as categoryId, " +
                 "   COUNT(DISTINCT v.id_venda) as salesCount, " +
                 "   COALESCE(SUM(vi.quantidade), 0) as totalQuantity, " +
-                "   COALESCE(SUM(vi.quantidade * vi.preco_unitario), 0) as revenue " +
+                "   COALESCE(SUM(vi.quantidade * vi.preco_unitario_venda), 0) as revenue " +
                 "FROM Categoria c " +
                 "LEFT JOIN Produto p ON c.id_categoria = p.id_categoria " +
                 "LEFT JOIN VendaItem vi ON p.id_produto = vi.id_produto " +
                 "LEFT JOIN Venda v ON vi.id_venda = v.id_venda " +
                 "WHERE v.data_venda >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) " +
-                "  AND v.status IN ('FINALIZADA', 'PAGA') " +
+                "  AND v.status = 'CONCLUIDA' " +
                 "  AND c.status = 'ATIVA' " +
                 "GROUP BY c.id_categoria, c.nome " +
                 "HAVING revenue > 0 " +
@@ -483,7 +483,7 @@ public class ReportsController {
                 "SELECT valor_total " +
                 "FROM Venda " +
                 "WHERE data_venda >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
-                "  AND status IN ('FINALIZADA', 'PAGA') " +
+                "  AND status = 'CONCLUIDA' " +
                 "ORDER BY valor_total";
 
             List<Double> values = jdbcTemplate.query(query, 
@@ -571,15 +571,15 @@ public class ReportsController {
                 "       WHEN valor_total < 200 THEN '100-200' " +
                 "       WHEN valor_total < 500 THEN '200-500' " +
                 "       ELSE '500+' " +
-                "   END as range, " +
+                "   END as price_range, " +
                 "   COUNT(*) as frequency, " +
                 "   COALESCE(SUM(valor_total), 0) as totalRevenue " +
                 "FROM Venda " +
                 "WHERE data_venda >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
-                "  AND status IN ('FINALIZADA', 'PAGA') " +
-                "GROUP BY range " +
+                "  AND status = 'CONCLUIDA' " +
+                "GROUP BY price_range " +
                 "ORDER BY " +
-                "   CASE range " +
+                "   CASE price_range " +
                 "       WHEN '0-50' THEN 1 " +
                 "       WHEN '50-100' THEN 2 " +
                 "       WHEN '100-200' THEN 3 " +
@@ -590,7 +590,7 @@ public class ReportsController {
             List<Map<String, Object>> results = jdbcTemplate.query(query, 
                 (rs, rowNum) -> {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("range", "R$ " + rs.getString("range"));
+                    row.put("range", "R$ " + rs.getString("price_range"));
                     row.put("frequency", rs.getInt("frequency"));
                     row.put("totalRevenue", rs.getDouble("totalRevenue"));
                     return row;
@@ -634,7 +634,7 @@ public class ReportsController {
                 "   COALESCE(SUM(valor_total), 0) as totalRevenue " +
                 "FROM Venda " +
                 "WHERE data_venda >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
-                "  AND status IN ('FINALIZADA', 'PAGA') " +
+                "  AND status = 'CONCLUIDA' " +
                 "GROUP BY dayNum, weekday " +
                 "ORDER BY dayNum";
 
@@ -677,7 +677,7 @@ public class ReportsController {
                 "   COALESCE(AVG(valor_total), 0) as avgTicket " +
                 "FROM Venda " +
                 "WHERE data_venda >= DATE_SUB(CURDATE(), INTERVAL ? DAY) " +
-                "  AND status IN ('FINALIZADA', 'PAGA') " +
+                "  AND status = 'CONCLUIDA' " +
                 "GROUP BY metodo_pagamento " +
                 "ORDER BY revenue DESC";
 
