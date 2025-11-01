@@ -22,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Search, Plus, Edit, Trash2, AlertTriangle, Eye, Calendar, Package, DollarSign, Grid3X3, List, Download,
+  Search, Plus, Edit, Trash2, AlertTriangle, Eye, Calendar, Package, DollarSign, Grid3X3, List, Download, TrendingUp,
 } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import {
@@ -68,6 +68,7 @@ export default function Products() {
   // Estados dos modais
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [reajusteModalOpen, setReajusteModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [productToEdit, setProductToEdit] = useState<ProductAPI | null>(null);
   const [productToDelete, setProductToDelete] = useState<ProductAPI | null>(null);
@@ -184,6 +185,13 @@ export default function Products() {
                 toast.success('Produtos exportados com sucesso!');
               }}>
                 <Download className="mr-2 h-4 w-4" /> Exportar CSV
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setReajusteModalOpen(true)}
+                disabled={!categories || categories.length === 0}
+              >
+                <TrendingUp className="mr-2 h-4 w-4" /> Reajustar Preços
               </Button>
               <Button onClick={handleCreateProduct}>
                 <Plus className="mr-2 h-4 w-4" /> Novo Produto
@@ -748,6 +756,176 @@ export default function Products() {
         onOpenChange={setDeleteModalOpen}
         product={productToDelete}
       />
+
+      {/* Modal de Reajuste de Preços em Massa */}
+      <ReajustePrecoModal
+        open={reajusteModalOpen}
+        onOpenChange={setReajusteModalOpen}
+        categories={categories}
+      />
     </div>
+  );
+}
+
+// Componente Modal de Reajuste de Preços
+interface ReajustePrecoModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  categories: { id: string; name?: string; nome?: string }[];
+}
+
+function ReajustePrecoModal({ open, onOpenChange, categories }: ReajustePrecoModalProps) {
+  const [categoriaId, setCategoriaId] = useState<string>('');
+  const [percentual, setPercentual] = useState<string>('');
+  const [aplicarCusto, setAplicarCusto] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+
+  const handleReajuste = async () => {
+    if (!categoriaId || !percentual) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    const percentualNum = parseFloat(percentual);
+    if (isNaN(percentualNum) || percentualNum === 0) {
+      toast.error('Percentual inválido');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const { productService } = await import('@/services/productService');
+      await productService.reajustarPrecosCategoria(
+        parseInt(categoriaId),
+        percentualNum,
+        aplicarCusto
+      );
+
+      toast.success(`Preços reajustados em ${percentualNum > 0 ? '+' : ''}${percentualNum}% com sucesso!`);
+      
+      // Resetar formulário
+      setCategoriaId('');
+      setPercentual('');
+      setAplicarCusto(false);
+      setPreviewMode(false);
+      onOpenChange(false);
+      
+      // Recarregar produtos (via query invalidation se estiver usando React Query)
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Erro ao reajustar preços:', error);
+      toast.error(error.message || 'Erro ao reajustar preços da categoria');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const categoriaSelecionada = categories.find(c => c.id === categoriaId);
+  const categoriaNome = categoriaSelecionada?.nome || categoriaSelecionada?.name || 'Categoria';
+  const percentualNum = parseFloat(percentual) || 0;
+  const isAumento = percentualNum > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Reajuste em Massa de Preços
+          </DialogTitle>
+          <DialogDescription>
+            Aplique um percentual de reajuste em todos os produtos ativos de uma categoria.
+            Use valores positivos para aumento e negativos para desconto.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {/* Seleção de Categoria */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Categoria *</label>
+            <Select value={categoriaId} onValueChange={setCategoriaId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.nome || cat.name || 'Sem nome'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Percentual de Reajuste */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Percentual de Reajuste * (%)</label>
+            <Input
+              type="number"
+              step="0.1"
+              placeholder="Ex: 10 para +10% ou -5 para -5%"
+              value={percentual}
+              onChange={(e) => setPercentual(e.target.value)}
+            />
+            {percentualNum !== 0 && (
+              <p className={`text-xs ${isAumento ? 'text-green-600' : 'text-red-600'}`}>
+                {isAumento ? '📈 Aumento' : '📉 Desconto'} de {Math.abs(percentualNum)}%
+              </p>
+            )}
+          </div>
+
+          {/* Opção de Aplicar no Custo */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="aplicarCusto"
+              checked={aplicarCusto}
+              onChange={(e) => setAplicarCusto(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <label htmlFor="aplicarCusto" className="text-sm font-medium cursor-pointer">
+              Também reajustar preço de custo
+            </label>
+          </div>
+
+          {/* Preview */}
+          {categoriaSelecionada && percentualNum !== 0 && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Atenção</AlertTitle>
+              <AlertDescription>
+                <div className="mt-2 space-y-1 text-sm">
+                  <p><strong>Categoria:</strong> {categoriaNome}</p>
+                  <p><strong>Reajuste:</strong> {isAumento ? '+' : ''}{percentualNum}%</p>
+                  <p><strong>Aplicar em:</strong> Preço de Venda{aplicarCusto ? ' e Custo' : ''}</p>
+                  <p className="text-muted-foreground mt-2">
+                    Todos os produtos ATIVOS desta categoria serão reajustados.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleReajuste}
+            disabled={isLoading || !categoriaId || !percentual || percentualNum === 0}
+            className={isAumento ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-600 hover:bg-orange-700'}
+          >
+            {isLoading ? 'Reajustando...' : `Aplicar Reajuste`}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

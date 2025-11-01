@@ -236,6 +236,41 @@ class ProductService {
     }>(`/products/calcular-desconto-progressivo?valorTotal=${valorTotal}`);
   }
 
+  /**
+   * Reajusta preços em massa de todos os produtos de uma categoria
+   * Utiliza o procedimento sp_reajustar_precos_categoria
+   * 
+   * @param categoriaId ID da categoria
+   * @param percentual Percentual de reajuste (10 = +10%, -5 = -5%)
+   * @param aplicarCusto Se true, também reajusta o preço de custo
+   */
+  async reajustarPrecosCategoria(
+    categoriaId: number,
+    percentual: number,
+    aplicarCusto: boolean
+  ): Promise<{
+    idCategoria: number;
+    percentualAplicado: number;
+    reajustouCusto: boolean;
+    dataHora: string;
+    mensagem: string;
+  }> {
+    return await apiRequest<{
+      idCategoria: number;
+      percentualAplicado: number;
+      reajustouCusto: boolean;
+      dataHora: string;
+      mensagem: string;
+    }>('/products/reajustar-precos', {
+      method: 'POST',
+      body: JSON.stringify({
+        categoriaId,
+        percentual,
+        aplicarCusto,
+      }),
+    });
+  }
+
   private async getHeaders() {
     const token = localStorage.getItem('auth_token');
     return {

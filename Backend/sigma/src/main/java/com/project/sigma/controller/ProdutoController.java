@@ -216,4 +216,60 @@ public class ProdutoController {
             return ResponseEntity.ok(errorResponse);
         }
     }
+
+    /**
+     * Reajusta preços em massa de todos os produtos de uma categoria
+     * POST /api/products/reajustar-precos
+     * Utiliza o procedimento sp_reajustar_precos_categoria do banco
+     * 
+     * Body JSON:
+     * {
+     *   "categoriaId": 1,
+     *   "percentual": 10.5,     // 10.5% de aumento ou -5 para desconto de 5%
+     *   "aplicarCusto": true     // true = reajusta preço de custo também
+     * }
+     * 
+     * @return JSON com resultado do reajuste
+     */
+    @PostMapping("/reajustar-precos")
+    public ResponseEntity<Map<String, Object>> reajustarPrecos(@RequestBody Map<String, Object> request) {
+        
+        System.out.println("📊 POST /api/products/reajustar-precos - Reajuste em massa iniciado");
+        
+        try {
+            Long categoriaId = Long.valueOf(request.get("categoriaId").toString());
+            BigDecimal percentual = new BigDecimal(request.get("percentual").toString());
+            Boolean aplicarCusto = Boolean.valueOf(request.get("aplicarCusto").toString());
+            
+            System.out.println("   Categoria ID: " + categoriaId);
+            System.out.println("   Percentual: " + percentual + "%");
+            System.out.println("   Aplicar no custo: " + aplicarCusto);
+            
+            Map<String, Object> resultado = produtoService.reajustarPrecosCategoria(
+                categoriaId, percentual, aplicarCusto
+            );
+            
+            System.out.println("✅ Reajuste aplicado com sucesso!");
+            
+            return ResponseEntity.ok(resultado);
+        } catch (SQLException e) {
+            System.err.println("❌ Erro SQL ao reajustar preços: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("erro", e.getMessage());
+            errorResponse.put("mensagem", "Erro ao reajustar preços da categoria");
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao reajustar preços: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("erro", e.getMessage());
+            errorResponse.put("mensagem", "Erro ao processar requisição de reajuste");
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
 }
