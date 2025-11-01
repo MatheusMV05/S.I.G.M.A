@@ -11,6 +11,10 @@ import com.project.sigma.exception.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.sql.DataSource;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +39,9 @@ public class StockService {
 
     @Autowired
     private UsuarioRepository usuarioRepository; // Para buscar o ID do usuário
+
+    @Autowired
+    private DataSource dataSource;
 
     /**
      * Busca movimentações de estoque com paginação e filtros
@@ -237,5 +244,65 @@ public class StockService {
 
         boolean available = produto.getEstoque() >= dto.getQuantity();
         return new ValidateStockResponseDTO(available, produto.getEstoque());
+    }
+
+    // ================================================================
+    // PROCEDURES SQL (Etapa 05) - Controle de Produtos Críticos
+    // ================================================================
+
+    /**
+     * Gera relatório de produtos com estoque crítico
+     * Utiliza o procedimento sp_relatorio_produtos_criticos do banco
+     */
+    public Map<String, Object> gerarRelatorioProdutosCriticos() throws SQLException {
+        String sql = "{CALL sp_relatorio_produtos_criticos()}";
+        
+        List<Map<String, Object>> produtosCriticos = new ArrayList<>();
+        Map<String, Object> resumo = null;
+        
+        try (Connection conn = dataSource.getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+            
+            boolean hasResults = stmt.execute();
+            
+            // Primeiro ResultSet - Lista de produtos críticos
+            if (hasResults) {
+                try (ResultSet rs = stmt.getResultSet()) {
+                    while (rs.next()) {
+                        Map<String, Object> produto = new HashMap<>();
+                        produto.put("idProduto", rs.getLong("id_produto"));
+                        produto.put("nomeProduto", rs.getString("nome_produto"));
+                        produto.put("categoria", rs.getString("categoria"));
+                        produto.put("estoqueAtual", rs.getInt("estoque_atual"));
+                        produto.put("estoqueMinimo", rs.getInt("estoque_minimo"));
+                        produto.put("deficit", rs.getInt("deficit"));
+                        produto.put("fornecedor", rs.getString("fornecedor"));
+                        produto.put("telefoneFornecedor", rs.getString("telefone_fornecedor"));
+                        produtosCriticos.add(produto);
+                    }
+                }
+                
+                // Segundo ResultSet - Resumo
+                if (stmt.getMoreResults()) {
+                    try (ResultSet rs = stmt.getResultSet()) {
+                        if (rs.next()) {
+                            resumo = new HashMap<>();
+                            resumo.put("totalProdutosCriticos", rs.getInt("total_produtos_criticos"));
+                            resumo.put("criticos", rs.getInt("criticos"));
+                            resumo.put("urgentes", rs.getInt("urgentes"));
+                            resumo.put("atencao", rs.getInt("atencao"));
+                            resumo.put("valorTotalReposicao", rs.getBigDecimal("valor_total_reposicao"));
+                            resumo.put("dataHoraRelatorio", rs.getTimestamp("data_hora_relatorio"));
+                        }
+                    }
+                }
+            }
+        }
+        
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("produtos", produtosCriticos);
+        resultado.put("resumo", resumo);
+        
+        return resultado;
     }
 }

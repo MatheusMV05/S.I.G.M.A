@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ShoppingCart, Trash2, Plus, Minus, X, CheckCircle, DollarSign } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, X, CheckCircle, DollarSign, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 
 import { promotionService } from '@/services/promotionService';
+import { productService } from '@/services/productService';
 
 // Tipos
 interface Product {
@@ -90,6 +91,16 @@ export default function POS() {
   const [saleDiscount, setSaleDiscount] = useState(0);
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [loadingPromos, setLoadingPromos] = useState(false);
+  
+  // Estados para desconto progressivo
+  const [descontoProgressivo, setDescontoProgressivo] = useState<{
+    valorOriginal: number;
+    descontoAplicado: number;
+    percentualDesconto: number;
+    valorFinal: number;
+    economizado: number;
+  } | null>(null);
+  const [calculandoDesconto, setCalculandoDesconto] = useState(false);
 
   // URL da API
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -109,36 +120,7 @@ export default function POS() {
     return map;
   }, [activePromotions]);
 
-  const loadActivePromotions = async () => {
-    try {
-      setLoadingPromos(true);
-      // Assumindo que o Objetivo 1 (filtro) foi corrigido
-      const response = await promotionService.getPromotions({
-        status: 'ATIVA',
-        page: 0,
-        size: 1000, // Pegar todas as promoções ativas
-      });
-      
-      if (response.content) {
-        setActivePromotions(response.content as any[]);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar promoções ativas:', error);
-      toast({
-        title: 'Erro ao carregar promoções',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoadingPromos(false);
-    }
-  };
-
-  // Carregar produtos do backend
-  useEffect(() => {
-    loadProducts();
-    loadActivePromotions();
-  }, []);
-
+  // Função auxiliar para calcular detalhes de preço de um item
   const getItemPriceDetails = (item: CartItem) => {
     // Verificação de segurança: previne "crash" se o item ou produto for nulo
     if (!item || !item.product) {
@@ -188,17 +170,87 @@ export default function POS() {
     };
   };
 
-  const originalSubtotal = cart.reduce(
-    (sum, item) => sum + item.product.preco_venda * item.quantity,
-    0
+  // Calcular totais
+  const originalSubtotal = useMemo(() => 
+    cart.reduce((sum, item) => sum + item.product.preco_venda * item.quantity, 0),
+    [cart]
   );
 
-  const totalPromotionDiscount = cart.reduce(
-    (sum, item) => sum + getItemPriceDetails(item).totalDiscount,
-    0
+  const totalPromotionDiscount = useMemo(() => 
+    cart.reduce((sum, item) => sum + getItemPriceDetails(item).totalDiscount, 0),
+    [cart, promotionMap]
   );
 
-  const totalAmount = originalSubtotal - totalPromotionDiscount - saleDiscount;
+  const totalAmount = useMemo(() => {
+    let total = originalSubtotal - totalPromotionDiscount - saleDiscount;
+    
+    // Aplicar desconto progressivo se houver
+    if (descontoProgressivo && descontoProgressivo.descontoAplicado > 0) {
+      total -= descontoProgressivo.descontoAplicado;
+    }
+    
+    return Math.max(0, total);
+  }, [originalSubtotal, totalPromotionDiscount, saleDiscount, descontoProgressivo]);
+
+  const loadActivePromotions = async () => {
+    try {
+      setLoadingPromos(true);
+      // Assumindo que o Objetivo 1 (filtro) foi corrigido
+      const response = await promotionService.getPromotions({
+        status: 'ATIVA',
+        page: 0,
+        size: 1000, // Pegar todas as promoções ativas
+      });
+      
+      if (response.content) {
+        setActivePromotions(response.content as any[]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar promoções ativas:', error);
+      toast({
+        title: 'Erro ao carregar promoções',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingPromos(false);
+    }
+  };
+
+  // Carregar produtos do backend
+  useEffect(() => {
+    loadProducts();
+    loadActivePromotions();
+  }, []);
+
+  // Calcular desconto progressivo quando o carrinho mudar
+  useEffect(() => {
+    const calcularDescontoAutomatico = async () => {
+      if (cart.length === 0) {
+        setDescontoProgressivo(null);
+        return;
+      }
+
+      const valorTotal = originalSubtotal - totalPromotionDiscount;
+      
+      if (valorTotal <= 0) {
+        setDescontoProgressivo(null);
+        return;
+      }
+
+      try {
+        setCalculandoDesconto(true);
+        const resultado = await productService.calcularDescontoProgressivo(valorTotal);
+        setDescontoProgressivo(resultado);
+      } catch (error) {
+        console.error('Erro ao calcular desconto progressivo:', error);
+        setDescontoProgressivo(null);
+      } finally {
+        setCalculandoDesconto(false);
+      }
+    };
+
+    calcularDescontoAutomatico();
+  }, [cart, originalSubtotal, totalPromotionDiscount]);
 
   const loadProducts = async () => {
     try {
@@ -372,6 +424,9 @@ export default function POS() {
     try {
       setLoading(true);
 
+      // Calcular desconto total (manual + progressivo)
+      const descontoTotal = saleDiscount + (descontoProgressivo?.descontoAplicado || 0);
+
       // Preparar dados da venda
       const salePayload: SalePayload = {
         id_funcionario: 1, // TODO: Pegar do contexto
@@ -387,8 +442,10 @@ export default function POS() {
           };
         }),
         metodo_pagamento: paymentMethod,
-        desconto: saleDiscount, // Desconto manual adicional sobre a venda
-        observacoes: `Venda PDV - ${new Date().toLocaleString()}`
+        desconto: descontoTotal, // Desconto manual + desconto progressivo
+        observacoes: descontoProgressivo && descontoProgressivo.descontoAplicado > 0
+          ? `Venda PDV - Desconto Progressivo: R$ ${descontoProgressivo.descontoAplicado.toFixed(2)} (${descontoProgressivo.percentualDesconto.toFixed(1)}%)`
+          : `Venda PDV - ${new Date().toLocaleString()}`
       };
 
       console.log('Enviando venda:', salePayload);
@@ -415,15 +472,22 @@ export default function POS() {
       // Limpar carrinho e resetar estado
       setCart([]);
       setSaleDiscount(0);
+      setDescontoProgressivo(null);
       setShowCheckoutDialog(false);
       setPaymentMethod('DINHEIRO');
 
       // Recarregar produtos para atualizar estoque
       await loadProducts();
 
+      // Mensagem de sucesso com informação de economia
+      let descricao = `Total: R$ ${totalAmount.toFixed(2)} - Venda #${saleResult.id_venda}`;
+      if (descontoProgressivo && descontoProgressivo.economizado > 0) {
+        descricao = `💰 Você economizou R$ ${descontoProgressivo.economizado.toFixed(2)}! | Total: R$ ${totalAmount.toFixed(2)}`;
+      }
+
       toast({
         title: 'Venda finalizada com sucesso!',
-        description: `Total: R$ ${totalAmount.toFixed(2)} - Venda #${saleResult.id_venda}`,
+        description: descricao,
       });
 
     } catch (error) {
@@ -653,6 +717,67 @@ export default function POS() {
             {/* Resumo e Finalização */}
             <Card>
               <CardContent className="p-4 space-y-3">
+                {/* Progress para próximo nível de desconto */}
+                {cart.length > 0 && (() => {
+                  const valorAtual = originalSubtotal - totalPromotionDiscount;
+                  let proximoNivel = 0;
+                  let percentualProximo = 0;
+                  let percentualAtual = 0;
+                  
+                  if (valorAtual < 200) {
+                    proximoNivel = 200;
+                    percentualProximo = 5;
+                    percentualAtual = 0;
+                  } else if (valorAtual < 500) {
+                    proximoNivel = 500;
+                    percentualProximo = 10;
+                    percentualAtual = 5;
+                  } else if (valorAtual < 1000) {
+                    proximoNivel = 1000;
+                    percentualProximo = 15;
+                    percentualAtual = 10;
+                  }
+                  
+                  const falta = Math.max(0, proximoNivel - valorAtual);
+                  const progresso = proximoNivel > 0 
+                    ? Math.min(100, (valorAtual / proximoNivel) * 100) 
+                    : 100;
+                  
+                  if (proximoNivel > 0 && falta > 0) {
+                    return (
+                      <div className="bg-primary/5 p-3 rounded-md space-y-2 animate-fade-in">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground font-medium">
+                            <TrendingUp className="inline h-3 w-3 mr-1" />
+                            Desconto atual: {percentualAtual}%
+                          </span>
+                          <span className="text-primary font-bold">
+                            Próximo: {percentualProximo}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-primary to-success h-full transition-all duration-500 ease-out"
+                            style={{ width: `${progresso}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground">
+                          Compre mais <span className="font-bold text-primary">R$ {falta.toFixed(2)}</span> e ganhe {percentualProximo}% de desconto!
+                        </p>
+                      </div>
+                    );
+                  } else if (valorAtual >= 1000) {
+                    return (
+                      <div className="bg-success/10 p-3 rounded-md text-center animate-fade-in">
+                        <p className="text-sm font-bold text-success">
+                          🎉 Desconto máximo alcançado! (15%)
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
                 <div className="space-y-2">
 
                   {/* --- LÓGICA DE TOTAIS ATUALIZADA --- */}
@@ -666,12 +791,34 @@ export default function POS() {
                       - R$ {totalPromotionDiscount.toFixed(2)}
                     </span>
                   </div>
+                  
+                  {/* Desconto Progressivo */}
+                  {calculandoDesconto ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Calculando desconto...</span>
+                      <span className="font-medium text-muted-foreground">⏳</span>
+                    </div>
+                  ) : descontoProgressivo && descontoProgressivo.descontoAplicado > 0 ? (
+                    <div className="flex justify-between text-sm bg-success/10 p-2 rounded-md animate-fade-in">
+                      <div className="flex items-center gap-2">
+                        <span className="text-success font-medium">🎉 Desconto Progressivo:</span>
+                        <Badge variant="secondary" className="bg-success text-success-foreground">
+                          {descontoProgressivo.percentualDesconto.toFixed(1)}%
+                        </Badge>
+                      </div>
+                      <span className="font-bold text-success">
+                        - R$ {descontoProgressivo.descontoAplicado.toFixed(2)}
+                      </span>
+                    </div>
+                  ) : null}
+                  
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Desconto (Manual):</span>
                     <span className="font-medium text-destructive">
                       - R$ {saleDiscount.toFixed(2)}
                     </span>
                   </div>
+                  
                   <div className="border-t pt-2">
                     <div className="flex justify-between">
                       <span className="font-bold">Total:</span>
@@ -679,6 +826,15 @@ export default function POS() {
                         R$ {totalAmount.toFixed(2)}
                       </span>
                     </div>
+                    
+                    {/* Mensagem de economia */}
+                    {descontoProgressivo && descontoProgressivo.economizado > 0 && (
+                      <div className="mt-2 text-center animate-fade-in">
+                        <p className="text-xs text-success font-medium">
+                          💰 Você economizou R$ {descontoProgressivo.economizado.toFixed(2)}!
+                        </p>
+                      </div>
+                    )}
                   </div>
                   {/* --- FIM DA LÓGICA DE TOTAIS --- */}
                 </div>
@@ -726,7 +882,7 @@ export default function POS() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Desconto (R$)</label>
+                <label className="text-sm font-medium">Desconto Manual (R$)</label>
                 <Input
                   type="number"
                   min="0"
@@ -736,6 +892,32 @@ export default function POS() {
                   onChange={(e) => setSaleDiscount(parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
                 />
+              </div>
+
+              {/* Resumo de descontos */}
+              <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span className="font-medium">R$ {originalSubtotal.toFixed(2)}</span>
+                </div>
+                {totalPromotionDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Descontos (Promoções):</span>
+                    <span className="font-medium text-destructive">- R$ {totalPromotionDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {descontoProgressivo && descontoProgressivo.descontoAplicado > 0 && (
+                  <div className="flex justify-between text-sm bg-success/10 p-2 rounded">
+                    <span className="text-success font-medium">🎉 Desconto Progressivo ({descontoProgressivo.percentualDesconto.toFixed(1)}%):</span>
+                    <span className="font-bold text-success">- R$ {descontoProgressivo.descontoAplicado.toFixed(2)}</span>
+                  </div>
+                )}
+                {saleDiscount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Desconto Manual:</span>
+                    <span className="font-medium text-destructive">- R$ {saleDiscount.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="border-t pt-4">

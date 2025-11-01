@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import com.project.sigma.dto.PaginatedResponseDTO;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,6 +41,9 @@ public class ClienteService {
 
     @Autowired
     private TelefoneRepository telefoneRepository;
+
+    @Autowired
+    private DataSource dataSource;
 
     public Optional<Cliente> buscarPorId(Long id) {
         return clienteRepository.findById(id);
@@ -353,4 +358,31 @@ public class ClienteService {
 
         return dto;
     }
+
+    // ================================================================
+    // FUNÇÕES SQL (Etapa 05) - Classificação de Clientes
+    // ================================================================
+
+    /**
+     * Classifica cliente baseado no número de compras
+     * Utiliza a função fn_classificar_cliente do banco
+     */
+    public String classificarCliente(Long idCliente) throws SQLException {
+        String sql = "SELECT fn_classificar_cliente(?) AS classificacao";
+        
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, idCliente);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("classificacao");
+                }
+            }
+        }
+        
+        return "Novo";
+    }
 }
+

@@ -10,7 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.project.sigma.dto.PaginatedResponseDTO;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -159,5 +162,56 @@ public class ProdutoController {
     public ResponseEntity<Void> deletarProduto(@PathVariable Long id) {
         produtoService.deletarProduto(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Calcula desconto progressivo baseado no valor total da compra
+     * GET /api/products/calcular-desconto-progressivo?valorTotal={valor}
+     * Utiliza a função fn_calcular_desconto_progressivo do banco
+     * 
+     * @param valorTotal Valor total da compra
+     * @return JSON com valor original, desconto aplicado, percentual e valor final
+     */
+    @GetMapping("/calcular-desconto-progressivo")
+    public ResponseEntity<Map<String, Object>> calcularDescontoProgressivo(
+            @RequestParam BigDecimal valorTotal) {
+        
+        System.out.println("💰 GET /api/products/calcular-desconto-progressivo - Valor: R$ " + valorTotal);
+        
+        try {
+            BigDecimal desconto = produtoService.calcularDescontoProgressivo(valorTotal);
+            BigDecimal valorFinal = valorTotal.subtract(desconto);
+            
+            // Calcula o percentual de desconto
+            BigDecimal percentual = BigDecimal.ZERO;
+            if (valorTotal.compareTo(BigDecimal.ZERO) > 0) {
+                percentual = desconto.divide(valorTotal, 4, BigDecimal.ROUND_HALF_UP)
+                                    .multiply(new BigDecimal("100"));
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("valorOriginal", valorTotal);
+            response.put("descontoAplicado", desconto);
+            response.put("percentualDesconto", percentual);
+            response.put("valorFinal", valorFinal);
+            response.put("economizado", desconto);
+            
+            System.out.println("✅ Desconto calculado: R$ " + desconto + " (" + percentual.setScale(2, BigDecimal.ROUND_HALF_UP) + "%)");
+            
+            return ResponseEntity.ok(response);
+        } catch (SQLException e) {
+            System.err.println("❌ Erro ao calcular desconto progressivo: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("valorOriginal", valorTotal);
+            errorResponse.put("descontoAplicado", BigDecimal.ZERO);
+            errorResponse.put("percentualDesconto", BigDecimal.ZERO);
+            errorResponse.put("valorFinal", valorTotal);
+            errorResponse.put("economizado", BigDecimal.ZERO);
+            errorResponse.put("erro", "Erro ao calcular desconto");
+            
+            return ResponseEntity.ok(errorResponse);
+        }
     }
 }

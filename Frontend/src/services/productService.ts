@@ -216,6 +216,26 @@ class ProductService {
     });
   }
 
+  /**
+   * Calcula desconto progressivo baseado no valor total da compra
+   * Utiliza a função SQL fn_calcular_desconto_progressivo
+   */
+  async calcularDescontoProgressivo(valorTotal: number): Promise<{
+    valorOriginal: number;
+    descontoAplicado: number;
+    percentualDesconto: number;
+    valorFinal: number;
+    economizado: number;
+  }> {
+    return await apiRequest<{
+      valorOriginal: number;
+      descontoAplicado: number;
+      percentualDesconto: number;
+      valorFinal: number;
+      economizado: number;
+    }>(`/products/calcular-desconto-progressivo?valorTotal=${valorTotal}`);
+  }
+
   private async getHeaders() {
     const token = localStorage.getItem('auth_token');
     return {
