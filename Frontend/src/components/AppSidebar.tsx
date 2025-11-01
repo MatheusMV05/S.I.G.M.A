@@ -37,6 +37,8 @@ import {
   EyeOff,
   ChevronUp,
   PieChart,
+  Database,
+  Search,
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -133,6 +135,21 @@ const reportItems = [
     url: '/charts',
     icon: PieChart,
     roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
+  },
+];
+
+const databaseItems = [
+  {
+    title: 'Consultas Avançadas',
+    url: '/consultas-avancadas',
+    icon: Search,
+    roles: ['ADMIN', 'MANAGER'] as UserRole[],
+  },
+  {
+    title: 'Database Features',
+    url: '/database-features',
+    icon: Database,
+    roles: ['ADMIN'] as UserRole[],
   },
 ];
 
@@ -321,6 +338,34 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {filterItems(systemItems).map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url}
+                        className={
+                          isActive(item.url) 
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        }
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Database Features - Admin e Gerente */}
+        {hasPermission(['ADMIN', 'MANAGER']) && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Banco de Dados</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filterItems(databaseItems).map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 

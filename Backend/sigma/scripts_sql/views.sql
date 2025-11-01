@@ -1,82 +1,143 @@
 -- ================================================================
 -- VIEWS (VISÕES) PARA CONSULTAS COMPLEXAS
 -- Sistema S.I.G.M.A - Etapa 04
+-- Requisito: 2 views com pelo menos 3 joins e justificativa semântica
 -- ================================================================
 
+USE SIGMA;
+
 -- ================================================================
--- VIEW 1: Relatório Completo de Vendas
+-- VIEW 1: Análise Completa de Vendas com Detalhamento
 -- ================================================================
--- Junta informações de Venda, Cliente, Funcionário e Itens
--- Facilita geração de relatórios gerenciais
-CREATE OR REPLACE VIEW vw_relatorio_vendas AS
+-- Justificativa: Consolida informações de 4 tabelas (Venda, Cliente, Pessoa, Funcionario)
+-- para análise gerencial completa de vendas, incluindo perfil do cliente e vendedor
+-- Útil para relatórios de desempenho, comissões e análise de comportamento de compra
+CREATE OR REPLACE VIEW vw_analise_vendas_completa AS
 SELECT
+    -- Dados da Venda
     v.id_venda,
     v.data_venda,
+    DATE(v.data_venda) AS data_venda_simples,
     v.valor_total,
-    v.forma_pagamento,
-    c.id_cliente,
-    c.nome AS cliente_nome,
-    c.cpf AS cliente_cpf,
-    c.telefone AS cliente_telefone,
-    c.email AS cliente_email,
-    f.id_funcionario,
-    f.nome AS funcionario_nome,
-    f.cargo AS funcionario_cargo,
-    COUNT(iv.id_item) AS total_itens_venda,
-    COALESCE(SUM(iv.quantidade), 0) AS quantidade_total_produtos
+    v.desconto,
+    v.valor_final,
+    v.metodo_pagamento,
+    v.status AS status_venda,
+    
+    -- Dados do Cliente
+    c.id_pessoa AS id_cliente,
+    pc.nome AS cliente_nome,
+    pc.email AS cliente_email,
+    pc.cidade AS cliente_cidade,
+    c.tipo_pessoa,
+    c.ranking AS ranking_cliente,
+    c.total_gasto AS total_gasto_cliente,
+    
+    -- Dados do Funcionário/Vendedor
+    f.id_pessoa AS id_funcionario,
+    pf.nome AS vendedor_nome,
+    f.cargo AS vendedor_cargo,
+    f.setor AS vendedor_setor,
+    
+    -- Dados do Caixa
+    cx.id_caixa,
+    cx.status AS status_caixa,
+    
+    -- Métricas Calculadas
+    ROUND((v.desconto / NULLIF(v.valor_total, 0)) * 100, 2) AS percentual_desconto,
+    ROUND(v.valor_final / NULLIF((SELECT COUNT(*) FROM VendaItem WHERE id_venda = v.id_venda), 0), 2) AS valor_medio_item,
+    (SELECT COUNT(*) FROM VendaItem WHERE id_venda = v.id_venda) AS quantidade_itens,
+    DAYNAME(v.data_venda) AS dia_semana_venda,
+    HOUR(v.data_venda) AS hora_venda
 FROM Venda v
-INNER JOIN Cliente c ON v.id_cliente = c.id_cliente
-INNER JOIN Funcionario f ON v.id_funcionario = f.id_funcionario
-LEFT JOIN ItemVenda iv ON v.id_venda = iv.id_venda
-GROUP BY 
-    v.id_venda, 
-    v.data_venda, 
-    v.valor_total, 
-    v.forma_pagamento,
-    c.id_cliente,
-    c.nome, 
-    c.cpf, 
-    c.telefone,
-    c.email,
-    f.id_funcionario,
-    f.nome, 
-    f.cargo;
+INNER JOIN Cliente c ON v.id_cliente = c.id_pessoa
+INNER JOIN Pessoa pc ON c.id_pessoa = pc.id_pessoa
+INNER JOIN Funcionario f ON v.id_funcionario = f.id_pessoa
+INNER JOIN Pessoa pf ON f.id_pessoa = pf.id_pessoa
+LEFT JOIN Caixa cx ON v.id_caixa = cx.id_caixa;
 
 
 -- ================================================================
--- VIEW 2: Estoque Completo com Informações de Categoria e Fornecedor
+-- VIEW 2: Inventário Completo com Análise de Rentabilidade
 -- ================================================================
--- Consolida informações de Produto, Categoria e Fornecedor
--- Útil para relatórios de inventário e reposição
-CREATE OR REPLACE VIEW vw_estoque_completo AS
+-- Justificativa: Integra 4 tabelas (Produto, Categoria, Fornecedor, Pessoa)
+-- para visão 360° do estoque com análise financeira e logística
+-- Essencial para decisões de compra, reposição e precificação
+CREATE OR REPLACE VIEW vw_inventario_rentabilidade AS
 SELECT
+    -- Dados do Produto
     p.id_produto,
     p.nome AS produto_nome,
-    p.descricao AS produto_descricao,
-    p.preco_venda,
+    p.marca,
+    p.descricao,
+    p.codigo_barras,
+    p.codigo_interno,
+    p.status AS status_produto,
+    
+    -- Preços e Margens
     p.preco_custo,
-    p.quantidade_estoque,
+    p.preco_venda,
+    p.margem_lucro AS margem_lucro_percentual,
+    ROUND(p.preco_venda - p.preco_custo, 2) AS lucro_unitario,
+    
+    -- Estoque
+    p.estoque,
     p.estoque_minimo,
+    p.estoque_maximo,
+    p.unidade_medida,
+    p.localizacao_prateleira,
+    
+    -- Valores Totais
+    ROUND(p.preco_custo * p.estoque, 2) AS valor_estoque_custo,
+    ROUND(p.preco_venda * p.estoque, 2) AS valor_estoque_venda,
+    ROUND((p.preco_venda - p.preco_custo) * p.estoque, 2) AS lucro_potencial_estoque,
+    
+    -- Categoria
     c.id_categoria,
     c.nome AS categoria_nome,
     c.descricao AS categoria_descricao,
+    c.status AS status_categoria,
+    
+    -- Fornecedor
     f.id_fornecedor,
-    f.nome AS fornecedor_nome,
+    f.nome_fantasia AS fornecedor_nome,
+    f.razao_social AS fornecedor_razao_social,
+    f.cnpj AS fornecedor_cnpj,
     f.telefone AS fornecedor_telefone,
     f.email AS fornecedor_email,
-    f.cnpj AS fornecedor_cnpj,
-    (p.preco_venda * p.quantidade_estoque) AS valor_total_estoque,
-    (p.preco_custo * p.quantidade_estoque) AS custo_total_estoque,
-    ((p.preco_venda - p.preco_custo) * p.quantidade_estoque) AS lucro_potencial,
+    f.cidade AS fornecedor_cidade,
+    f.estado AS fornecedor_estado,
+    f.prazo_entrega_dias,
+    f.avaliacao AS avaliacao_fornecedor,
+    f.status AS status_fornecedor,
+    
+    -- Status de Alerta
     CASE 
-        WHEN p.quantidade_estoque = 0 THEN 'SEM ESTOQUE'
-        WHEN p.quantidade_estoque < p.estoque_minimo THEN 'ESTOQUE BAIXO'
-        WHEN p.quantidade_estoque >= p.estoque_minimo * 2 THEN 'ESTOQUE OK'
-        ELSE 'ESTOQUE ADEQUADO'
+        WHEN p.estoque = 0 THEN 'CRÍTICO - SEM ESTOQUE'
+        WHEN p.estoque <= p.estoque_minimo THEN 'ALERTA - ESTOQUE BAIXO'
+        WHEN p.estoque >= p.estoque_maximo THEN 'ATENÇÃO - ESTOQUE ALTO'
+        ELSE 'ESTOQUE NORMAL'
     END AS status_estoque,
-    ROUND(((p.preco_venda - p.preco_custo) / p.preco_custo) * 100, 2) AS margem_lucro_percentual
+    
+    CASE 
+        WHEN p.estoque <= p.estoque_minimo 
+        THEN CONCAT('Repor ', (p.estoque_minimo - p.estoque + 10), ' unidades')
+        ELSE 'Estoque adequado'
+    END AS acao_recomendada,
+    
+    -- Análise de Rentabilidade
+    CASE 
+        WHEN p.margem_lucro >= 50 THEN 'ALTA RENTABILIDADE'
+        WHEN p.margem_lucro >= 30 THEN 'RENTABILIDADE MÉDIA'
+        WHEN p.margem_lucro >= 15 THEN 'RENTABILIDADE BAIXA'
+        ELSE 'RENTABILIDADE CRÍTICA'
+    END AS classificacao_rentabilidade,
+    
+    p.data_cadastro,
+    DATEDIFF(CURDATE(), p.data_cadastro) AS dias_desde_cadastro
+    
 FROM Produto p
-INNER JOIN Categoria c ON p.id_categoria = c.id_categoria
+LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
 LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
 
 
@@ -84,18 +145,33 @@ LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
 -- CONSULTAS DE EXEMPLO PARA AS VIEWS
 -- ================================================================
 
--- Exemplo 1: Vendas do último mês com cliente e funcionário
--- SELECT * FROM vw_relatorio_vendas 
--- WHERE data_venda >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+-- Exemplo 1: Vendas do mês atual com perfil de cliente
+-- SELECT * FROM vw_analise_vendas_completa 
+-- WHERE MONTH(data_venda) = MONTH(CURDATE()) 
+--   AND YEAR(data_venda) = YEAR(CURDATE())
+--   AND status_venda = 'CONCLUIDA'
 -- ORDER BY data_venda DESC;
 
--- Exemplo 2: Produtos com estoque baixo
--- SELECT * FROM vw_estoque_completo 
--- WHERE status_estoque IN ('SEM ESTOQUE', 'ESTOQUE BAIXO')
--- ORDER BY quantidade_estoque ASC;
+-- Exemplo 2: Produtos com estoque crítico e fornecedor
+-- SELECT * FROM vw_inventario_rentabilidade 
+-- WHERE status_estoque IN ('CRÍTICO - SEM ESTOQUE', 'ALERTA - ESTOQUE BAIXO')
+--   AND status_produto = 'ATIVO'
+-- ORDER BY estoque ASC;
 
--- Exemplo 3: Produtos mais lucrativos
--- SELECT produto_nome, preco_venda, lucro_potencial, margem_lucro_percentual
--- FROM vw_estoque_completo
--- ORDER BY lucro_potencial DESC
+-- Exemplo 3: Top 10 produtos mais rentáveis
+-- SELECT produto_nome, categoria_nome, margem_lucro_percentual, 
+--        lucro_potencial_estoque, classificacao_rentabilidade
+-- FROM vw_inventario_rentabilidade
+-- WHERE status_produto = 'ATIVO'
+-- ORDER BY lucro_potencial_estoque DESC
 -- LIMIT 10;
+
+-- Exemplo 4: Análise de vendas por vendedor
+-- SELECT vendedor_nome, vendedor_setor,
+--        COUNT(*) AS total_vendas,
+--        SUM(valor_final) AS faturamento_total,
+--        ROUND(AVG(valor_final), 2) AS ticket_medio
+-- FROM vw_analise_vendas_completa
+-- WHERE status_venda = 'CONCLUIDA'
+-- GROUP BY vendedor_nome, vendedor_setor
+-- ORDER BY faturamento_total DESC;
