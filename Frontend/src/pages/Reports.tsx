@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   LineChart,
   Line,
@@ -41,9 +42,14 @@ import {
   Clock,
   Award,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  PackageX,
+  Crown,
+  ArrowUpCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProdutosNuncaVendidos, useProdutosAcimaMedia, useClientesVIP } from '@/hooks/useReports';
 
 // Mock data para relatórios
 const salesData = [
@@ -84,7 +90,7 @@ const customerMetrics = [
   { segment: 'Básico', customers: 892, revenue: 134280, avgTicket: 150.50 }
 ];
 
-type ReportType = 'sales' | 'inventory' | 'customers' | 'financial';
+type ReportType = 'sales' | 'inventory' | 'customers' | 'financial' | 'insights';
 
 export default function Reports() {
   const { user } = useAuth();
@@ -214,7 +220,7 @@ export default function Reports() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReportType)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="sales" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Vendas
@@ -230,6 +236,10 @@ export default function Reports() {
           <TabsTrigger value="financial" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Financeiro
+          </TabsTrigger>
+          <TabsTrigger value="insights" className="flex items-center gap-2">
+            <Award className="h-4 w-4" />
+            Insights
           </TabsTrigger>
         </TabsList>
 
@@ -599,8 +609,217 @@ export default function Reports() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Feature #6: Insights - Relatórios Avançados */}
+        <TabsContent value="insights" className="space-y-6">
+          <InsightsTab />
+        </TabsContent>
       </Tabs>
     </div>
   </DesktopOnlyPage>
 );
+}
+
+// ================================================================
+// Feature #6: Componente de Insights
+// ================================================================
+function InsightsTab() {
+  const { data: produtosNuncaVendidos, isLoading: loadingNuncaVendidos, refetch: refetchNuncaVendidos } = useProdutosNuncaVendidos(5);
+  const { data: produtosAcimaMedia, isLoading: loadingAcimaMedia, refetch: refetchAcimaMedia } = useProdutosAcimaMedia(5);
+  const { data: clientesVIP, isLoading: loadingVIP, refetch: refetchVIP } = useClientesVIP(5);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header com descrição */}
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <Award className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-purple-900 mb-2">🔍 Insights Avançados de Negócio</h3>
+              <p className="text-sm text-purple-700">
+                Análises inteligentes que identificam oportunidades, riscos e clientes estratégicos para 
+                melhorar a gestão do seu negócio.
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                refetchNuncaVendidos();
+                refetchAcimaMedia();
+                refetchVIP();
+              }}
+              className="border-purple-300 hover:bg-purple-100"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Grid de Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Card 1: Produtos Nunca Vendidos (ANTI JOIN) */}
+        <Card className="border-orange-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PackageX className="h-5 w-5 text-orange-600" />
+              Produtos Nunca Vendidos
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Produtos em estoque que nunca geraram receita
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingNuncaVendidos ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+              </div>
+            ) : produtosNuncaVendidos && produtosNuncaVendidos.length > 0 ? (
+              <div className="space-y-3">
+                {produtosNuncaVendidos.map((produto) => (
+                  <div key={produto.idProduto} className="p-3 border rounded-lg hover:bg-orange-50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm line-clamp-1">{produto.produtoNome}</p>
+                        <p className="text-xs text-muted-foreground">{produto.categoriaNome}</p>
+                      </div>
+                      <Badge variant="destructive" className="text-xs">Parado</Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Estoque:</span>
+                        <p className="font-semibold">{produto.quantidadeEstoque} un</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Valor parado:</span>
+                        <p className="font-semibold text-orange-600">{formatCurrency(produto.valorEstoqueParado)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <PackageX className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum produto parado encontrado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 2: Produtos Acima da Média (SUBCONSULTA) */}
+        <Card className="border-blue-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowUpCircle className="h-5 w-5 text-blue-600" />
+              Produtos Premium
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Produtos com preços acima da média da categoria
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingAcimaMedia ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+              </div>
+            ) : produtosAcimaMedia && produtosAcimaMedia.length > 0 ? (
+              <div className="space-y-3">
+                {produtosAcimaMedia.map((produto) => (
+                  <div key={produto.idProduto} className="p-3 border rounded-lg hover:bg-blue-50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm line-clamp-1">{produto.produtoNome}</p>
+                        <p className="text-xs text-muted-foreground">{produto.categoriaNome}</p>
+                      </div>
+                      <Badge variant="default" className="text-xs bg-blue-600">
+                        +{produto.percentualAcimaMedia.toFixed(1)}%
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Preço:</span>
+                        <p className="font-semibold text-blue-600">{formatCurrency(produto.precoVenda)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Acima em:</span>
+                        <p className="font-semibold">{formatCurrency(produto.diferencaMedia)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <ArrowUpCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum produto premium encontrado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Clientes VIP (SUBCONSULTA) */}
+        <Card className="border-purple-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Crown className="h-5 w-5 text-purple-600" />
+              Clientes VIP
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Clientes com gastos acima da média geral
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingVIP ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+              </div>
+            ) : clientesVIP && clientesVIP.length > 0 ? (
+              <div className="space-y-3">
+                {clientesVIP.map((cliente) => (
+                  <div key={cliente.idCliente} className="p-3 border rounded-lg hover:bg-purple-50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm line-clamp-1">{cliente.clienteNome}</p>
+                        <p className="text-xs text-muted-foreground">{cliente.totalCompras} compras</p>
+                      </div>
+                      <Crown className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Total gasto:</span>
+                        <p className="font-semibold text-purple-600">{formatCurrency(cliente.valorTotalGasto)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Ticket médio:</span>
+                        <p className="font-semibold">{formatCurrency(cliente.ticketMedio)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Crown className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum cliente VIP encontrado</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }

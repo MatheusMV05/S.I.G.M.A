@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reportsService } from '@/services';
+import { reportService, ProdutoNuncaVendidoDTO, ProdutoAcimaMediaDTO, ClienteVIPDTO } from '@/services/reportService';
 import type { DashboardKPIs, SalesReport, InventoryReport } from '@/services/types';
 
 // Query Keys
@@ -21,6 +22,10 @@ export const reportKeys = {
     [...reportKeys.all, 'loss', { startDate, endDate }] as const,
   comparative: (params: any) => [...reportKeys.all, 'comparative', params] as const,
   scheduled: () => [...reportKeys.all, 'scheduled'] as const,
+  // Feature #6: Relatórios Avançados com SQL
+  produtosNuncaVendidos: (limit: number) => [...reportKeys.all, 'produtos-nunca-vendidos', limit] as const,
+  produtosAcimaMedia: (limit: number) => [...reportKeys.all, 'produtos-acima-media', limit] as const,
+  clientesVIP: (limit: number) => [...reportKeys.all, 'clientes-vip', limit] as const,
 };
 
 // Hook para KPIs do dashboard
@@ -193,3 +198,40 @@ export const useCancelScheduledReport = () => {
     },
   });
 };
+
+// ================================================================
+// Feature #6: Hooks para Relatórios Avançados com SQL
+// ================================================================
+
+/**
+ * Hook para produtos que nunca foram vendidos (ANTI JOIN)
+ */
+export function useProdutosNuncaVendidos(limit: number = 10) {
+  return useQuery<ProdutoNuncaVendidoDTO[], Error>({
+    queryKey: reportKeys.produtosNuncaVendidos(limit),
+    queryFn: () => reportService.getProdutosNuncaVendidos(limit),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+}
+
+/**
+ * Hook para produtos com preço acima da média (SUBCONSULTA)
+ */
+export function useProdutosAcimaMedia(limit: number = 10) {
+  return useQuery<ProdutoAcimaMediaDTO[], Error>({
+    queryKey: reportKeys.produtosAcimaMedia(limit),
+    queryFn: () => reportService.getProdutosAcimaMedia(limit),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+}
+
+/**
+ * Hook para clientes VIP (SUBCONSULTA)
+ */
+export function useClientesVIP(limit: number = 10) {
+  return useQuery<ClienteVIPDTO[], Error>({
+    queryKey: reportKeys.clientesVIP(limit),
+    queryFn: () => reportService.getClientesVIP(limit),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+}
