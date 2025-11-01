@@ -51,6 +51,7 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedClassificacao, setSelectedClassificacao] = useState<string>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -209,12 +210,6 @@ export default function Customers() {
       // CNPJ: 00.000.000/0000-00
       return document.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
-  };
-
-  const getCustomerTier = (totalSpent: number) => {
-    if (totalSpent >= 5000) return { tier: 'Gold', color: 'bg-yellow-500' };
-    if (totalSpent >= 2000) return { tier: 'Silver', color: 'bg-gray-400' };
-    return { tier: 'Bronze', color: 'bg-orange-600' };
   };
 
   return (
@@ -386,6 +381,19 @@ export default function Customers() {
                 <SelectItem value="inactive">Inativo</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={selectedClassificacao} onValueChange={setSelectedClassificacao}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Classificação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas VIP</SelectItem>
+                <SelectItem value="DIAMANTE">💎 DIAMANTE</SelectItem>
+                <SelectItem value="PLATINA">🏆 PLATINA</SelectItem>
+                <SelectItem value="OURO">🥇 OURO</SelectItem>
+                <SelectItem value="PRATA">🥈 PRATA</SelectItem>
+                <SelectItem value="BRONZE">🥉 BRONZE</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -415,8 +423,14 @@ export default function Customers() {
                 </TableRow>
               ) : (
                 // MUDANÇA: de 'filteredCustomers.map' para 'customers.map'
-                customers.map((customer) => {
-                  const tier = getCustomerTier(customer.totalSpent);
+                customers
+                  .filter(customer => {
+                    // Filtro de classificação VIP
+                    if (selectedClassificacao === 'all') return true;
+                    return customer.classificacao === selectedClassificacao;
+                  })
+                  .map((customer) => {
+                  const tier = getCustomerTier(customer.classificacao);
                   const daysSinceLastPurchase = customer.lastPurchase 
                     ? Math.floor((new Date().getTime() - new Date(customer.lastPurchase).getTime()) / (1000 * 60 * 60 * 24))
                     : null;
@@ -494,7 +508,7 @@ export default function Customers() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full ${tier.color}`}></div>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant={tier.variant} className="text-xs font-semibold">
                             {tier.tier}
                           </Badge>
                         </div>
@@ -894,7 +908,7 @@ const CustomerForm = ({
 
 // Componente de detalhes do cliente
 const CustomerDetails = ({ customer }: { customer: Customer }) => {
-  const tier = getCustomerTier(customer.totalSpent);
+  const tier = getCustomerTier(customer.classificacao);
   const averagePerPurchase = customer.totalPurchases > 0 ? customer.totalSpent / customer.totalPurchases : 0;
   
   const formatCurrency = (value: number) => {
@@ -916,12 +930,6 @@ const CustomerDetails = ({ customer }: { customer: Customer }) => {
     }
   };
 
-  function getCustomerTier(totalSpent: number) {
-    if (totalSpent >= 5000) return { tier: 'Gold', color: 'bg-yellow-500' };
-    if (totalSpent >= 2000) return { tier: 'Silver', color: 'bg-gray-400' };
-    return { tier: 'Bronze', color: 'bg-orange-600' };
-  }
-
   return (
     <div className="space-y-6">
       {/* Basic Info */}
@@ -931,7 +939,7 @@ const CustomerDetails = ({ customer }: { customer: Customer }) => {
             <h3 className="text-2xl font-semibold">{customer.name}</h3>
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${tier.color}`}></div>
-              <Badge variant="outline">{tier.tier}</Badge>
+              <Badge variant={tier.variant} className="font-semibold">{tier.tier}</Badge>
             </div>
           </div>
           <div className="flex items-center gap-4 text-muted-foreground">
@@ -1064,8 +1072,25 @@ const CustomerDetails = ({ customer }: { customer: Customer }) => {
   );
 };
 
-function getCustomerTier(totalSpent: number) {
-  if (totalSpent >= 5000) return { tier: 'Gold', color: 'bg-yellow-500' };
-  if (totalSpent >= 2000) return { tier: 'Silver', color: 'bg-gray-400' };
-  return { tier: 'Bronze', color: 'bg-orange-600' };
+/**
+ * Retorna a badge de classificação VIP do cliente
+ * Baseado na função SQL fn_classificar_cliente
+ * DIAMANTE ≥R$10.000 | PLATINA ≥R$5.000 | OURO ≥R$2.000 | PRATA ≥R$500 | BRONZE <R$500
+ */
+function getCustomerTier(classificacao?: string) {
+  if (!classificacao) return { tier: 'BRONZE', icon: '🥉', color: 'bg-orange-600', variant: 'outline' as const };
+  
+  switch (classificacao) {
+    case 'DIAMANTE':
+      return { tier: '💎 DIAMANTE', icon: '💎', color: 'bg-cyan-500', variant: 'default' as const };
+    case 'PLATINA':
+      return { tier: '🏆 PLATINA', icon: '🏆', color: 'bg-gray-300', variant: 'secondary' as const };
+    case 'OURO':
+      return { tier: '🥇 OURO', icon: '🥇', color: 'bg-yellow-500', variant: 'default' as const };
+    case 'PRATA':
+      return { tier: '🥈 PRATA', icon: '🥈', color: 'bg-gray-400', variant: 'secondary' as const };
+    case 'BRONZE':
+    default:
+      return { tier: '🥉 BRONZE', icon: '🥉', color: 'bg-orange-600', variant: 'outline' as const };
+  }
 }

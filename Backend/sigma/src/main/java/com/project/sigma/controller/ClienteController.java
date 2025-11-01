@@ -71,4 +71,22 @@ public class ClienteController {
         clienteService.deletarCliente(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Endpoint para obter a classificação VIP de um cliente.
+     * HTTP GET /api/customers/{id}/classificacao
+     * 
+     * Retorna: DIAMANTE, PLATINA, OURO, PRATA ou BRONZE
+     * baseado no total gasto usando fn_classificar_cliente
+     */
+    @GetMapping("/{id}/classificacao")
+    public ResponseEntity<String> getClassificacaoCliente(@PathVariable Long id) {
+        try {
+            String classificacao = clienteService.classificarCliente(id);
+            return ResponseEntity.ok(classificacao);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("BRONZE");
+        }
+    }
 }

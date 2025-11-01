@@ -337,6 +337,13 @@ public class ClienteService {
         dto.setAtivo(cliente.getAtivo());
         dto.setRanking(cliente.getRanking());
         dto.setTotalGasto(cliente.getTotal_gasto());
+        
+        // Calcular classificação VIP usando fn_classificar_cliente
+        try {
+            dto.setClassificacao(classificarCliente(cliente.getId_pessoa()));
+        } catch (SQLException e) {
+            dto.setClassificacao("BRONZE"); // Default em caso de erro
+        }
 
         // Get specific client type data
         if (cliente.getTipo_pessoa() == Cliente.TipoPessoa.FISICA) {
@@ -364,11 +371,27 @@ public class ClienteService {
     // ================================================================
 
     /**
-     * Classifica cliente baseado no número de compras
+     * Classifica cliente baseado no total gasto
      * Utiliza a função fn_classificar_cliente do banco
+     * 
+     * Etapas:
+     * 1. Calcula o total gasto pelo cliente (sum de vendas)
+     * 2. Passa para fn_classificar_cliente que retorna a classificação
+     * 
+     * Classificações: DIAMANTE, PLATINA, OURO, PRATA, BRONZE
      */
     public String classificarCliente(Long idCliente) throws SQLException {
-        String sql = "SELECT fn_classificar_cliente(?) AS classificacao";
+        // SQL que calcula total gasto e aplica a função de classificação
+        String sql = """
+            SELECT fn_classificar_cliente(
+                COALESCE(
+                    (SELECT SUM(v.valor_total) 
+                     FROM Venda v 
+                     WHERE v.id_cliente = ?),
+                    0
+                )
+            ) AS classificacao
+        """;
         
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -382,7 +405,7 @@ public class ClienteService {
             }
         }
         
-        return "Novo";
+        return "BRONZE"; // Default para clientes sem compras
     }
 }
 

@@ -228,6 +228,7 @@ export interface BackendClienteDTO {
   ativo: boolean;
   ranking: number;
   totalGasto: number;
+  classificacao: 'DIAMANTE' | 'PLATINA' | 'OURO' | 'PRATA' | 'BRONZE'; // Classificação VIP
   cpf?: string;
   dataNascimento?: string; // O backend envia LocalDate, que o JSON converte para string
   cnpj?: string;

@@ -49,6 +49,7 @@ const mapBackendToFrontend = (dto: BackendClienteDTO): Customer => {
     status: dto.ativo ? 'active' : 'inactive',
     birthDate: dto.dataNascimento,
     totalSpent: dto.totalGasto || 0,
+    classificacao: dto.classificacao, // Classificação VIP do SQL
     totalPurchases: 0, // TODO: O backend não retorna esse campo ainda
     registrationDate: '', // TODO: O backend não retorna esse campo ainda
     lastPurchase: undefined, // TODO: O backend não retorna esse campo ainda

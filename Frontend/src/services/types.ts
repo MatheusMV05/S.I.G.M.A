@@ -159,6 +159,8 @@ export interface CreateSupplierRequest {
 // ============== TYPES DE CLIENTES ==============
 export type CustomerType = 'individual' | 'business';
 
+export type CustomerClassification = 'DIAMANTE' | 'PLATINA' | 'OURO' | 'PRATA' | 'BRONZE';
+
 export interface Customer {
   id: string;
   name: string;
@@ -172,6 +174,7 @@ export interface Customer {
   totalPurchases: number;
   totalSpent: number;
   status: 'active' | 'inactive';
+  classificacao?: CustomerClassification; // Classificação VIP: DIAMANTE ≥R$10k, PLATINA ≥R$5k, OURO ≥R$2k, PRATA ≥R$500, BRONZE <R$500
   notes?: string;
   birthDate?: string;
   companyInfo?: {
