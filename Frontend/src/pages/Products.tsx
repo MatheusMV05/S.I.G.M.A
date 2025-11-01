@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card';
@@ -39,7 +39,6 @@ import { ProductModal } from '@/components/ProductModal';
 import { DeleteProductModal } from '@/components/DeleteProductModal';
 import { toast } from 'sonner';
 import { productService, LogAuditoriaDTO } from '@/services/productService';
-import { useEffect } from 'react';
 
 // --- CORREÇÃO IMPORTANTE ---
 // 1. O tipo 'Product' foi atualizado para usar os nomes de campo em português
@@ -70,6 +69,7 @@ export default function Products() {
   // Estados de controle da UI (sem alterações)
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedProduct, setSelectedProduct] = useState<ProductAPI | null>(null);
@@ -87,6 +87,21 @@ export default function Products() {
   const [historicoProduto, setHistoricoProduto] = useState<LogAuditoriaDTO[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
 
+  // Debounce do searchTerm - aguarda 500ms após parar de digitar
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(0); // Reset page quando buscar
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset page quando mudar filtros
+  useEffect(() => {
+    setPage(0);
+  }, [selectedCategory, selectedStatus]);
+
   // Hooks do React Query para buscar dados (sem alterações)
   const {
     data: productsPage,
@@ -95,7 +110,7 @@ export default function Products() {
   } = useProducts({
     page,
     size: 10,
-    search: searchTerm || undefined,
+    search: debouncedSearchTerm || undefined,
     categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
     // Adapte o status se necessário, baseado no que o backend espera
     // status: selectedStatus !== 'all' ? selectedStatus.toUpperCase() : undefined,
@@ -111,6 +126,22 @@ export default function Products() {
   const { data: categoriesTreeData, isLoading: treeLoading, error: treeError } = useCategoriesTree();
   
   const products = (productsPage?.content ?? []) as unknown as ProductAPI[];
+  
+  // Debug: verificar dados de paginação
+  React.useEffect(() => {
+    if (productsPage) {
+      console.log('📊 Paginação:', {
+        page: page,
+        size: 10,
+        totalElements: productsPage.totalElements,
+        totalPages: productsPage.totalPages,
+        currentPage: productsPage.number,
+        productsInPage: productsPage.content?.length || 0,
+        first: productsPage.first,
+        last: productsPage.last
+      });
+    }
+  }, [productsPage, page]);
   
   // Tentar primeiro com categoriesData, depois com categoriesTreeData
   const categoriesFromPaginated = (categoriesData?.content ?? []).filter(cat => cat.id && cat.id !== '');
@@ -577,12 +608,33 @@ export default function Products() {
         </div>
       )}
       
-      {/* Paginação (sem alterações) */}
+      {/* Paginação */}
       {productsPage && productsPage.totalPages > 1 && (
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={productsPage.first}>Anterior</Button>
-          <span className="text-sm text-muted-foreground">Página {productsPage.number + 1} de {productsPage.totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={productsPage.last}>Próximo</Button>
+        <div className="flex items-center justify-between py-4 px-2">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {productsPage.content.length} de {productsPage.totalElements} produtos
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPage(page - 1)} 
+              disabled={productsPage.first || page === 0}
+            >
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground px-2">
+              Página {page + 1} de {productsPage.totalPages}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPage(page + 1)} 
+              disabled={productsPage.last || page >= productsPage.totalPages - 1}
+            >
+              Próximo
+            </Button>
+          </div>
         </div>
       )}
 

@@ -165,16 +165,23 @@ public class ProdutoRepository implements BaseRepository<Produto, Long> {
         }
 
         // 1. Obter contagem total
+        countSql.append(whereClause);
         Long totalElements = jdbcTemplate.queryForObject(countSql.toString(), Long.class, params.toArray());
 
         // 2. Adicionar ordenação e paginação
-        // ... (código da paginação permanece o mesmo) ...
+        sql.append(whereClause);
+        sql.append(" ORDER BY p.nome ASC ");
+        sql.append(" LIMIT ? OFFSET ? ");
+        params.add(size);
+        params.add(page * size);
 
         // 3. Obter o conteúdo da página
-        // ATENÇÃO AQUI: Mude para List<Produto> e use o produtoRowMapper()
+        System.out.println("🔍 SQL Paginação: " + sql.toString());
+        System.out.println("📊 Params: page=" + page + ", size=" + size + ", offset=" + (page * size));
+        
         List<Produto> content = jdbcTemplate.query(
                 sql.toString(),
-                produtoRowMapper(), // Use o row mapper de entidade existente
+                produtoRowMapper(),
                 params.toArray()
         );
 
