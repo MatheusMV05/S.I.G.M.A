@@ -1,9 +1,12 @@
 package com.project.sigma.controller;
 
+import com.project.sigma.dto.LogAuditoriaDTO;
 import com.project.sigma.dto.PaginatedResponseDTO;
 import com.project.sigma.dto.ProdutoRequestDTO;
 import com.project.sigma.dto.ProdutoResponseDTO;
 import com.project.sigma.model.Produto;
+import com.project.sigma.repository.LogAuditoriaRepository;
+import com.project.sigma.repository.ProdutoRepository;
 import com.project.sigma.service.ProdutoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,7 +17,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/products")
@@ -22,6 +27,12 @@ public class ProdutoController {
 
     @Autowired
     private ProdutoService produtoService;
+
+    @Autowired
+    private LogAuditoriaRepository logAuditoriaRepository;
+
+    @Autowired
+    private ProdutoRepository produtoRepository;
 
     @GetMapping
     public ResponseEntity<PaginatedResponseDTO<ProdutoResponseDTO>> getProdutos(
@@ -131,6 +142,7 @@ public class ProdutoController {
     public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody ProdutoRequestDTO dto) {
         System.out.println("=== DEBUG PRODUTO UPDATE ===");
         System.out.println("ID recebido: " + id);
+        System.out.println("ID Categoria recebido: " + dto.getIdCategoria());
 
         // Convert DTO to entity using new schema field names
         Produto produto = new Produto();
@@ -140,7 +152,19 @@ public class ProdutoController {
         produto.setEstoque(dto.getQuantEmEstoque());
         produto.setPreco_venda(dto.getValorUnitario());
         produto.setData_validade(dto.getDataValidade());
-        produto.setId_categoria(dto.getIdCategoria());
+        
+        // CORRIGIDO: Permitir que id_categoria seja null se não fornecido
+        // Isso evita foreign key constraint error quando categoria não é alterada
+        if (dto.getIdCategoria() != null && dto.getIdCategoria() > 0) {
+            produto.setId_categoria(dto.getIdCategoria());
+        } else {
+            // Buscar a categoria atual do produto para manter
+            Optional<Produto> produtoAtual = produtoRepository.findById(id);
+            if (produtoAtual.isPresent()) {
+                produto.setId_categoria(produtoAtual.get().getId_categoria());
+            }
+        }
+        
         produto.setDescricao(dto.getDescricao());
         produto.setEstoque_minimo(dto.getEstoqueMinimo());
         // CORRIGIDO: garantir que estoque_maximo nunca seja null
@@ -152,6 +176,7 @@ public class ProdutoController {
         System.out.println("Produto antes de enviar para service:");
         System.out.println("preco_venda: " + produto.getPreco_venda());
         System.out.println("estoque: " + produto.getEstoque());
+        System.out.println("id_categoria: " + produto.getId_categoria());
         System.out.println("estoque_maximo: " + produto.getEstoque_maximo());
         System.out.println("===============================");
 
@@ -270,6 +295,33 @@ public class ProdutoController {
             errorResponse.put("mensagem", "Erro ao processar requisição de reajuste");
             
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
+
+    /**
+     * Busca histórico de auditoria de um produto específico
+     * GET /api/products/{id}/historico
+     * Utiliza a tabela AuditoriaLog populada pelo trigger trg_auditoria_produto_update
+     * 
+     * Retorna todas as alterações feitas no produto ordenadas por data (mais recente primeiro)
+     * 
+     * @param id ID do produto
+     * @return Lista de logs de auditoria do produto
+     */
+    @GetMapping("/{id}/historico")
+    public ResponseEntity<List<LogAuditoriaDTO>> getHistoricoProduto(@PathVariable Long id) {
+        System.out.println("📜 GET /api/products/" + id + "/historico - Buscando histórico de auditoria");
+        
+        try {
+            List<LogAuditoriaDTO> historico = logAuditoriaRepository.buscarPorRegistro("Produto", id.intValue());
+            
+            System.out.println("✅ Encontrados " + historico.size() + " registros de auditoria para o produto ID " + id);
+            
+            return ResponseEntity.ok(historico);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar histórico do produto: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of()); // Retorna lista vazia em caso de erro
         }
     }
 }

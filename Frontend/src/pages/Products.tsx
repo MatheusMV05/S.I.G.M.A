@@ -22,7 +22,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Search, Plus, Edit, Trash2, AlertTriangle, Eye, Calendar, Package, DollarSign, Grid3X3, List, Download, TrendingUp,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Search, Plus, Edit, Trash2, AlertTriangle, Eye, Calendar, Package, DollarSign, Grid3X3, List, Download, TrendingUp, History, AlertCircle,
 } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import {
@@ -32,6 +38,8 @@ import {
 import { ProductModal } from '@/components/ProductModal';
 import { DeleteProductModal } from '@/components/DeleteProductModal';
 import { toast } from 'sonner';
+import { productService, LogAuditoriaDTO } from '@/services/productService';
+import { useEffect } from 'react';
 
 // --- CORREÇÃO IMPORTANTE ---
 // 1. O tipo 'Product' foi atualizado para usar os nomes de campo em português
@@ -45,6 +53,7 @@ type ProductAPI = {
   preco_venda: number;
   estoque: number;
   estoque_minimo: number;
+  estoque_maximo?: number;
   status: 'ATIVO' | 'INATIVO';
   category: { id: string; nome: string; }; // A categoria aninhada - id como string
   codigo_barras?: string;
@@ -52,6 +61,7 @@ type ProductAPI = {
   peso?: number;
   data_criacao?: string;
   data_atualizacao?: string;
+  data_validade?: string;
   imagens?: string[];
 };
 
@@ -72,6 +82,10 @@ export default function Products() {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [productToEdit, setProductToEdit] = useState<ProductAPI | null>(null);
   const [productToDelete, setProductToDelete] = useState<ProductAPI | null>(null);
+  
+  // Estado para histórico de auditoria
+  const [historicoProduto, setHistoricoProduto] = useState<LogAuditoriaDTO[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState(false);
 
   // Hooks do React Query para buscar dados (sem alterações)
   const {
@@ -109,6 +123,28 @@ export default function Products() {
       console.log('✅ Categorias carregadas com sucesso:', categories.length);
     }
   }, [categories]);
+
+  // Carregar histórico de auditoria quando produto é selecionado
+  useEffect(() => {
+    const carregarHistorico = async () => {
+      if (selectedProduct) {
+        setLoadingHistorico(true);
+        try {
+          const historico = await productService.getHistoricoProduto(selectedProduct.id_produto);
+          setHistoricoProduto(historico);
+        } catch (error) {
+          console.error('Erro ao carregar histórico:', error);
+          setHistoricoProduto([]);
+        } finally {
+          setLoadingHistorico(false);
+        }
+      } else {
+        setHistoricoProduto([]);
+      }
+    };
+
+    carregarHistorico();
+  }, [selectedProduct]);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -552,7 +588,7 @@ export default function Products() {
 
       {/* Modal de Detalhes do Produto */}
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
@@ -691,32 +727,201 @@ export default function Products() {
                 </CardContent>
               </Card>
 
-              {/* Informações de Data (se disponíveis) */}
-              {(selectedProduct.data_criacao || selectedProduct.data_atualizacao) && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Histórico
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-4">
-                    {selectedProduct.data_criacao && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Data de Criação</label>
-                        <p>{new Date(selectedProduct.data_criacao).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                    )}
-                    {selectedProduct.data_atualizacao && (
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Última Atualização</label>
-                        <p>{new Date(selectedProduct.data_atualizacao).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+              {/* Tabs: Histórico e Auditoria */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <History className="h-5 w-5" />
+                    Histórico e Auditoria
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="info" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="info">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Informações
+                      </TabsTrigger>
+                      <TabsTrigger value="auditoria">
+                        <History className="h-4 w-4 mr-2" />
+                        Auditoria ({historicoProduto.length})
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="info" className="space-y-4 mt-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">📊 Resumo Executivo</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {/* Margem de Lucro */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                              <label className="text-xs font-medium text-blue-600">Margem de Lucro</label>
+                              <p className="text-2xl font-bold text-blue-900">
+                                {selectedProduct.preco_venda && selectedProduct.preco_custo
+                                  ? (((selectedProduct.preco_venda - selectedProduct.preco_custo) / selectedProduct.preco_venda) * 100).toFixed(1)
+                                  : '0'}%
+                              </p>
+                            </div>
+                            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                              <label className="text-xs font-medium text-green-600">Lucro por Unidade</label>
+                              <p className="text-2xl font-bold text-green-900">
+                                {formatCurrency((selectedProduct.preco_venda || 0) - (selectedProduct.preco_custo || 0))}
+                              </p>
+                            </div>
+                          </div>
 
+                          {/* Estoque e Validade */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Estoque Atual</label>
+                              <p className="text-lg font-semibold">{selectedProduct.estoque || 0} unidades</p>
+                              {selectedProduct.estoque_minimo && (
+                                <p className="text-xs text-muted-foreground">
+                                  Mínimo: {selectedProduct.estoque_minimo} | 
+                                  {selectedProduct.estoque_maximo && ` Máximo: ${selectedProduct.estoque_maximo}`}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Valor em Estoque</label>
+                              <p className="text-lg font-semibold text-green-600">
+                                {formatCurrency((selectedProduct.preco_venda || 0) * (selectedProduct.estoque || 0))}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Custo: {formatCurrency((selectedProduct.preco_custo || 0) * (selectedProduct.estoque || 0))}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Datas do Sistema */}
+                          <div className="pt-4 border-t">
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">📅 Informações Temporais</label>
+                            <div className="grid grid-cols-2 gap-4">
+                              {selectedProduct.data_criacao && (
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Cadastrado em</label>
+                                  <p className="text-sm">{new Date(selectedProduct.data_criacao).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}</p>
+                                </div>
+                              )}
+                              {selectedProduct.data_atualizacao && (
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Última alteração</label>
+                                  <p className="text-sm">{new Date(selectedProduct.data_atualizacao).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}</p>
+                                </div>
+                              )}
+                              {selectedProduct.data_validade && (
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Data de Validade</label>
+                                  <p className="text-sm">{new Date(selectedProduct.data_validade).toLocaleDateString('pt-BR')}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Alertas e Insights */}
+                          <div className="space-y-2">
+                            {selectedProduct.estoque <= selectedProduct.estoque_minimo && (
+                              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-medium text-orange-900">Estoque Crítico</p>
+                                  <p className="text-xs text-orange-700">Este produto está abaixo do estoque mínimo. Considere reabastecer.</p>
+                                </div>
+                              </div>
+                            )}
+                            {selectedProduct.preco_venda < selectedProduct.preco_custo && (
+                              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-medium text-red-900">Atenção: Prejuízo</p>
+                                  <p className="text-xs text-red-700">O preço de venda está menor que o custo!</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="auditoria" className="mt-4">
+                      {loadingHistorico ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          Carregando histórico...
+                        </div>
+                      ) : historicoProduto.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>Nenhuma alteração registrada para este produto</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {historicoProduto.map((log, index) => (
+                            <div
+                              key={log.idLog}
+                              className="border-l-2 border-primary pl-4 pb-4 relative"
+                            >
+                              {/* Timeline dot */}
+                              <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary border-2 border-background" />
+                              
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <Badge variant={
+                                    log.operacao === 'INSERT' ? 'default' :
+                                    log.operacao === 'UPDATE' ? 'secondary' :
+                                    'destructive'
+                                  } className="text-xs">
+                                    {log.operacao}
+                                  </Badge>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {new Date(log.dataHora).toLocaleString('pt-BR', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {log.descricao && (
+                                <p className="text-sm font-medium mb-2">{log.descricao}</p>
+                              )}
+                              
+                              {log.dadosAntigos && (
+                                <details className="text-xs text-muted-foreground">
+                                  <summary className="cursor-pointer hover:text-foreground">
+                                    Ver detalhes das alterações
+                                  </summary>
+                                  <div className="mt-2 p-2 bg-muted rounded text-xs font-mono">
+                                    {log.dadosAntigos}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* Informações de Data (se disponíveis) - REMOVIDO, agora está na tab */}
               {/* Imagens (se disponíveis) */}
               {selectedProduct.imagens && selectedProduct.imagens.length > 0 && (
                 <Card>

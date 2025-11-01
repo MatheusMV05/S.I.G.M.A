@@ -25,16 +25,16 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
     private JdbcTemplate jdbcTemplate;
 
     private static final String SELECT_ALL_SQL = 
-        "SELECT * FROM LogsAuditoria ORDER BY data_hora DESC";
+        "SELECT * FROM AuditoriaLog ORDER BY data_hora DESC";
 
     private static final String SELECT_BY_ID_SQL = 
-        "SELECT * FROM LogsAuditoria WHERE id_log = ?";
+        "SELECT * FROM AuditoriaLog WHERE id_log = ?";
 
     private static final String DELETE_SQL = 
-        "DELETE FROM LogsAuditoria WHERE id_log = ?";
+        "DELETE FROM AuditoriaLog WHERE id_log = ?";
 
     private static final String EXISTS_SQL = 
-        "SELECT COUNT(*) FROM LogsAuditoria WHERE id_log = ?";
+        "SELECT COUNT(*) FROM AuditoriaLog WHERE id_log = ?";
 
     // ================================================================
     // IMPLEMENTAÇÃO DA INTERFACE BaseRepository
@@ -90,7 +90,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
             Integer limit) {
 
         StringBuilder sql = new StringBuilder(
-            "SELECT * FROM LogsAuditoria WHERE 1=1 "
+            "SELECT * FROM AuditoriaLog WHERE 1=1 "
         );
         List<Object> params = new ArrayList<>();
 
@@ -165,8 +165,8 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      * Busca logs de um registro específico
      */
     public List<LogAuditoriaDTO> buscarPorRegistro(String tabela, Integer registroId) {
-        String sql = "SELECT * FROM LogsAuditoria " +
-                    "WHERE tabela = ? AND registro_id = ? " +
+        String sql = "SELECT * FROM AuditoriaLog " +
+                    "WHERE tabela_afetada = ? AND id_registro = ? " +
                     "ORDER BY data_hora DESC";
 
         return jdbcTemplate.query(sql, logAuditoriaRowMapper(), tabela, registroId);
@@ -176,7 +176,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      * Busca logs por usuário
      */
     public List<LogAuditoriaDTO> buscarPorUsuario(Integer idUsuario, Integer limit) {
-        String sql = "SELECT * FROM LogsAuditoria " +
+        String sql = "SELECT * FROM AuditoriaLog " +
                     "WHERE id_usuario = ? " +
                     "ORDER BY data_hora DESC " +
                     "LIMIT ?";
@@ -189,7 +189,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      */
     public Long contarTodos() {
         return jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM LogsAuditoria",
+            "SELECT COUNT(*) FROM AuditoriaLog",
             Long.class
         );
     }
@@ -199,7 +199,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      */
     public Long contarPorTabela(String tabela) {
         return jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM LogsAuditoria WHERE tabela = ?",
+            "SELECT COUNT(*) FROM AuditoriaLog WHERE tabela_afetada = ?",
             Long.class,
             tabela
         );
@@ -210,7 +210,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      */
     public Long contarPorOperacao(String operacao) {
         return jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM LogsAuditoria WHERE operacao = ?",
+            "SELECT COUNT(*) FROM AuditoriaLog WHERE operacao = ?",
             Long.class,
             operacao
         );
@@ -221,8 +221,8 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      */
     public List<String> listarTabelasComLogs() {
         return jdbcTemplate.query(
-            "SELECT DISTINCT tabela FROM LogsAuditoria ORDER BY tabela",
-            (rs, rowNum) -> rs.getString("tabela")
+            "SELECT DISTINCT tabela_afetada FROM AuditoriaLog ORDER BY tabela_afetada",
+            (rs, rowNum) -> rs.getString("tabela_afetada")
         );
     }
 
@@ -231,7 +231,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      */
     public int deletarLogsAntigos(int dias) {
         LocalDateTime dataLimite = LocalDateTime.now().minusDays(dias);
-        String sql = "DELETE FROM LogsAuditoria WHERE data_hora < ?";
+        String sql = "DELETE FROM AuditoriaLog WHERE data_hora < ?";
         return jdbcTemplate.update(sql, Timestamp.valueOf(dataLimite));
     }
 
@@ -239,7 +239,7 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
      * Deleta todos os logs de uma tabela específica
      */
     public int deletarLogsPorTabela(String tabela) {
-        String sql = "DELETE FROM LogsAuditoria WHERE tabela = ?";
+        String sql = "DELETE FROM AuditoriaLog WHERE tabela_afetada = ?";
         return jdbcTemplate.update(sql, tabela);
     }
 
@@ -264,10 +264,10 @@ public class LogAuditoriaRepository implements BaseRepository<LogAuditoriaDTO, I
         return (ResultSet rs, int rowNum) -> {
             LogAuditoriaDTO dto = new LogAuditoriaDTO();
             dto.setIdLog(rs.getInt("id_log"));
-            dto.setTabela(rs.getString("tabela"));
+            dto.setTabela(rs.getString("tabela_afetada"));  // CORRIGIDO: tabela → tabela_afetada
             dto.setOperacao(rs.getString("operacao"));
             dto.setIdUsuario((Integer) rs.getObject("id_usuario"));
-            dto.setRegistroId(rs.getInt("registro_id"));
+            dto.setRegistroId(rs.getInt("id_registro"));  // CORRIGIDO: registro_id → id_registro
             dto.setDadosAntigos(rs.getString("dados_antigos"));
             dto.setDadosNovos(rs.getString("dados_novos"));
             dto.setIpOrigem(rs.getString("ip_origem"));

@@ -271,6 +271,17 @@ class ProductService {
     });
   }
 
+  /**
+   * Busca histórico de auditoria de um produto
+   * Utiliza a tabela AuditoriaLog populada pelo trigger trg_auditoria_produto_update
+   * 
+   * @param productId ID do produto
+   * @returns Lista de alterações feitas no produto
+   */
+  async getHistoricoProduto(productId: number): Promise<LogAuditoriaDTO[]> {
+    return await apiRequest<LogAuditoriaDTO[]>(`/products/${productId}/historico`);
+  }
+
   private async getHeaders() {
     const token = localStorage.getItem('auth_token');
     return {
@@ -278,6 +289,20 @@ class ProductService {
       ...(token && { 'Authorization': `Bearer ${token}` }),
     };
   }
+}
+
+// Interface para o DTO de Log de Auditoria
+export interface LogAuditoriaDTO {
+  idLog: number;
+  tabela: string;
+  operacao: 'INSERT' | 'UPDATE' | 'DELETE';
+  idUsuario?: number;
+  registroId: number;
+  dadosAntigos?: string;
+  dadosNovos?: string;
+  ipOrigem?: string;
+  dataHora: string;
+  descricao: string;
 }
 
 export const productService = ProductService.getInstance();
