@@ -307,12 +307,21 @@ export interface CreatePromotionRequest {
 export interface DashboardKPIs {
   todayRevenue: number;
   yesterdayRevenue: number;
-  monthRevenue: number;
+  todaySales: number;
+  yesterdaySales: number;
   averageTicket: number;
+  yesterdayAverageTicket: number;
   totalProducts: number;
   lowStockProducts: number;
   totalCustomers: number;
-  todaySales: number;
+  monthRevenue: number;
+  lastMonthRevenue: number;
+  monthlyGrowth: number;
+  weekRevenue: number;
+  lastWeekRevenue: number;
+  weeklyGrowth: number;
+  activePromotions: number;
+  customerRetention: number;
 }
 
 export interface SalesReport {

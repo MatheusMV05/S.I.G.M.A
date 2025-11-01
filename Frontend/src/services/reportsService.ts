@@ -19,10 +19,10 @@ class ReportsService {
   }
 
   /**
-   * Busca KPIs do dashboard
+   * Busca KPIs do dashboard com dados reais de vendas
    */
   async getDashboardKPIs(): Promise<DashboardKPIs> {
-    return await apiRequest<DashboardKPIs>('/reports/dashboard');
+    return await apiRequest<DashboardKPIs>('/reports/dashboard-kpis');
   }
 
   /**

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useDashboardKPIs } from '@/hooks/useReports';
+import { useDashboardKPIs, useDailyRevenue, useTopProducts, useHourlySales, useSalesByCategory, useSalesStatistics, useSalesDistribution, useSalesByWeekday, usePaymentMethods } from '@/hooks/useReports';
 import { useLowStockProducts } from '@/hooks/useProducts';
 import { useProdutosCriticos } from '@/hooks/useProdutosCriticos';
 import {
@@ -27,7 +27,8 @@ import {
   Store,
   CreditCard,
   Activity,
-  ArrowRight
+  ArrowRight,
+  TrendingDown as TrendingDownIcon
 } from 'lucide-react';
 import {
   Area,
@@ -43,68 +44,14 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid
+  CartesianGrid,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Legend
 } from 'recharts';
-
-// Dados para gráfico de faturamento dos últimos 30 dias
-const revenueData = [
-  { day: '01', revenue: 12500, target: 15000 },
-  { day: '02', revenue: 14200, target: 15000 },
-  { day: '03', revenue: 16800, target: 15000 },
-  { day: '04', revenue: 13400, target: 15000 },
-  { day: '05', revenue: 17600, target: 15000 },
-  { day: '06', revenue: 19200, target: 15000 },
-  { day: '07', revenue: 15800, target: 15000 },
-  { day: '08', revenue: 14600, target: 15000 },
-  { day: '09', revenue: 18400, target: 15000 },
-  { day: '10', revenue: 16200, target: 15000 },
-  { day: '11', revenue: 17800, target: 15000 },
-  { day: '12', revenue: 20400, target: 15000 },
-  { day: '13', revenue: 16600, target: 15000 },
-  { day: '14', revenue: 15200, target: 15000 },
-  { day: '15', revenue: 18900, target: 15000 },
-  { day: '16', revenue: 17400, target: 15000 },
-  { day: '17', revenue: 16800, target: 15000 },
-  { day: '18', revenue: 19600, target: 15000 },
-  { day: '19', revenue: 18200, target: 15000 },
-  { day: '20', revenue: 17000, target: 15000 },
-  { day: '21', revenue: 20800, target: 15000 },
-  { day: '22', revenue: 19400, target: 15000 },
-  { day: '23', revenue: 18600, target: 15000 },
-  { day: '24', revenue: 16400, target: 15000 },
-  { day: '25', revenue: 17800, target: 15000 },
-  { day: '26', revenue: 19200, target: 15000 },
-  { day: '27', revenue: 18400, target: 15000 },
-  { day: '28', revenue: 17600, target: 15000 },
-  { day: '29', revenue: 19800, target: 15000 },
-  { day: '30', revenue: 18750, target: 15000 }
-];
-
-// Dados para gráfico de produtos mais vendidos
-const topProductsData = [
-  { name: 'Arroz Branco 5kg', sales: 145, color: '#9333FF' },
-  { name: 'Coca-Cola 2L', sales: 128, color: '#FF33CC' },
-  { name: 'Pão Francês kg', sales: 112, color: '#00FF7F' },
-  { name: 'Leite Integral 1L', sales: 98, color: '#FFD700' },
-  { name: 'Açúcar Cristal 1kg', sales: 87, color: '#FF3333' },
-  { name: 'Óleo de Soja 900ml', sales: 76, color: '#33CCFF' }
-];
-
-// Dados para vendas por hora do dia atual
-const hourlyData = [
-  { hour: '08h', sales: 12 },
-  { hour: '09h', sales: 28 },
-  { hour: '10h', sales: 45 },
-  { hour: '11h', sales: 38 },
-  { hour: '12h', sales: 52 },
-  { hour: '13h', sales: 41 },
-  { hour: '14h', sales: 35 },
-  { hour: '15h', sales: 48 },
-  { hour: '16h', sales: 56 },
-  { hour: '17h', sales: 62 },
-  { hour: '18h', sales: 58 },
-  { hour: '19h', sales: 44 }
-];
 
 // Componente KPI Card
 const KPICard = ({ 
@@ -178,9 +125,20 @@ const KPICard = ({
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [selectedPeriod, setSelectedPeriod] = useState(30); // Filtro de período em dias
   
-  // Buscar KPIs do dashboard
-  const { data: dashboardKPIs, isLoading: isLoadingKPIs, error: kpisError } = useDashboardKPIs();
+  // Buscar dados reais do backend
+  const { data: dashboardKPIs, isLoading: isLoadingKPIs } = useDashboardKPIs();
+  const { data: dailyRevenueData, isLoading: isLoadingRevenue } = useDailyRevenue(selectedPeriod);
+  const { data: topProductsData, isLoading: isLoadingProducts } = useTopProducts(6);
+  const { data: hourlySalesData, isLoading: isLoadingHourly } = useHourlySales();
+  
+  // Novos gráficos estatísticos
+  const { data: salesByCategory, isLoading: isLoadingCategory } = useSalesByCategory();
+  const { data: salesStats, isLoading: isLoadingStats } = useSalesStatistics(selectedPeriod);
+  const { data: salesDistribution, isLoading: isLoadingDistribution } = useSalesDistribution(selectedPeriod);
+  const { data: salesByWeekday, isLoading: isLoadingWeekday } = useSalesByWeekday(selectedPeriod);
+  const { data: paymentMethods, isLoading: isLoadingPayments } = usePaymentMethods(selectedPeriod);
   
   // Buscar produtos com estoque baixo (método antigo - será substituído)
   const { data: lowStockProducts, isLoading: isLoadingLowStock } = useLowStockProducts();
@@ -192,14 +150,23 @@ export default function Dashboard() {
 
   // Dados fallback para desenvolvimento (caso a API não esteja disponível)
   const fallbackKPIs = {
-    todayRevenue: 18750.40,
-    yesterdayRevenue: 16420.30,
-    averageTicket: 94.25,
-    totalProducts: 2847,
-    lowStockProducts: 15,
-    totalCustomers: 1568,
-    todaySales: 198,
+    todayRevenue: 0,
+    yesterdayRevenue: 0,
+    todaySales: 0,
+    yesterdaySales: 0,
+    averageTicket: 0,
+    yesterdayAverageTicket: 0,
+    totalProducts: 0,
+    lowStockProducts: 0,
+    totalCustomers: 0,
     monthRevenue: 0,
+    lastMonthRevenue: 0,
+    monthlyGrowth: 0,
+    weekRevenue: 0,
+    lastWeekRevenue: 0,
+    weeklyGrowth: 0,
+    activePromotions: 0,
+    customerRetention: 0,
   };
 
   // Usar dados reais ou fallback
@@ -210,8 +177,13 @@ export default function Dashboard() {
     ? ((kpis.todayRevenue - kpis.yesterdayRevenue) / kpis.yesterdayRevenue) * 100 
     : 0;
   
-  // Para salesChange, vamos usar um valor estimado já que não temos yesterdaySales na API
-  const salesChange = 12.5; // Valor estimado positivo
+  const salesChange = kpis.yesterdaySales 
+    ? ((kpis.todaySales - kpis.yesterdaySales) / kpis.yesterdaySales) * 100 
+    : 0;
+
+  const ticketChange = kpis.yesterdayAverageTicket 
+    ? ((kpis.averageTicket - kpis.yesterdayAverageTicket) / kpis.yesterdayAverageTicket) * 100 
+    : 0;
 
   // Funções de navegação
   const handleNewSale = () => navigate('/pos');
@@ -268,8 +240,8 @@ export default function Dashboard() {
         <KPICard
           title="Ticket Médio"
           value={`R$ ${kpis.averageTicket.toFixed(2)}`}
-          change={8.5}
-          changeType="increase"
+          change={Math.round(ticketChange * 100) / 100}
+          changeType={ticketChange >= 0 ? 'increase' : 'decrease'}
           icon={CreditCard}
           color="primary"
         />
@@ -294,20 +266,42 @@ export default function Dashboard() {
 
       {/* Charts and Analytics */}
       <Tabs defaultValue="revenue" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="revenue" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Faturamento
-          </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Produtos
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Atividade
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-4 gap-2">
+            <TabsTrigger value="revenue" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Faturamento
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Produtos
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Estatísticas
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Atividade
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Filtro de Período */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">Período:</label>
+            <select 
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(Number(e.target.value))}
+              className="px-3 py-1 rounded-md border border-border bg-background text-sm"
+            >
+              <option value={7}>7 dias</option>
+              <option value={15}>15 dias</option>
+              <option value={30}>30 dias</option>
+              <option value={60}>60 dias</option>
+              <option value={90}>90 dias</option>
+            </select>
+          </div>
+        </div>
 
         <TabsContent value="revenue" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -319,9 +313,9 @@ export default function Dashboard() {
                   Faturamento dos Últimos 30 Dias
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative">
                 <ResponsiveContainer width="100%" height={250}>
-                  <AreaChart data={revenueData}>
+                  <AreaChart data={dailyRevenueData || []}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#9333FF" stopOpacity={0.3}/>
@@ -337,7 +331,7 @@ export default function Dashboard() {
                         border: '1px solid #333',
                         borderRadius: '8px'
                       }}
-                      formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Faturamento']}
+                      formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Faturamento']}
                     />
                     <Area 
                       type="monotone" 
@@ -349,6 +343,11 @@ export default function Dashboard() {
                     <Line type="monotone" dataKey="target" stroke="#666" strokeDasharray="5 5" />
                   </AreaChart>
                 </ResponsiveContainer>
+                {isLoadingRevenue && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Carregando dados...</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -362,17 +361,19 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Crescimento Semanal</span>
-                      <span className="font-semibold text-success">+15.8%</span>
+                      <span className={`font-semibold ${kpis.weeklyGrowth >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        {kpis.weeklyGrowth >= 0 ? '+' : ''}{kpis.weeklyGrowth.toFixed(1)}%
+                      </span>
                     </div>
-                    <Progress value={15.8} className="h-2" />
+                    <Progress value={Math.min(Math.abs(kpis.weeklyGrowth), 100)} className="h-2" />
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Retenção de Clientes</span>
-                      <span className="font-semibold text-primary">78.5%</span>
+                      <span className="font-semibold text-primary">{kpis.customerRetention.toFixed(1)}%</span>
                     </div>
-                    <Progress value={78.5} className="h-2" />
+                    <Progress value={kpis.customerRetention} className="h-2" />
                   </div>
 
                   <div className="pt-2 border-t border-border">
@@ -391,7 +392,7 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold">8</p>
+                      <p className="text-2xl font-bold">{kpis.activePromotions}</p>
                       <p className="text-sm text-muted-foreground">campanhas ativas</p>
                     </div>
                     <Target className="h-8 w-8 text-secondary" />
@@ -413,7 +414,7 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
-                      data={topProductsData}
+                      data={topProductsData || []}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -421,7 +422,7 @@ export default function Dashboard() {
                       paddingAngle={2}
                       dataKey="sales"
                     >
-                      {topProductsData.map((entry, index) => (
+                      {(topProductsData || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -435,7 +436,7 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="mt-4 space-y-2">
-                  {topProductsData.slice(0, 3).map((product, index) => (
+                  {(topProductsData || []).slice(0, 3).map((product, index) => (
                     <div key={index} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <div 
@@ -447,6 +448,16 @@ export default function Dashboard() {
                       <span className="font-semibold">{product.sales}</span>
                     </div>
                   ))}
+                  {isLoadingProducts && (
+                    <div className="text-center text-sm text-muted-foreground py-4">
+                      Carregando produtos...
+                    </div>
+                  )}
+                  {!isLoadingProducts && (!topProductsData || topProductsData.length === 0) && (
+                    <div className="text-center text-sm text-muted-foreground py-4">
+                      Nenhum produto vendido nos últimos 30 dias
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -457,26 +468,273 @@ export default function Dashboard() {
                 <CardTitle>Ranking Completo</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {topProductsData.map((product, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary font-bold text-sm">
-                        {index + 1}
+                {isLoadingProducts ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 animate-pulse">
+                        <div className="w-8 h-8 rounded-full bg-muted" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-muted rounded w-3/4" />
+                          <div className="h-3 bg-muted rounded w-1/2" />
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium truncate">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{product.sales} vendas</p>
+                    ))}
+                  </div>
+                ) : !topProductsData || topProductsData.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">Nenhum produto vendido nos últimos 30 dias</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {topProductsData.map((product, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium truncate">{product.name}</p>
+                          <p className="text-sm text-muted-foreground">{product.sales} vendas</p>
+                        </div>
+                        <div 
+                          className="w-4 h-4 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: product.color }}
+                        />
                       </div>
-                      <div 
-                        className="w-4 h-4 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: product.color }}
-                      />
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Nova Aba: Estatísticas com Análises Avançadas */}
+        <TabsContent value="statistics" className="space-y-6">
+          {/* Indicadores Estatísticos */}
+          {salesStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Média</p>
+                  <p className="text-2xl font-bold text-primary">R$ {salesStats.mean?.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Ticket médio</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Mediana</p>
+                  <p className="text-2xl font-bold text-primary">R$ {salesStats.median?.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Valor central</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Desvio Padrão</p>
+                  <p className="text-2xl font-bold text-warning">R$ {salesStats.stdDev?.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Dispersão</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground">Amplitude</p>
+                  <p className="text-2xl font-bold text-success">R$ {(salesStats.max - salesStats.min)?.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Max - Min</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Gráfico 1: Distribuição de Frequência de Vendas */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Distribuição de Vendas por Faixa
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={salesDistribution || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
+                    <XAxis dataKey="range" stroke="#888" />
+                    <YAxis stroke="#888" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="frequency" fill="#9333FF" radius={[4, 4, 0, 0]}>
+                      {(salesDistribution || []).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={`hsl(${280 + index * 20}, 70%, 50%)`} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                {isLoadingDistribution && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Carregando distribuição...</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Gráfico 2: Vendas por Dia da Semana (Radar) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-success" />
+                  Vendas por Dia da Semana
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={salesByWeekday || []}>
+                    <PolarGrid stroke="#333" />
+                    <PolarAngleAxis dataKey="weekday" stroke="#888" />
+                    <PolarRadiusAxis stroke="#888" />
+                    <Radar 
+                      name="Vendas" 
+                      dataKey="salesCount" 
+                      stroke="#00FF7F" 
+                      fill="#00FF7F" 
+                      fillOpacity={0.6} 
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+                {isLoadingWeekday && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Carregando dados...</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Gráfico 3: Vendas por Categoria */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-warning" />
+                  Faturamento por Categoria
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={salesByCategory || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ category, percent }) => `${category}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="revenue"
+                    >
+                      {(salesByCategory || []).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 50%)`} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Faturamento']}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {isLoadingCategory && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Carregando categorias...</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Gráfico 4: Métodos de Pagamento */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Preferência de Pagamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={paymentMethods || []} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
+                    <XAxis type="number" stroke="#888" />
+                    <YAxis dataKey="method" type="category" stroke="#888" width={100} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value) => [`${value} vendas`, 'Quantidade']}
+                    />
+                    <Bar dataKey="count" fill="#FF33CC" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                {isLoadingPayments && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Carregando métodos...</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Insights Estatísticos */}
+          {salesStats && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Insights Estatísticos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-success" />
+                      Variabilidade dos Dados
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      O desvio padrão de <strong>R$ {salesStats.stdDev?.toFixed(2)}</strong> indica {
+                        salesStats.stdDev > salesStats.mean * 0.5 
+                          ? 'alta variabilidade nas vendas' 
+                          : 'vendas relativamente consistentes'
+                      }.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/30">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      Concentração de Valores
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      A diferença entre média (R$ {salesStats.mean?.toFixed(2)}) e mediana (R$ {salesStats.median?.toFixed(2)}) é de <strong>R$ {Math.abs(salesStats.mean - salesStats.median).toFixed(2)}</strong>, {
+                        Math.abs(salesStats.mean - salesStats.median) < salesStats.mean * 0.1
+                          ? 'indicando distribuição simétrica'
+                          : 'indicando presença de valores atípicos'
+                      }.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">
@@ -486,9 +744,9 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle>Vendas por Hora - Hoje</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative">
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={hourlyData}>
+                  <BarChart data={hourlySalesData || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
                     <XAxis dataKey="hour" stroke="#888" />
                     <YAxis stroke="#888" />
@@ -502,6 +760,16 @@ export default function Dashboard() {
                     <Bar dataKey="sales" fill="#FF33CC" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+                {isLoadingHourly && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Carregando dados...</div>
+                  </div>
+                )}
+                {!isLoadingHourly && (!hourlySalesData || hourlySalesData.length === 0) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                    <div className="text-sm text-muted-foreground">Nenhuma venda registrada hoje</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -7,6 +7,10 @@ import type { DashboardKPIs, SalesReport, InventoryReport } from '@/services/typ
 export const reportKeys = {
   all: ['reports'] as const,
   dashboard: () => [...reportKeys.all, 'dashboard'] as const,
+  dashboardKPIs: () => [...reportKeys.all, 'dashboard-kpis'] as const,
+  dailyRevenue: (days: number) => [...reportKeys.all, 'daily-revenue', days] as const,
+  topProducts: (limit: number) => [...reportKeys.all, 'top-products', limit] as const,
+  hourlySales: () => [...reportKeys.all, 'hourly-sales'] as const,
   sales: (startDate: string, endDate: string, filters?: any) => 
     [...reportKeys.all, 'sales', { startDate, endDate, filters }] as const,
   inventory: (filters?: any) => [...reportKeys.all, 'inventory', { filters }] as const,
@@ -31,10 +35,115 @@ export const reportKeys = {
 // Hook para KPIs do dashboard
 export const useDashboardKPIs = () => {
   return useQuery({
-    queryKey: reportKeys.dashboard(),
+    queryKey: reportKeys.dashboardKPIs(),
     queryFn: () => reportsService.getDashboardKPIs(),
     staleTime: 2 * 60 * 1000, // 2 minutos
     refetchInterval: 5 * 60 * 1000, // Atualiza a cada 5 minutos
+  });
+};
+
+// Hook para faturamento diário (últimos X dias)
+export const useDailyRevenue = (days: number = 30) => {
+  return useQuery({
+    queryKey: reportKeys.dailyRevenue(days),
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/daily-revenue?days=${days}`);
+      if (!response.ok) throw new Error('Erro ao buscar faturamento diário');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+};
+
+// Hook para produtos mais vendidos
+export const useTopProducts = (limit: number = 10) => {
+  return useQuery({
+    queryKey: reportKeys.topProducts(limit),
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/top-products?limit=${limit}`);
+      if (!response.ok) throw new Error('Erro ao buscar produtos mais vendidos');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+};
+
+// Hook para vendas por hora (hoje)
+export const useHourlySales = () => {
+  return useQuery({
+    queryKey: reportKeys.hourlySales(),
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/hourly-sales`);
+      if (!response.ok) throw new Error('Erro ao buscar vendas por hora');
+      return response.json();
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    refetchInterval: 5 * 60 * 1000, // Atualiza a cada 5 minutos
+  });
+};
+
+// Hook para vendas por categoria
+export const useSalesByCategory = () => {
+  return useQuery({
+    queryKey: [...reportKeys.all, 'sales-by-category'] as const,
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/sales-by-category`);
+      if (!response.ok) throw new Error('Erro ao buscar vendas por categoria');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// Hook para estatísticas de vendas (média, mediana, desvio padrão)
+export const useSalesStatistics = (days: number = 30) => {
+  return useQuery({
+    queryKey: [...reportKeys.all, 'sales-statistics', days] as const,
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/sales-statistics?days=${days}`);
+      if (!response.ok) throw new Error('Erro ao buscar estatísticas');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// Hook para distribuição de vendas
+export const useSalesDistribution = (days: number = 30) => {
+  return useQuery({
+    queryKey: [...reportKeys.all, 'sales-distribution', days] as const,
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/sales-distribution?days=${days}`);
+      if (!response.ok) throw new Error('Erro ao buscar distribuição');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// Hook para vendas por dia da semana
+export const useSalesByWeekday = (days: number = 30) => {
+  return useQuery({
+    queryKey: [...reportKeys.all, 'sales-by-weekday', days] as const,
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/sales-by-weekday?days=${days}`);
+      if (!response.ok) throw new Error('Erro ao buscar vendas por dia da semana');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// Hook para métodos de pagamento
+export const usePaymentMethods = (days: number = 30) => {
+  return useQuery({
+    queryKey: [...reportKeys.all, 'payment-methods', days] as const,
+    queryFn: async () => {
+      const response = await fetch(`http://localhost:8080/api/reports/payment-methods?days=${days}`);
+      if (!response.ok) throw new Error('Erro ao buscar métodos de pagamento');
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
   });
 };
 
