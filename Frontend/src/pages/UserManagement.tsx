@@ -6,12 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import {
   Users,
   Plus,
@@ -28,127 +27,49 @@ import {
   UserCog,
   Package,
   Save,
-  X,
-  Filter,
-  Star,
-  Clock,
   AlertTriangle
 } from 'lucide-react';
 import { useAuth, UserRole, rolePermissions } from '@/contexts/AuthContext';
+import { useUsers } from '@/hooks/useUsers';
+import { UsuarioData } from '@/services/userService';
+import { useNotifications } from '@/contexts/NotificationContext';
 
-// Mock data expandido para todos os usuários
-const mockAllUsers = [
-  {
-    id: '1',
-    name: 'Carlos Oliveira',
-    email: 'admin@comprebem.com',
-    role: 'ADMIN' as UserRole,
-    department: 'Administração',
-    status: 'active',
-    lastLogin: '2024-12-02T10:30:00',
-    createdAt: '2024-01-15T09:00:00',
-    permissions: rolePermissions.ADMIN,
-    phone: '(11) 99999-0001',
-    salary: 8000.00,
-    hireDate: '2024-01-15'
-  },
-  {
-    id: '2',
-    name: 'Amanda Silva',
-    email: 'gerente@comprebem.com',
-    role: 'MANAGER' as UserRole,
-    department: 'Gerência',
-    status: 'active',
-    lastLogin: '2024-12-02T09:15:00',
-    createdAt: '2024-02-01T09:00:00',
-    permissions: rolePermissions.MANAGER,
-    phone: '(11) 99999-0002',
-    salary: 6000.00,
-    hireDate: '2024-02-01'
-  },
-  {
-    id: '3',
-    name: 'João Santos',
-    email: 'supervisor@comprebem.com',
-    role: 'SUPERVISOR' as UserRole,
-    department: 'Supervisão',
-    status: 'active',
-    lastLogin: '2024-12-02T08:45:00',
-    createdAt: '2024-03-10T09:00:00',
-    permissions: rolePermissions.SUPERVISOR,
-    phone: '(11) 99999-0003',
-    salary: 4500.00,
-    hireDate: '2024-03-10'
-  },
-  {
-    id: '4',
-    name: 'Maria Costa',
-    email: 'caixa@comprebem.com',
-    role: 'CASHIER' as UserRole,
-    department: 'Caixa',
-    status: 'active',
-    lastLogin: '2024-12-01T18:30:00',
-    createdAt: '2024-04-20T09:00:00',
-    permissions: rolePermissions.CASHIER,
-    phone: '(11) 99999-0004',
-    salary: 2800.00,
-    hireDate: '2024-04-20'
-  },
-  {
-    id: '5',
-    name: 'Pedro Lima',
-    email: 'estoque@comprebem.com',
-    role: 'STOCK' as UserRole,
-    department: 'Estoque',
-    status: 'active',
-    lastLogin: '2024-12-02T07:00:00',
-    createdAt: '2024-05-05T09:00:00',
-    permissions: rolePermissions.STOCK,
-    phone: '(11) 99999-0005',
-    salary: 2500.00,
-    hireDate: '2024-05-05'
-  },
-  {
-    id: '6',
-    name: 'Ana Ferreira',
-    email: 'caixa2@comprebem.com',
-    role: 'CASHIER' as UserRole,
-    department: 'Caixa',
-    status: 'inactive',
-    lastLogin: '2024-11-28T17:30:00',
-    createdAt: '2024-06-15T09:00:00',
-    permissions: rolePermissions.CASHIER,
-    phone: '(11) 99999-0006',
-    salary: 2800.00,
-    hireDate: '2024-06-15'
-  }
-];
+// Mapeamento de roles do backend para o frontend
+const roleMap: Record<string, UserRole> = {
+  'ADMIN': 'ADMIN',
+  'USER': 'CASHIER', // Mapeando USER do backend para CASHIER do frontend
+};
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  department: string;
-  status: string;
-  lastLogin: string;
-  createdAt: string;
-  permissions: string[];
-  phone: string;
-  salary: number;
-  hireDate: string;
-}
+const reverseRoleMap: Record<UserRole, string> = {
+  'ADMIN': 'ADMIN',
+  'MANAGER': 'USER',
+  'SUPERVISOR': 'USER',
+  'CASHIER': 'USER',
+  'STOCK': 'USER',
+};
 
 export default function UserManagement() {
   const { user, hasPermission } = useAuth();
+  const { addNotification } = useNotifications();
+  const { 
+    users, 
+    stats, 
+    loading, 
+    createUser, 
+    updateUser, 
+    deleteUser, 
+    refresh 
+  } = useUsers();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UsuarioData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<User>>({});
+  const [formData, setFormData] = useState<Partial<UsuarioData>>({});
   const [editMode, setEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Verificar se o usuário tem permissão para gerenciar usuários
   if (!hasPermission(['ADMIN'])) {
@@ -165,54 +86,61 @@ export default function UserManagement() {
     );
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   const formatDate = (dateString: string) => {
+    if (!dateString) return '--';
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   const formatDateTime = (dateString: string) => {
+    if (!dateString) return 'Nunca acessou';
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
-  const getRoleBadge = (role: UserRole) => {
+  const getRoleBadge = (role: string) => {
+    // Mapear role do backend para exibição
+    const displayRole = roleMap[role] || 'CASHIER';
+    
     const roleConfig = {
-      admin: { label: 'Administrador', variant: 'default' as const, icon: Crown },
-      manager: { label: 'Gerente', variant: 'secondary' as const, icon: Briefcase },
-      supervisor: { label: 'Supervisor', variant: 'outline' as const, icon: UserCog },
-      cashier: { label: 'Operador Caixa', variant: 'outline' as const, icon: UserCheck },
-      stock: { label: 'Estoquista', variant: 'outline' as const, icon: Package }
+      ADMIN: { label: 'Administrador', variant: 'default' as const, icon: Crown },
+      MANAGER: { label: 'Gerente', variant: 'secondary' as const, icon: Briefcase },
+      SUPERVISOR: { label: 'Supervisor', variant: 'outline' as const, icon: UserCog },
+      CASHIER: { label: 'Usuário', variant: 'outline' as const, icon: UserCheck },
+      STOCK: { label: 'Estoquista', variant: 'outline' as const, icon: Package }
     };
     
-    return roleConfig[role] || roleConfig.cashier;
+    return roleConfig[displayRole] || roleConfig.CASHIER;
   };
 
   const getStatusBadge = (status: string) => {
+    const normalizedStatus = status?.toUpperCase();
     const statusConfig = {
-      active: { label: 'Ativo', variant: 'default' as const, icon: UserCheck },
-      inactive: { label: 'Inativo', variant: 'secondary' as const, icon: UserX },
-      suspended: { label: 'Suspenso', variant: 'destructive' as const, icon: AlertTriangle }
+      ATIVO: { label: 'Ativo', variant: 'default' as const, icon: UserCheck },
+      INATIVO: { label: 'Inativo', variant: 'secondary' as const, icon: UserX },
+      SUSPENDED: { label: 'Suspenso', variant: 'destructive' as const, icon: AlertTriangle }
     };
     
-    return statusConfig[status as keyof typeof statusConfig] || statusConfig.active;
+    return statusConfig[normalizedStatus as keyof typeof statusConfig] || statusConfig.ATIVO;
   };
 
-  const filteredUsers = mockAllUsers.filter(userData => {
-    const matchesSearch = userData.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         userData.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         userData.department.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || userData.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || userData.status === statusFilter;
+  const filteredUsers = users.filter(userData => {
+    const matchesSearch = userData.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         userData.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         userData.setor?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Mapear o filtro do frontend para o backend
+    let backendRole = roleFilter;
+    if (roleFilter !== 'all') {
+      const displayRole = roleFilter.toUpperCase() as UserRole;
+      backendRole = reverseRoleMap[displayRole] || 'USER';
+    }
+    
+    const matchesRole = roleFilter === 'all' || userData.role === backendRole;
+    const matchesStatus = statusFilter === 'all' || userData.status?.toUpperCase() === statusFilter.toUpperCase();
     
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleEdit = (userData: User) => {
+  const handleEdit = (userData: UsuarioData) => {
     setFormData(userData);
     setEditMode(true);
     setIsDialogOpen(true);
@@ -220,51 +148,111 @@ export default function UserManagement() {
 
   const handleNew = () => {
     setFormData({
-      name: '',
+      username: '',
+      password: '',
+      role: 'USER',
+      status: 'ATIVO',
+      nome: '',
       email: '',
-      role: 'CASHIER',
-      department: '',
-      status: 'active',
-      phone: '',
-      salary: 0,
-      hireDate: '',
-      permissions: rolePermissions.CASHIER
+      cargo: '',
+      setor: '',
+      salario: 0,
     });
     setEditMode(false);
     setIsDialogOpen(true);
   };
 
-  const handleDetails = (userData: User) => {
+  const handleDetails = (userData: UsuarioData) => {
     setSelectedUser(userData);
     setIsDetailsOpen(true);
   };
 
-  const handleSave = () => {
-    const finalData = {
-      ...formData,
-      permissions: rolePermissions[formData.role as UserRole] || [],
-      createdAt: editMode ? formData.createdAt : new Date().toISOString(),
-      lastLogin: editMode ? formData.lastLogin : null
-    };
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      if (editMode && formData.id) {
+        await updateUser(formData.id, formData);
+        addNotification({
+          type: 'success',
+          title: 'Sucesso',
+          message: 'Usuário atualizado com sucesso!',
+          priority: 'medium'
+        });
+      } else {
+        // Criar novo usuário requer ID do funcionário
+        if (!formData.id) {
+          addNotification({
+            type: 'error',
+            title: 'Erro',
+            message: 'É necessário selecionar um funcionário',
+            priority: 'high'
+          });
+          return;
+        }
+        await createUser(formData as UsuarioData);
+        addNotification({
+          type: 'success',
+          title: 'Sucesso',
+          message: 'Usuário criado com sucesso!',
+          priority: 'medium'
+        });
+      }
+      setIsDialogOpen(false);
+      setFormData({});
+      refresh();
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao salvar usuário';
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: errorMsg,
+        priority: 'high'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-    console.log('Salvando usuário:', finalData);
-    setIsDialogOpen(false);
-    setFormData({});
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteUser(id);
+      addNotification({
+        type: 'success',
+        title: 'Sucesso',
+        message: 'Usuário excluído com sucesso!',
+        priority: 'medium'
+      });
+      refresh();
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao excluir usuário';
+      addNotification({
+        type: 'error',
+        title: 'Erro',
+        message: errorMsg,
+        priority: 'high'
+      });
+    }
   };
 
   const getUserStats = () => {
+    if (stats) {
+      return {
+        total: stats.total,
+        active: stats.ativos,
+        admins: stats.admins,
+        users: stats.users,
+      };
+    }
+    
     return {
-      total: mockAllUsers.length,
-      active: mockAllUsers.filter(u => u.status === 'active').length,
-      admins: mockAllUsers.filter(u => u.role === 'ADMIN').length,
-      managers: mockAllUsers.filter(u => u.role === 'MANAGER').length,
-      supervisors: mockAllUsers.filter(u => u.role === 'SUPERVISOR').length,
-      cashiers: mockAllUsers.filter(u => u.role === 'CASHIER').length,
-      stockers: mockAllUsers.filter(u => u.role === 'STOCK').length
+      total: users.length,
+      active: users.filter(u => u.status === 'ATIVO').length,
+      admins: users.filter(u => u.role === 'ADMIN').length,
+      users: users.filter(u => u.role === 'USER').length,
     };
   };
 
-  const stats = getUserStats();
+  const calculatedStats = getUserStats();
 
   return (
     <DesktopOnlyPage
@@ -299,12 +287,12 @@ export default function UserManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm font-medium text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-2xl font-bold">{calculatedStats.total}</p>
             </div>
           </CardContent>
         </Card>
@@ -312,7 +300,7 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm font-medium text-muted-foreground">Ativos</p>
-              <p className="text-2xl font-bold text-success">{stats.active}</p>
+              <p className="text-2xl font-bold text-success">{calculatedStats.active}</p>
             </div>
           </CardContent>
         </Card>
@@ -321,43 +309,16 @@ export default function UserManagement() {
             <div className="text-center">
               <Crown className="h-6 w-6 mx-auto mb-1 text-yellow-500" />
               <p className="text-xs text-muted-foreground">Admins</p>
-              <p className="text-lg font-bold">{stats.admins}</p>
+              <p className="text-lg font-bold">{calculatedStats.admins}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-center">
-              <Briefcase className="h-6 w-6 mx-auto mb-1 text-blue-500" />
-              <p className="text-xs text-muted-foreground">Gerentes</p>
-              <p className="text-lg font-bold">{stats.managers}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <UserCog className="h-6 w-6 mx-auto mb-1 text-purple-500" />
-              <p className="text-xs text-muted-foreground">Supervisores</p>
-              <p className="text-lg font-bold">{stats.supervisors}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <UserCheck className="h-6 w-6 mx-auto mb-1 text-green-500" />
-              <p className="text-xs text-muted-foreground">Caixas</p>
-              <p className="text-lg font-bold">{stats.cashiers}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <Package className="h-6 w-6 mx-auto mb-1 text-orange-500" />
-              <p className="text-xs text-muted-foreground">Estoque</p>
-              <p className="text-lg font-bold">{stats.stockers}</p>
+              <UserCheck className="h-6 w-6 mx-auto mb-1 text-blue-500" />
+              <p className="text-xs text-muted-foreground">Usuários</p>
+              <p className="text-lg font-bold">{calculatedStats.users}</p>
             </div>
           </CardContent>
         </Card>
@@ -381,10 +342,7 @@ export default function UserManagement() {
           <SelectContent>
             <SelectItem value="all">Todos os Perfis</SelectItem>
             <SelectItem value="admin">Administrador</SelectItem>
-            <SelectItem value="manager">Gerente</SelectItem>
-            <SelectItem value="supervisor">Supervisor</SelectItem>
-            <SelectItem value="cashier">Operador Caixa</SelectItem>
-            <SelectItem value="stock">Estoquista</SelectItem>
+            <SelectItem value="cashier">Usuário</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -393,8 +351,8 @@ export default function UserManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="active">Ativos</SelectItem>
-            <SelectItem value="inactive">Inativos</SelectItem>
+            <SelectItem value="ATIVO">Ativos</SelectItem>
+            <SelectItem value="INATIVO">Inativos</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -421,88 +379,108 @@ export default function UserManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((userData) => {
-                const roleInfo = getRoleBadge(userData.role);
-                const statusInfo = getStatusBadge(userData.status);
-                const RoleIcon = roleInfo.icon;
-                const StatusIcon = statusInfo.icon;
-                
-                return (
-                  <TableRow key={userData.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{userData.name}</p>
-                        <p className="text-sm text-muted-foreground">{userData.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={roleInfo.variant}>
-                        <RoleIcon className="h-3 w-3 mr-1" />
-                        {roleInfo.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{userData.department}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusInfo.variant}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {statusInfo.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {formatDateTime(userData.lastLogin)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium text-success">
-                        {formatCurrency(userData.salary)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDetails(userData)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEdit(userData)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {userData.id !== user?.id && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o usuário "{userData.name}"? 
-                                  Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    Carregando usuários...
+                  </TableCell>
+                </TableRow>
+              ) : filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Nenhum usuário encontrado
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredUsers.map((userData) => {
+                  const roleInfo = getRoleBadge(userData.role);
+                  const statusInfo = getStatusBadge(userData.status);
+                  const RoleIcon = roleInfo.icon;
+                  const StatusIcon = statusInfo.icon;
+                  
+                  return (
+                    <TableRow key={userData.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{userData.nome}</p>
+                          <p className="text-sm text-muted-foreground">{userData.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={roleInfo.variant}>
+                          <RoleIcon className="h-3 w-3 mr-1" />
+                          {roleInfo.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{userData.setor || '--'}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusInfo.variant}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {statusInfo.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {formatDateTime(userData.ultimoAcesso || '')}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium text-success">
+                          {userData.salario 
+                            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(userData.salario)
+                            : '--'
+                          }
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDetails(userData)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(userData)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {String(userData.id) !== String(user?.id) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir o usuário "{userData.nome}"? 
+                                    Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    className="bg-destructive hover:bg-destructive/90"
+                                    onClick={() => handleDelete(userData.id!)}
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -532,12 +510,13 @@ export default function UserManagement() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo *</Label>
+                    <Label htmlFor="nome">Nome Completo *</Label>
                     <Input
-                      id="name"
-                      value={formData.name || ''}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      id="nome"
+                      value={formData.nome || ''}
+                      onChange={(e) => setFormData({...formData, nome: e.target.value})}
                       placeholder="Ex: João da Silva"
+                      disabled={editMode}
                     />
                   </div>
 
@@ -549,63 +528,75 @@ export default function UserManagement() {
                       value={formData.email || ''}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       placeholder="joao@comprebem.com"
+                      disabled={editMode}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
+                    <Label htmlFor="telefone">Telefone</Label>
                     <Input
-                      id="phone"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      id="telefone"
+                      value={formData.telefone || ''}
+                      onChange={(e) => setFormData({...formData, telefone: e.target.value})}
                       placeholder="(11) 99999-9999"
+                      disabled={editMode}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="username">Username *</Label>
+                    <Input
+                      id="username"
+                      value={formData.username || ''}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      placeholder="usuario.sistema"
+                      disabled={editMode}
+                    />
+                  </div>
+
+                  {!editMode && (
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Senha *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password || ''}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        placeholder="Mínimo 6 caracteres"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
                     <Label htmlFor="role">Perfil de Acesso *</Label>
                     <Select 
-                      value={formData.role || 'cashier'} 
-                      onValueChange={(value) => setFormData({...formData, role: value as UserRole, permissions: rolePermissions[value as UserRole]})}
+                      value={formData.role || 'USER'} 
+                      onValueChange={(value) => setFormData({...formData, role: value})}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Administrador/Dono</SelectItem>
-                        <SelectItem value="manager">Gerente</SelectItem>
-                        <SelectItem value="supervisor">Supervisor</SelectItem>
-                        <SelectItem value="cashier">Operador de Caixa</SelectItem>
-                        <SelectItem value="stock">Estoquista</SelectItem>
+                        <SelectItem value="ADMIN">Administrador</SelectItem>
+                        <SelectItem value="USER">Usuário</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="department">Departamento</Label>
-                    <Input
-                      id="department"
-                      value={formData.department || ''}
-                      onChange={(e) => setFormData({...formData, department: e.target.value})}
-                      placeholder="Ex: Caixa, Estoque, Gerência"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>
                     <Select 
-                      value={formData.status || 'active'} 
+                      value={formData.status || 'ATIVO'} 
                       onValueChange={(value) => setFormData({...formData, status: value})}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="active">Ativo</SelectItem>
-                        <SelectItem value="inactive">Inativo</SelectItem>
-                        <SelectItem value="suspended">Suspenso</SelectItem>
+                        <SelectItem value="ATIVO">Ativo</SelectItem>
+                        <SelectItem value="INATIVO">Inativo</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -620,7 +611,7 @@ export default function UserManagement() {
                   <h3 className="text-lg font-semibold mb-3">Permissões do Perfil</h3>
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {(formData.permissions || []).map((permission) => (
+                      {(rolePermissions[formData.role === 'ADMIN' ? 'ADMIN' : 'CASHIER'] || []).map((permission) => (
                         <div key={permission} className="flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-success" />
                           <span className="text-sm">{permission}</span>
@@ -636,17 +627,8 @@ export default function UserManagement() {
                     {formData.role === 'ADMIN' && (
                       <p>Acesso total ao sistema. Pode criar, editar e remover usuários. Acompanha relatórios financeiros, de vendas e de estoque. Aprova mudanças críticas.</p>
                     )}
-                    {formData.role === 'MANAGER' && (
-                      <p>Gerência de Estoque e Funcionários. Cadastra produtos, controla entrada e saída, cria escalas, aprova férias. Visualiza relatórios de vendas e desempenho.</p>
-                    )}
-                    {formData.role === 'SUPERVISOR' && (
-                      <p>Consulta relatórios de estoque e vendas. Autoriza cancelamentos e devoluções. Auxilia no fechamento de caixa. Não gerencia funcionários.</p>
-                    )}
-                    {formData.role === 'CASHIER' && (
-                      <p>Registra vendas. Realiza cancelamentos simples. Consulta preços e disponibilidade de produtos. Não tem acesso a relatórios de estoque.</p>
-                    )}
-                    {formData.role === 'STOCK' && (
-                      <p>Dá entrada e saída de mercadorias. Consulta saldo de estoque. Reporta perdas. Não cadastra novos produtos nem altera preços.</p>
+                    {formData.role === 'USER' && (
+                      <p>Acesso básico ao sistema. Pode realizar operações cotidianas como vendas, consultas e movimentações de estoque conforme seu cargo.</p>
                     )}
                   </div>
                 </div>
@@ -658,25 +640,49 @@ export default function UserManagement() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="hireDate">Data de Contratação</Label>
+                    <Label htmlFor="cargo">Cargo</Label>
                     <Input
-                      id="hireDate"
-                      type="date"
-                      value={formData.hireDate || ''}
-                      onChange={(e) => setFormData({...formData, hireDate: e.target.value})}
+                      id="cargo"
+                      value={formData.cargo || ''}
+                      onChange={(e) => setFormData({...formData, cargo: e.target.value})}
+                      placeholder="Ex: Gerente, Caixa, Estoquista"
+                      disabled={editMode}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="salary">Salário</Label>
+                    <Label htmlFor="setor">Setor/Departamento</Label>
                     <Input
-                      id="salary"
+                      id="setor"
+                      value={formData.setor || ''}
+                      onChange={(e) => setFormData({...formData, setor: e.target.value})}
+                      placeholder="Ex: Vendas, Estoque, Administrativo"
+                      disabled={editMode}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="dataAdmissao">Data de Admissão</Label>
+                    <Input
+                      id="dataAdmissao"
+                      type="date"
+                      value={formData.dataAdmissao || ''}
+                      onChange={(e) => setFormData({...formData, dataAdmissao: e.target.value})}
+                      disabled={editMode}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="salario">Salário</Label>
+                    <Input
+                      id="salario"
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.salary || ''}
-                      onChange={(e) => setFormData({...formData, salary: parseFloat(e.target.value) || 0})}
+                      value={formData.salario || ''}
+                      onChange={(e) => setFormData({...formData, salario: parseFloat(e.target.value) || 0})}
                       placeholder="0.00"
+                      disabled={editMode}
                     />
                   </div>
                 </div>
@@ -685,16 +691,23 @@ export default function UserManagement() {
                   {editMode && (
                     <>
                       <div className="space-y-2">
-                        <Label>Data de Criação</Label>
+                        <Label>Matrícula</Label>
                         <p className="text-sm text-muted-foreground">
-                          {formData.createdAt ? formatDateTime(formData.createdAt) : '--'}
+                          {formData.matricula || '--'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>CPF</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {formData.cpf || '--'}
                         </p>
                       </div>
 
                       <div className="space-y-2">
                         <Label>Último Acesso</Label>
                         <p className="text-sm text-muted-foreground">
-                          {formData.lastLogin ? formatDateTime(formData.lastLogin) : 'Nunca acessou'}
+                          {formData.ultimoAcesso ? formatDateTime(formData.ultimoAcesso) : 'Nunca acessou'}
                         </p>
                       </div>
                     </>
@@ -708,12 +721,17 @@ export default function UserManagement() {
             <Button 
               variant="outline" 
               onClick={() => setIsDialogOpen(false)}
+              disabled={isSaving}
             >
               Cancelar
             </Button>
-            <Button onClick={handleSave} className="bg-primary hover:bg-primary-hover">
+            <Button 
+              onClick={handleSave} 
+              className="bg-primary hover:bg-primary-hover"
+              disabled={isSaving}
+            >
               <Save className="h-4 w-4 mr-2" />
-              Salvar Usuário
+              {isSaving ? 'Salvando...' : 'Salvar Usuário'}
             </Button>
           </div>
         </DialogContent>
@@ -739,7 +757,7 @@ export default function UserManagement() {
                       const RoleIcon = getRoleBadge(selectedUser.role).icon;
                       return <RoleIcon className="h-5 w-5" />;
                     })()}
-                    {selectedUser.name}
+                    {selectedUser.nome}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -752,12 +770,12 @@ export default function UserManagement() {
                   {/* Outros campos em grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Telefone</Label>
-                      <p className="font-medium">{selectedUser.phone}</p>
+                      <Label className="text-sm text-muted-foreground">Username</Label>
+                      <p className="font-medium">{selectedUser.username}</p>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Departamento</Label>
-                      <p className="font-medium">{selectedUser.department}</p>
+                      <Label className="text-sm text-muted-foreground">Telefone</Label>
+                      <p className="font-medium">{selectedUser.telefone || '--'}</p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Status</Label>
@@ -771,16 +789,38 @@ export default function UserManagement() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Data de Contratação</Label>
-                      <p className="font-medium">{formatDate(selectedUser.hireDate)}</p>
+                      <Label className="text-sm text-muted-foreground">Cargo</Label>
+                      <p className="font-medium">{selectedUser.cargo || '--'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Setor</Label>
+                      <p className="font-medium">{selectedUser.setor || '--'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Matrícula</Label>
+                      <p className="font-medium">{selectedUser.matricula || '--'}</p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Data de Admissão</Label>
+                      <p className="font-medium">{selectedUser.dataAdmissao ? formatDate(selectedUser.dataAdmissao) : '--'}</p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Salário</Label>
-                      <p className="font-medium text-success">{formatCurrency(selectedUser.salary)}</p>
+                      <p className="font-medium text-success">
+                        {selectedUser.salario 
+                          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedUser.salario)
+                          : '--'
+                        }
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Último Acesso</Label>
-                      <p className="font-medium">{formatDateTime(selectedUser.lastLogin)}</p>
+                      <p className="font-medium">{formatDateTime(selectedUser.ultimoAcesso || '')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -806,7 +846,7 @@ export default function UserManagement() {
                     <div className="space-y-4">
                       <Label className="text-sm text-muted-foreground block">Permissões Ativas</Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {selectedUser.permissions.map((permission) => (
+                        {(rolePermissions[selectedUser.role === 'ADMIN' ? 'ADMIN' : 'CASHIER'] || []).map((permission) => (
                           <div key={permission} className="flex items-center gap-3 p-3 bg-muted/30 rounded-md border border-muted/20">
                             <ShieldCheck className="h-4 w-4 text-success" />
                             <span className="text-sm">{permission}</span>
