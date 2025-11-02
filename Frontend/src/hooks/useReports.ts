@@ -12,6 +12,7 @@ export const reportKeys = {
   dailyRevenue: (days: number) => [...reportKeys.all, 'daily-revenue', days] as const,
   topProducts: (limit: number) => [...reportKeys.all, 'top-products', limit] as const,
   hourlySales: () => [...reportKeys.all, 'hourly-sales'] as const,
+  receitaLucroMensal: (meses: number) => [...reportKeys.all, 'receita-lucro-mensal', meses] as const,
   sales: (startDate: string, endDate: string, filters?: any) => 
     [...reportKeys.all, 'sales', { startDate, endDate, filters }] as const,
   inventory: (filters?: any) => [...reportKeys.all, 'inventory', { filters }] as const,
@@ -120,6 +121,15 @@ export const usePaymentMethods = (days: number = 30) => {
     queryKey: [...reportKeys.all, 'payment-methods', days] as const,
     queryFn: () => apiRequest(`/reports/payment-methods?days=${days}`),
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+// Hook para receita vs lucro mensal
+export const useReceitaLucroMensal = (meses: number = 12) => {
+  return useQuery({
+    queryKey: reportKeys.receitaLucroMensal(meses),
+    queryFn: () => apiRequest(`/reports/receita-lucro-mensal?meses=${meses}`),
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 

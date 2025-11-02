@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useDashboardKPIs, useDailyRevenue, useTopProducts, useHourlySales, useSalesByCategory, useSalesStatistics, useSalesDistribution, useSalesByWeekday, usePaymentMethods } from '@/hooks/useReports';
+import { useDashboardKPIs, useDailyRevenue, useTopProducts, useHourlySales, useSalesByCategory, useSalesStatistics, useSalesDistribution, useSalesByWeekday, usePaymentMethods, useReceitaLucroMensal } from '@/hooks/useReports';
 import { useLowStockProducts } from '@/hooks/useProducts';
 import { useProdutosCriticos } from '@/hooks/useProdutosCriticos';
 import {
@@ -141,6 +141,7 @@ export default function Dashboard() {
   const { data: salesDistribution, isLoading: isLoadingDistribution } = useSalesDistribution(selectedPeriod);
   const { data: salesByWeekday, isLoading: isLoadingWeekday } = useSalesByWeekday(selectedPeriod);
   const { data: paymentMethods, isLoading: isLoadingPayments } = usePaymentMethods(selectedPeriod);
+  const { data: receitaLucroMensal, isLoading: isLoadingReceitaLucro } = useReceitaLucroMensal(12);
   
   // Buscar produtos com estoque baixo (método antigo - será substituído)
   const { data: lowStockProducts, isLoading: isLoadingLowStock } = useLowStockProducts();
@@ -312,8 +313,11 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-primary" />
-                  Faturamento dos Últimos 30 Dias
+                  Faturamento dos Últimos {selectedPeriod} Dias
                 </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Exibindo apenas dias com vendas registradas
+                </p>
               </CardHeader>
               <CardContent className="relative">
                 <ResponsiveContainer width="100%" height={250}>
@@ -825,23 +829,15 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Receita vs Lucro - Últimos 12 Meses</CardTitle>
+              {(!receitaLucroMensal || receitaLucroMensal.length === 0) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Aguardando dados - Registre vendas em diferentes meses
+                </p>
+              )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={[
-                  { month: 'Jan', vendas: 45000, lucro: 12000 },
-                  { month: 'Fev', vendas: 52000, lucro: 14500 },
-                  { month: 'Mar', vendas: 48000, lucro: 13200 },
-                  { month: 'Abr', vendas: 61000, lucro: 17800 },
-                  { month: 'Mai', vendas: 55000, lucro: 15200 },
-                  { month: 'Jun', vendas: 67000, lucro: 19500 },
-                  { month: 'Jul', vendas: 58000, lucro: 16100 },
-                  { month: 'Ago', vendas: 71000, lucro: 20800 },
-                  { month: 'Set', vendas: 63000, lucro: 18200 },
-                  { month: 'Out', vendas: 69000, lucro: 19800 },
-                  { month: 'Nov', vendas: 74000, lucro: 21600 },
-                  { month: 'Dez', vendas: 82000, lucro: 24500 }
-                ]}>
+                <AreaChart data={receitaLucroMensal || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
                   <XAxis dataKey="month" stroke="#888" />
                   <YAxis stroke="#888" />
@@ -874,6 +870,20 @@ export default function Dashboard() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              {isLoadingReceitaLucro && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                  <div className="text-sm text-muted-foreground">Carregando dados...</div>
+                </div>
+              )}
+              {!isLoadingReceitaLucro && (!receitaLucroMensal || receitaLucroMensal.length === 0) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+                  <div className="text-center text-sm text-muted-foreground">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum dado disponível</p>
+                    <p className="text-xs mt-1">Registre vendas em diferentes meses</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

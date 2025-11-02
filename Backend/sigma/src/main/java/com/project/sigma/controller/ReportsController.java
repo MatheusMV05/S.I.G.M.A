@@ -702,4 +702,49 @@ public class ReportsController {
             return ResponseEntity.ok(new ArrayList<>());
         }
     }
+
+    /**
+     * Endpoint: Receita vs Lucro Mensal
+     * GET /api/reports/receita-lucro-mensal?meses=12
+     */
+    @GetMapping("/receita-lucro-mensal")
+    public ResponseEntity<List<Map<String, Object>>> getReceitaLucroMensal(
+            @RequestParam(defaultValue = "12") int meses) {
+        System.out.println("📊 GET /api/reports/receita-lucro-mensal - Últimos " + meses + " meses");
+
+        try {
+            String query = 
+                "SELECT " +
+                "   DATE_FORMAT(v.data_venda, '%b') as mes, " +
+                "   DATE_FORMAT(v.data_venda, '%Y-%m') as mesCompleto, " +
+                "   COALESCE(SUM(v.valor_total), 0) as vendas, " +
+                "   COALESCE(SUM(v.valor_total) * 0.297, 0) as lucro, " +  // Margem de 29.7%
+                "   COUNT(v.id_venda) as numeroVendas " +
+                "FROM Venda v " +
+                "WHERE v.data_venda >= DATE_SUB(CURDATE(), INTERVAL ? MONTH) " +
+                "  AND v.status = 'CONCLUIDA' " +
+                "GROUP BY DATE_FORMAT(v.data_venda, '%Y-%m'), DATE_FORMAT(v.data_venda, '%b') " +
+                "ORDER BY DATE_FORMAT(v.data_venda, '%Y-%m') ASC";
+
+            List<Map<String, Object>> results = jdbcTemplate.query(query, 
+                (rs, rowNum) -> {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("month", rs.getString("mes"));
+                    row.put("mesCompleto", rs.getString("mesCompleto"));
+                    row.put("vendas", rs.getDouble("vendas"));
+                    row.put("lucro", rs.getDouble("lucro"));
+                    row.put("numeroVendas", rs.getInt("numeroVendas"));
+                    return row;
+                },
+                meses
+            );
+
+            System.out.println("✅ Retornando " + results.size() + " meses de receita vs lucro");
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar receita vs lucro mensal: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+    }
 }
