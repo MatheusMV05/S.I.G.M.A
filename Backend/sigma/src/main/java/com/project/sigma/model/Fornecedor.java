@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,9 +18,21 @@ public class Fornecedor {
     private String cnpj;
     private String email;
     private String telefone;
-    private String endereco_completo;
+    
+    // Endereço detalhado
+    private String rua;
+    private String numero;
+    private String bairro;
+    private String cidade;
+    private String estado;
+    private String cep;
+    
     private String contato_principal;
+    private String condicoes_pagamento;
+    private Integer prazo_entrega_dias;
+    private BigDecimal avaliacao;
     private StatusFornecedor status;
+    private LocalDateTime data_cadastro;
 
     // Not stored in DB, populated when needed
     private Pessoa pessoa;
@@ -33,5 +48,6 @@ public class Fornecedor {
         this.email = email;
         this.telefone = telefone;
         this.status = StatusFornecedor.ATIVO;
+        this.data_cadastro = LocalDateTime.now();
     }
 }

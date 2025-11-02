@@ -1,9 +1,46 @@
 import { apiRequest } from './api';
-import type { 
-  Supplier, 
-  CreateSupplierRequest, 
-  PaginatedResponse 
-} from './types';
+
+export interface Fornecedor {
+  id_fornecedor: number;
+  id_pessoa?: number;
+  nome_fantasia: string;
+  razao_social?: string;
+  cnpj: string;
+  email?: string;
+  telefone?: string;
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  contato_principal?: string;
+  condicoes_pagamento?: string;
+  prazo_entrega_dias?: number;
+  avaliacao?: number;
+  status: 'ATIVO' | 'INATIVO';
+  data_cadastro?: string;
+  total_produtos?: number;
+  valor_total_compras?: number;
+}
+
+export interface CreateFornecedorRequest {
+  nome_fantasia: string;
+  razao_social?: string;
+  cnpj: string;
+  email?: string;
+  telefone?: string;
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  contato_principal?: string;
+  condicoes_pagamento?: string;
+  prazo_entrega_dias?: number;
+  avaliacao?: number;
+}
 
 class SupplierService {
   private static instance: SupplierService;
@@ -16,53 +53,49 @@ class SupplierService {
   }
 
   /**
-   * Busca fornecedores com paginação e filtros
+   * Busca todos os fornecedores com filtros opcionais
    */
   async getSuppliers(params?: {
-    page?: number;
-    size?: number;
     search?: string;
-    active?: boolean;
-  }): Promise<PaginatedResponse<Supplier>> {
+    status?: string;
+  }): Promise<Fornecedor[]> {
     const queryParams = new URLSearchParams();
     
-    if (params?.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params?.size !== undefined) queryParams.set('size', params.size.toString());
     if (params?.search) queryParams.set('search', params.search);
-    if (params?.active !== undefined) queryParams.set('active', params.active.toString());
+    if (params?.status) queryParams.set('status', params.status);
 
     const queryString = queryParams.toString();
-    const endpoint = `/suppliers${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/fornecedores${queryString ? `?${queryString}` : ''}`;
 
-    return await apiRequest<PaginatedResponse<Supplier>>(endpoint);
+    return await apiRequest<Fornecedor[]>(endpoint);
   }
 
   /**
    * Busca todos os fornecedores ativos (para dropdowns)
    */
-  async getActiveSuppliers(): Promise<Supplier[]> {
-    return await apiRequest<Supplier[]>('/suppliers/active');
+  async getActiveSuppliers(): Promise<Fornecedor[]> {
+    return await apiRequest<Fornecedor[]>('/fornecedores/ativos');
   }
 
   /**
    * Busca fornecedor por ID
    */
-  async getSupplierById(id: string): Promise<Supplier> {
-    return await apiRequest<Supplier>(`/suppliers/${id}`);
+  async getSupplierById(id: number): Promise<Fornecedor> {
+    return await apiRequest<Fornecedor>(`/fornecedores/${id}`);
   }
 
   /**
    * Busca fornecedor por CNPJ
    */
-  async getSupplierByDocument(document: string): Promise<Supplier> {
-    return await apiRequest<Supplier>(`/suppliers/document/${document}`);
+  async getSupplierByCnpj(cnpj: string): Promise<Fornecedor> {
+    return await apiRequest<Fornecedor>(`/fornecedores/cnpj/${cnpj}`);
   }
 
   /**
    * Cria um novo fornecedor
    */
-  async createSupplier(supplierData: CreateSupplierRequest): Promise<Supplier> {
-    return await apiRequest<Supplier>('/suppliers', {
+  async createSupplier(supplierData: CreateFornecedorRequest): Promise<Fornecedor> {
+    return await apiRequest<Fornecedor>('/fornecedores', {
       method: 'POST',
       body: JSON.stringify(supplierData),
     });
@@ -71,8 +104,8 @@ class SupplierService {
   /**
    * Atualiza um fornecedor existente
    */
-  async updateSupplier(id: string, supplierData: Partial<CreateSupplierRequest>): Promise<Supplier> {
-    return await apiRequest<Supplier>(`/suppliers/${id}`, {
+  async updateSupplier(id: number, supplierData: Partial<CreateFornecedorRequest>): Promise<Fornecedor> {
+    return await apiRequest<Fornecedor>(`/fornecedores/${id}`, {
       method: 'PUT',
       body: JSON.stringify(supplierData),
     });
@@ -81,8 +114,8 @@ class SupplierService {
   /**
    * Exclui um fornecedor
    */
-  async deleteSupplier(id: string): Promise<void> {
-    await apiRequest<void>(`/suppliers/${id}`, {
+  async deleteSupplier(id: number): Promise<void> {
+    await apiRequest<void>(`/fornecedores/${id}`, {
       method: 'DELETE',
     });
   }
@@ -90,48 +123,11 @@ class SupplierService {
   /**
    * Ativa/desativa um fornecedor
    */
-  async toggleSupplierStatus(id: string, active: boolean): Promise<Supplier> {
-    return await apiRequest<Supplier>(`/suppliers/${id}/status`, {
+  async toggleSupplierStatus(id: number, ativo: boolean): Promise<Fornecedor> {
+    return await apiRequest<Fornecedor>(`/fornecedores/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ active }),
+      body: JSON.stringify({ ativo }),
     });
-  }
-
-  /**
-   * Busca produtos de um fornecedor
-   */
-  async getSupplierProducts(id: string, params?: {
-    page?: number;
-    size?: number;
-    search?: string;
-  }) {
-    const queryParams = new URLSearchParams();
-    
-    if (params?.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params?.size !== undefined) queryParams.set('size', params.size.toString());
-    if (params?.search) queryParams.set('search', params.search);
-
-    const queryString = queryParams.toString();
-    const endpoint = `/suppliers/${id}/products${queryString ? `?${queryString}` : ''}`;
-
-    return await apiRequest(endpoint);
-  }
-
-  /**
-   * Valida CNPJ
-   */
-  async validateDocument(document: string): Promise<{ valid: boolean; message?: string }> {
-    return await apiRequest<{ valid: boolean; message?: string }>('/suppliers/validate-document', {
-      method: 'POST',
-      body: JSON.stringify({ document }),
-    });
-  }
-
-  /**
-   * Busca dados do fornecedor por CNPJ na Receita Federal
-   */
-  async fetchSupplierDataByCnpj(cnpj: string): Promise<Partial<CreateSupplierRequest>> {
-    return await apiRequest<Partial<CreateSupplierRequest>>(`/suppliers/fetch-data/${cnpj}`);
   }
 }
 
