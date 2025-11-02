@@ -554,8 +554,8 @@ export default function Insights() {
                                 ({produtos.length} produtos)
                               </span>
                             </h4>
-                            <div className="space-y-2">
-                              {produtos.slice(0, classe === 'A' ? 10 : 5).map((produto: any, index: number) => (
+                            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin">
+                              {produtos.map((produto: any, index: number) => (
                                 <div key={index} className={`p-3 border border-${corClasse}-200 dark:border-${corClasse}-800 rounded-lg hover:bg-${corClasse}-200/30 dark:hover:bg-${corClasse}-950/50 transition-colors`}>
                                   <div className="flex items-start justify-between mb-2">
                                     <div className="flex-1">
