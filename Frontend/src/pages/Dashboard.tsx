@@ -793,38 +793,6 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Análise de Custos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Análise de Custos Operacionais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { category: 'Custo dos Produtos', value: kpis.monthRevenue * 0.703, percentage: 70.3, color: 'bg-primary' },
-                  { category: 'Funcionários', value: kpis.monthRevenue * 0.145, percentage: 14.5, color: 'bg-blue-500' },
-                  { category: 'Operacionais', value: kpis.monthRevenue * 0.103, percentage: 10.3, color: 'bg-green-500' },
-                  { category: 'Marketing', value: kpis.monthRevenue * 0.034, percentage: 3.4, color: 'bg-orange-500' },
-                  { category: 'Outros', value: kpis.monthRevenue * 0.015, percentage: 1.5, color: 'bg-gray-500' }
-                ].map((cost, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${cost.color}`} />
-                      <span className="font-medium">{cost.category}</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Progress value={cost.percentage} className="w-24 h-2" />
-                      <div className="text-right min-w-[120px]">
-                        <p className="font-semibold">R$ {cost.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        <p className="text-sm text-muted-foreground">{cost.percentage}%</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Gráfico Receita vs Lucro */}
           <Card>
             <CardHeader>
