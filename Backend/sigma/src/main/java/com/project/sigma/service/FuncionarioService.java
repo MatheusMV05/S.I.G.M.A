@@ -74,6 +74,7 @@ public class FuncionarioService {
         // Create Funcionario
         Funcionario funcionario = new Funcionario();
         funcionario.setId_pessoa(pessoa.getId_pessoa());
+        funcionario.setCpf(funcionarioDTO.getCpf());
         funcionario.setMatricula(funcionarioDTO.getMatricula());
         funcionario.setSalario(funcionarioDTO.getSalario());
         funcionario.setCargo(funcionarioDTO.getCargo());
@@ -174,6 +175,7 @@ public class FuncionarioService {
         }
 
         // Update Funcionario
+        funcionario.setCpf(funcionarioDTO.getCpf());
         funcionario.setMatricula(funcionarioDTO.getMatricula());
         funcionario.setSalario(funcionarioDTO.getSalario());
         funcionario.setCargo(funcionarioDTO.getCargo());
@@ -252,6 +254,7 @@ public class FuncionarioService {
 
         // Set funcionario data
         dto.setId_pessoa(funcionario.getId_pessoa());
+        dto.setCpf(funcionario.getCpf());
         dto.setMatricula(funcionario.getMatricula());
         dto.setSalario(funcionario.getSalario());
         dto.setCargo(funcionario.getCargo());
@@ -290,7 +293,13 @@ public class FuncionarioService {
         // Get Telefone data
         List<Telefone> telefones = telefoneRepository.findByPessoa(funcionario.getId_pessoa());
         if (!telefones.isEmpty()) {
+            // Set first phone for compatibility
             dto.setTelefone(telefones.get(0).getNumero());
+            // Set all phones as array
+            String[] telefonesArray = telefones.stream()
+                .map(Telefone::getNumero)
+                .toArray(String[]::new);
+            dto.setTelefones(telefonesArray);
         }
 
         // Get supervisor name if exists

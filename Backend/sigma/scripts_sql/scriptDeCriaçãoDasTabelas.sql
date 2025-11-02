@@ -44,6 +44,7 @@ CREATE TABLE Telefone (
 -- Tabela de Funcionários (especialização de Pessoa)
 CREATE TABLE Funcionario (
                              id_pessoa BIGINT PRIMARY KEY,
+                             cpf VARCHAR(14) UNIQUE NULL COMMENT 'CPF do funcionário',
                              matricula VARCHAR(20) UNIQUE NOT NULL,
                              salario DECIMAL(10, 2) NOT NULL,
                              cargo VARCHAR(100),

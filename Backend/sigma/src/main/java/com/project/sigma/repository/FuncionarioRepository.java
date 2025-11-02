@@ -20,9 +20,9 @@ public class FuncionarioRepository implements BaseRepository<Funcionario, Long> 
     private JdbcTemplate jdbcTemplate;
 
     private static final String INSERT_SQL =
-            "INSERT INTO Funcionario (id_pessoa, matricula, salario, cargo, setor, id_supervisor, status, data_admissao, " +
+            "INSERT INTO Funcionario (id_pessoa, cpf, matricula, salario, cargo, setor, id_supervisor, status, data_admissao, " +
             "turno, tipo_contrato, carga_horaria_semanal, comissao_percentual, meta_mensal, beneficios, observacoes) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SELECT_BY_ID_SQL =
             "SELECT * FROM Funcionario WHERE id_pessoa = ?";
@@ -31,7 +31,7 @@ public class FuncionarioRepository implements BaseRepository<Funcionario, Long> 
             "SELECT * FROM Funcionario ORDER BY nome";
 
     private static final String UPDATE_SQL =
-            "UPDATE Funcionario SET matricula = ?, salario = ?, cargo = ?, setor = ?, id_supervisor = ?, status = ?, " +
+            "UPDATE Funcionario SET cpf = ?, matricula = ?, salario = ?, cargo = ?, setor = ?, id_supervisor = ?, status = ?, " +
             "data_admissao = ?, turno = ?, tipo_contrato = ?, carga_horaria_semanal = ?, comissao_percentual = ?, " +
             "meta_mensal = ?, beneficios = ?, observacoes = ?, foto_url = ?, data_ultima_promocao = ? " +
             "WHERE id_pessoa = ?";
@@ -54,6 +54,7 @@ public class FuncionarioRepository implements BaseRepository<Funcionario, Long> 
     private Funcionario insert(Funcionario funcionario) {
         jdbcTemplate.update(INSERT_SQL,
                 funcionario.getId_pessoa(),
+                funcionario.getCpf(),
                 funcionario.getMatricula(),
                 funcionario.getSalario(),
                 funcionario.getCargo(),
@@ -73,6 +74,7 @@ public class FuncionarioRepository implements BaseRepository<Funcionario, Long> 
 
     private Funcionario update(Funcionario funcionario) {
         jdbcTemplate.update(UPDATE_SQL,
+                funcionario.getCpf(),
                 funcionario.getMatricula(),
                 funcionario.getSalario(),
                 funcionario.getCargo(),
@@ -202,6 +204,7 @@ public class FuncionarioRepository implements BaseRepository<Funcionario, Long> 
         return (ResultSet rs, int rowNum) -> {
             Funcionario funcionario = new Funcionario();
             funcionario.setId_pessoa(rs.getLong("id_pessoa"));
+            funcionario.setCpf(rs.getString("cpf"));
             funcionario.setMatricula(rs.getString("matricula"));
             funcionario.setSalario(rs.getBigDecimal("salario"));
             funcionario.setCargo(rs.getString("cargo"));

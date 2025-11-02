@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class Funcionario {
     private Long id_pessoa;
+    private String cpf;
     private String matricula;
     private BigDecimal salario;
     private String cargo;

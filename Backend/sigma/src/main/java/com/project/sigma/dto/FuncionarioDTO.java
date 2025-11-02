@@ -44,8 +44,12 @@ public class FuncionarioDTO {
     private BigDecimal comissao_percentual;
     private BigDecimal meta_mensal;
 
-    // Telefone field
-    private String telefone;
+    // Telefone fields
+    private String telefone;  // Primeiro telefone (para compatibilidade)
+    private String[] telefones;  // Todos os telefones
+    
+    // CPF field
+    private String cpf;
 
     // Additional fields for display
     private String nomeSupervisor;

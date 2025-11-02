@@ -269,51 +269,51 @@ INSERT INTO Telefone (id_pessoa, numero, tipo) VALUES
 -- 3. FUNCIONÁRIOS (35 registros)
 -- =================================================================
 
-INSERT INTO Funcionario (id_pessoa, matricula, salario, cargo, setor, id_supervisor, status, data_admissao, turno, tipo_contrato, carga_horaria_semanal, comissao_percentual, meta_mensal) VALUES
+INSERT INTO Funcionario (id_pessoa, cpf, matricula, salario, cargo, setor, id_supervisor, status, data_admissao, turno, tipo_contrato, carga_horaria_semanal, comissao_percentual, meta_mensal) VALUES
 -- Diretoria e Gerência
-(1, 'FUN001', 15000.00, 'Diretor Geral', 'Diretoria', NULL, 'ATIVO', '2020-01-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(2, 'FUN002', 12000.00, 'Gerente de Vendas', 'Vendas', 1, 'ATIVO', '2020-03-10', 'INTEGRAL', 'CLT', 44, 5.00, 150000.00),
-(3, 'FUN003', 10000.00, 'Gerente de Estoque', 'Estoque', 1, 'ATIVO', '2020-05-20', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(4, 'FUN004', 8000.00, 'Supervisor de Caixa', 'Financeiro', 2, 'ATIVO', '2021-02-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(5, 'FUN005', 7500.00, 'Supervisor de Compras', 'Compras', 3, 'ATIVO', '2021-04-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(1, '123.456.789-01', 'FUN001', 15000.00, 'Diretor Geral', 'Diretoria', NULL, 'ATIVO', '2020-01-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(2, '234.567.890-12', 'FUN002', 12000.00, 'Gerente de Vendas', 'Vendas', 1, 'ATIVO', '2020-03-10', 'INTEGRAL', 'CLT', 44, 5.00, 150000.00),
+(3, '345.678.901-23', 'FUN003', 10000.00, 'Gerente de Estoque', 'Estoque', 1, 'ATIVO', '2020-05-20', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(4, '456.789.012-34', 'FUN004', 8000.00, 'Supervisor de Caixa', 'Financeiro', 2, 'ATIVO', '2021-02-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(5, '567.890.123-45', 'FUN005', 7500.00, 'Supervisor de Compras', 'Compras', 3, 'ATIVO', '2021-04-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 
 -- Operadores de Caixa
-(6, 'FUN006', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-06-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
-(7, 'FUN007', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-07-10', 'TARDE', 'CLT', 44, 0.00, 0.00),
-(8, 'FUN008', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-08-15', 'NOITE', 'CLT', 44, 0.00, 0.00),
-(9, 'FUN009', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-01-05', 'MANHA', 'CLT', 44, 0.00, 0.00),
-(10, 'FUN010', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-02-20', 'TARDE', 'CLT', 44, 0.00, 0.00),
-(11, 'FUN011', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-03-10', 'NOITE', 'CLT', 44, 0.00, 0.00),
-(12, 'FUN012', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-05-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(6, '678.901.234-56', 'FUN006', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-06-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(7, '789.012.345-67', 'FUN007', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-07-10', 'TARDE', 'CLT', 44, 0.00, 0.00),
+(8, '890.123.456-78', 'FUN008', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-08-15', 'NOITE', 'CLT', 44, 0.00, 0.00),
+(9, '901.234.567-89', 'FUN009', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-01-05', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(10, '012.345.678-90', 'FUN010', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-02-20', 'TARDE', 'CLT', 44, 0.00, 0.00),
+(11, '111.222.333-44', 'FUN011', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-03-10', 'NOITE', 'CLT', 44, 0.00, 0.00),
+(12, '222.333.444-55', 'FUN012', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-05-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 
 -- Vendedores
-(13, 'FUN013', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-09-01', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
-(14, 'FUN014', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-10-10', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
-(15, 'FUN015', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-01-15', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
-(16, 'FUN016', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-03-01', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
-(17, 'FUN017', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-04-20', 'MANHA', 'CLT', 36, 3.00, 20000.00),
-(18, 'FUN018', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-06-10', 'TARDE', 'CLT', 36, 3.00, 20000.00),
+(13, '333.444.555-66', 'FUN013', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-09-01', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(14, '444.555.666-77', 'FUN014', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-10-10', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(15, '555.666.777-88', 'FUN015', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-01-15', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(16, '666.777.888-99', 'FUN016', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-03-01', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(17, '777.888.999-00', 'FUN017', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-04-20', 'MANHA', 'CLT', 36, 3.00, 20000.00),
+(18, '888.999.000-11', 'FUN018', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-06-10', 'TARDE', 'CLT', 36, 3.00, 20000.00),
 
 -- Estoquistas
-(19, 'FUN019', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2021-11-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
-(20, 'FUN020', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-01-10', 'TARDE', 'CLT', 44, 0.00, 0.00),
-(21, 'FUN021', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-02-15', 'NOITE', 'CLT', 44, 0.00, 0.00),
-(22, 'FUN022', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-04-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(23, 'FUN023', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-05-20', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(19, '999.000.111-22', 'FUN019', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2021-11-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(20, '000.111.222-33', 'FUN020', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-01-10', 'TARDE', 'CLT', 44, 0.00, 0.00),
+(21, '111.222.333-00', 'FUN021', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-02-15', 'NOITE', 'CLT', 44, 0.00, 0.00),
+(22, '222.333.444-11', 'FUN022', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-04-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(23, '333.444.555-22', 'FUN023', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-05-20', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 
 -- Outros setores
-(24, 'FUN024', 4500.00, 'Analista Financeiro', 'Financeiro', 1, 'ATIVO', '2021-12-01', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
-(25, 'FUN025', 4500.00, 'Analista de Compras', 'Compras', 5, 'ATIVO', '2022-01-15', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
-(26, 'FUN026', 5000.00, 'Analista de TI', 'TI', 1, 'ATIVO', '2020-06-10', 'INTEGRAL', 'PJ', 40, 0.00, 0.00),
-(27, 'FUN027', 4200.00, 'Assistente Administrativo', 'Administrativo', 1, 'ATIVO', '2022-02-01', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
-(28, 'FUN028', 4200.00, 'Assistente de RH', 'RH', 1, 'ATIVO', '2022-03-15', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
-(29, 'FUN029', 3600.00, 'Auxiliar de Limpeza', 'Serviços Gerais', 1, 'ATIVO', '2022-04-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
-(30, 'FUN030', 3600.00, 'Auxiliar de Manutenção', 'Manutenção', 1, 'ATIVO', '2022-05-10', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(31, 'FUN031', 4800.00, 'Coordenador de Marketing', 'Marketing', 2, 'ATIVO', '2021-08-01', 'INTEGRAL', 'CLT', 40, 2.00, 50000.00),
-(32, 'FUN032', 3900.00, 'Recepcionista', 'Atendimento', 1, 'ATIVO', '2022-06-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(33, 'FUN033', 4000.00, 'Auxiliar Administrativo', 'Administrativo', 27, 'ATIVO', '2022-07-15', 'INTEGRAL', 'ESTAGIO', 30, 0.00, 0.00),
-(34, 'FUN034', 3500.00, 'Empacotador', 'Vendas', 2, 'ATIVO', '2022-08-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
-(35, 'FUN035', 3500.00, 'Repositor', 'Estoque', 3, 'INATIVO', '2022-09-10', 'MANHA', 'TEMPORARIO', 44, 0.00, 0.00);
+(24, '444.555.666-33', 'FUN024', 4500.00, 'Analista Financeiro', 'Financeiro', 1, 'ATIVO', '2021-12-01', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(25, '555.666.777-44', 'FUN025', 4500.00, 'Analista de Compras', 'Compras', 5, 'ATIVO', '2022-01-15', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(26, '456.789.012-34', 'FUN026', 5000.00, 'Analista de TI', 'TI', 1, 'ATIVO', '2020-06-10', 'INTEGRAL', 'PJ', 40, 0.00, 0.00),
+(27, '666.777.888-55', 'FUN027', 4200.00, 'Assistente Administrativo', 'Administrativo', 1, 'ATIVO', '2022-02-01', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(28, '777.888.999-66', 'FUN028', 4200.00, 'Assistente de RH', 'RH', 1, 'ATIVO', '2022-03-15', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(29, '888.999.000-77', 'FUN029', 3600.00, 'Auxiliar de Limpeza', 'Serviços Gerais', 1, 'ATIVO', '2022-04-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(30, '999.000.111-88', 'FUN030', 3600.00, 'Auxiliar de Manutenção', 'Manutenção', 1, 'ATIVO', '2022-05-10', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(31, '000.111.222-99', 'FUN031', 4800.00, 'Coordenador de Marketing', 'Marketing', 2, 'ATIVO', '2021-08-01', 'INTEGRAL', 'CLT', 40, 2.00, 50000.00),
+(32, '111.000.999-00', 'FUN032', 3900.00, 'Recepcionista', 'Atendimento', 1, 'ATIVO', '2022-06-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(33, '222.111.000-11', 'FUN033', 4000.00, 'Auxiliar Administrativo', 'Administrativo', 27, 'ATIVO', '2022-07-15', 'INTEGRAL', 'ESTAGIO', 30, 0.00, 0.00),
+(34, '333.222.111-22', 'FUN034', 3500.00, 'Empacotador', 'Vendas', 2, 'ATIVO', '2022-08-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(35, '444.333.222-33', 'FUN035', 3500.00, 'Repositor', 'Estoque', 3, 'INATIVO', '2022-09-10', 'MANHA', 'TEMPORARIO', 44, 0.00, 0.00);
 
 -- =================================================================
 -- 4. USUÁRIOS (10 registros - funcionários com acesso ao sistema)

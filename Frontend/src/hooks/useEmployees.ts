@@ -6,7 +6,7 @@ import {
   type EstatisticasSetor,
   StatusFuncionario 
 } from '@/services/employeeService';
-import { useNotifications } from '@/contexts/NotificationContext';
+import { toast } from 'sonner';
 
 interface UseEmployeesFilters {
   cargo?: string;
@@ -19,7 +19,6 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<UseEmployeesFilters>(initialFilters || {});
-  const { addNotification } = useNotifications();
 
   // Carrega funcionários
   const loadEmployees = useCallback(async () => {
@@ -31,16 +30,11 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar funcionários';
       setError(errorMessage);
-      addNotification({
-        type: 'error',
-        title: 'Erro ao Carregar',
-        message: errorMessage,
-        priority: 'high'
-      });
+      toast.error(`Erro ao carregar: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
-  }, [filters, addNotification]);
+  }, [filters]);
 
   // Carrega ao montar e quando filtros mudam
   useEffect(() => {
@@ -52,22 +46,12 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
     try {
       setLoading(true);
       await employeeService.createEmployee(data);
-      addNotification({
-        type: 'success',
-        title: 'Funcionário Criado',
-        message: `${data.nome} foi cadastrado com sucesso!`,
-        priority: 'medium'
-      });
+      toast.success(`${data.nome} foi cadastrado com sucesso!`);
       await loadEmployees();
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar funcionário';
-      addNotification({
-        type: 'error',
-        title: 'Erro ao Criar',
-        message: errorMessage,
-        priority: 'high'
-      });
+      toast.error(errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -79,22 +63,12 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
     try {
       setLoading(true);
       await employeeService.updateEmployee(id, data);
-      addNotification({
-        type: 'success',
-        title: 'Funcionário Atualizado',
-        message: 'Dados atualizados com sucesso!',
-        priority: 'medium'
-      });
+      toast.success('Dados atualizados com sucesso!');
       await loadEmployees();
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar funcionário';
-      addNotification({
-        type: 'error',
-        title: 'Erro ao Atualizar',
-        message: errorMessage,
-        priority: 'high'
-      });
+      toast.error(errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -106,26 +80,16 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
     try {
       setLoading(true);
       await employeeService.deleteEmployee(id);
-      addNotification({
-        type: 'success',
-        title: 'Funcionário Removido',
-        message: `${nome} foi removido do sistema.`,
-        priority: 'medium'
-      });
+      toast.success(`${nome} foi removido do sistema`);
       await loadEmployees();
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar funcionário';
       
-      // Se for erro de constraint, não mostra notificação (será tratado no componente)
+      // Se for erro de constraint, não mostra toast (será tratado no componente)
       if (!errorMessage.includes('foreign key constraint') && 
           !errorMessage.includes('Cannot delete or update a parent row')) {
-        addNotification({
-          type: 'error',
-          title: 'Erro ao Deletar',
-          message: errorMessage,
-          priority: 'high'
-        });
+        toast.error(errorMessage);
       }
       
       // Re-lança o erro para ser tratado no componente
@@ -141,22 +105,12 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
       setLoading(true);
       await employeeService.toggleEmployeeStatus(id);
       const newStatus = currentStatus === StatusFuncionario.ATIVO ? 'inativado' : 'ativado';
-      addNotification({
-        type: 'success',
-        title: 'Status Alterado',
-        message: `Funcionário ${newStatus} com sucesso!`,
-        priority: 'medium'
-      });
+      toast.success(`Funcionário ${newStatus} com sucesso!`);
       await loadEmployees();
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao alterar status';
-      addNotification({
-        type: 'error',
-        title: 'Erro',
-        message: errorMessage,
-        priority: 'high'
-      });
+      toast.error(errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -169,12 +123,7 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
       return await employeeService.getEmployeeById(id);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar funcionário';
-      addNotification({
-        type: 'error',
-        title: 'Erro',
-        message: errorMessage,
-        priority: 'medium'
-      });
+      toast.error(errorMessage);
       return null;
     }
   };
@@ -185,12 +134,7 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
       return await employeeService.getEmployeeByMatricula(matricula);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Funcionário não encontrado';
-      addNotification({
-        type: 'error',
-        title: 'Não Encontrado',
-        message: errorMessage,
-        priority: 'low'
-      });
+      toast.error(errorMessage);
       return null;
     }
   };
@@ -227,7 +171,6 @@ export function useEmployeeStats() {
   const [stats, setStats] = useState<EstatisticasSetor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addNotification } = useNotifications();
 
   const loadStats = useCallback(async () => {
     try {
@@ -238,16 +181,11 @@ export function useEmployeeStats() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar estatísticas';
       setError(errorMessage);
-      addNotification({
-        type: 'error',
-        title: 'Erro',
-        message: errorMessage,
-        priority: 'medium'
-      });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [addNotification]);
+  }, []);
 
   useEffect(() => {
     loadStats();
