@@ -32,7 +32,9 @@ import {
   TrendingUp,
   Calendar,
   Award,
-  FileText
+  FileText,
+  AlertCircle,
+  UserX
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees, useEmployeeOptions } from '@/hooks/useEmployees';
@@ -66,6 +68,7 @@ export default function EmployeesManagement() {
   const [selectedEmployee, setSelectedEmployee] = useState<Funcionario | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<CreateFuncionarioRequest>>({});
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -226,26 +229,53 @@ export default function EmployeesManagement() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Validação básica antes de enviar
+      if (!formData.telefones || formData.telefones.length === 0 || !formData.telefones[0]) {
+        alert('❌ Por favor, adicione pelo menos um telefone.');
+        setIsSaving(false);
+        return;
+      }
+
       if (editMode && selectedEmployee) {
-        await updateEmployee(selectedEmployee.id_funcionario, formData);
+        await updateEmployee(selectedEmployee.id_pessoa, formData);
       } else {
-        await createEmployee(formData as CreateFuncionarioRequest);
+        // Converter telefones array para telefone singular
+        const dataToSend: any = { ...formData };
+        
+        // Backend espera "telefone" (singular) não "telefones" (array)
+        if (formData.telefones && formData.telefones.length > 0) {
+          dataToSend.telefone = formData.telefones[0].trim(); // Pega o primeiro telefone
+          delete dataToSend.telefones; // Remove o array
+        }
+        
+        await createEmployee(dataToSend as CreateFuncionarioRequest);
       }
       setIsDialogOpen(false);
       setFormData({});
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar funcionário:', error);
+      // Erro já é exibido pelo hook useEmployees
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (employee: Funcionario) => {
-    await deleteEmployee(employee.id_funcionario, employee.nome);
+    try {
+      await deleteEmployee(employee.id_pessoa, employee.nome);
+    } catch (error: any) {
+      // Verifica se é erro de foreign key constraint
+      if (error?.message?.includes('foreign key constraint') || 
+          error?.message?.includes('Cannot delete or update a parent row')) {
+        setSelectedEmployee(employee);
+        setIsSalesModalOpen(true);
+      }
+      // Outros erros já são tratados pelo hook
+    }
   };
 
   const handleToggleStatus = async (employee: Funcionario) => {
-    await toggleEmployeeStatus(employee.id_funcionario, employee.status);
+    await toggleEmployeeStatus(employee.id_pessoa, employee.status);
   };
 
   // Adicionar telefone
@@ -409,7 +439,7 @@ export default function EmployeesManagement() {
               </TableHeader>
               <TableBody>
                 {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id_funcionario}>
+                  <TableRow key={employee.id_pessoa}>
                     <TableCell>
                       <div className="space-y-1">
                         <p className="font-medium">{employee.nome}</p>
@@ -956,11 +986,11 @@ export default function EmployeesManagement() {
                       <SelectContent>
                         <SelectItem value="none">Sem supervisor</SelectItem>
                         {supervisors
-                          .filter(sup => !selectedEmployee || sup.id_funcionario !== selectedEmployee.id_funcionario)
+                          .filter(sup => !selectedEmployee || sup.id_pessoa !== selectedEmployee.id_pessoa)
                           .map(supervisor => (
                             <SelectItem 
-                              key={supervisor.id_funcionario || `sup-${supervisor.nome}`} 
-                              value={supervisor.id_funcionario?.toString() || 'none'}
+                              key={supervisor.id_pessoa || `sup-${supervisor.nome}`} 
+                              value={supervisor.id_pessoa?.toString() || 'none'}
                             >
                               {supervisor.nome} - {supervisor.cargo}
                             </SelectItem>
@@ -1263,6 +1293,89 @@ export default function EmployeesManagement() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Vendas Associadas */}
+        <Dialog open={isSalesModalOpen} onOpenChange={setIsSalesModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Não é possível excluir o funcionário
+              </DialogTitle>
+              <DialogDescription>
+                O funcionário <strong>{selectedEmployee?.nome}</strong> possui vendas registradas no sistema.
+                Para manter a integridade dos dados históricos, não é permitido excluir funcionários com vendas associadas.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-4 space-y-4">
+              {/* Informações do funcionário */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Informações do Funcionário
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Nome:</span>
+                    <p className="font-medium">{selectedEmployee?.nome}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Matrícula:</span>
+                    <p className="font-medium">{selectedEmployee?.matricula}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Cargo:</span>
+                    <p className="font-medium">{selectedEmployee?.cargo}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>
+                    <Badge variant={selectedEmployee?.status === StatusFuncionario.ATIVO ? 'default' : 'secondary'}>
+                      {selectedEmployee?.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Alternativa - Inativar */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    <strong>Alternativa Recomendada:</strong> Em vez de excluir, você pode{' '}
+                    <strong>inativar o funcionário</strong>. Isso mantém todo o histórico de vendas 
+                    e permite consultas futuras, mas impede que o funcionário realize novas operações no sistema.
+                  </span>
+                </p>
+              </div>
+
+              {/* Botão de ação */}
+              <div className="flex justify-between items-center pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsSalesModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                
+                {selectedEmployee?.status === StatusFuncionario.ATIVO && (
+                  <Button
+                    variant="default"
+                    onClick={async () => {
+                      if (selectedEmployee) {
+                        await handleToggleStatus(selectedEmployee);
+                        setIsSalesModalOpen(false);
+                      }
+                    }}
+                  >
+                    <UserX className="h-4 w-4 mr-2" />
+                    Inativar Funcionário
+                  </Button>
+                )}
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

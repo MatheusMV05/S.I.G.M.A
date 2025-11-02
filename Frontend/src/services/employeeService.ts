@@ -23,8 +23,7 @@ export enum TipoContrato {
 
 // Interface completa do Funcionário (DTO do backend)
 export interface Funcionario {
-  id_funcionario: number;
-  id_pessoa: number;
+  id_pessoa: number; // PK - referência à tabela Pessoa
   matricula: string;
   cargo: string;
   setor: string;
@@ -84,7 +83,7 @@ export interface CreateFuncionarioRequest {
   estado?: string;
   cep?: string;
   email?: string;
-  telefones?: string[];
+  telefone: string; // Backend espera telefone singular (obrigatório)
   
   // Dados do Funcionário
   matricula: string;

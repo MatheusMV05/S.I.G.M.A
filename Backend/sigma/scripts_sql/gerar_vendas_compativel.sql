@@ -60,10 +60,19 @@ BEGIN
         WHERE ativo = TRUE 
         ORDER BY RAND() LIMIT 1;
         
-        -- Funcionário aleatório (id_pessoa)
+        -- ⚠️ IMPORTANTE: Apenas funcionários autorizados a fazer vendas
+        -- Cargos permitidos: Administrador, Gerente de Vendas, Supervisor de Caixa, 
+        --                    Operador de Caixa, Vendedor
         SELECT id_pessoa INTO funcionario_id 
         FROM Funcionario 
         WHERE status = 'ATIVO' 
+          AND cargo IN (
+              'Administrador',
+              'Gerente de Vendas',
+              'Supervisor de Caixa',
+              'Operador de Caixa',
+              'Vendedor'
+          )
         ORDER BY RAND() LIMIT 1;
         
         -- Data nos últimos 30 dias, hora 8h-20h

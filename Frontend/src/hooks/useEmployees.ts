@@ -116,13 +116,20 @@ export function useEmployees(initialFilters?: UseEmployeesFilters) {
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao deletar funcionário';
-      addNotification({
-        type: 'error',
-        title: 'Erro ao Deletar',
-        message: errorMessage,
-        priority: 'high'
-      });
-      return false;
+      
+      // Se for erro de constraint, não mostra notificação (será tratado no componente)
+      if (!errorMessage.includes('foreign key constraint') && 
+          !errorMessage.includes('Cannot delete or update a parent row')) {
+        addNotification({
+          type: 'error',
+          title: 'Erro ao Deletar',
+          message: errorMessage,
+          priority: 'high'
+        });
+      }
+      
+      // Re-lança o erro para ser tratado no componente
+      throw err;
     } finally {
       setLoading(false);
     }

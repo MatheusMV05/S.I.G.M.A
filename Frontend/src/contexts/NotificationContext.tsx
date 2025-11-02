@@ -100,75 +100,17 @@ const mockNotifications: Notification[] = [
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Simular notificações em tempo real
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simular verificação de estoque baixo
-      checkLowStockProducts();
-      
-      // Simular ações de outros usuários (apenas para admins)
-      if (user?.role === 'ADMIN') {
-        simulateUserActions();
-      }
-    }, 30000); // Verifica a cada 30 segundos
+  // Auto-refresh e notificações mock removidas por solicitação do usuário
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     checkLowStockProducts();
+  //   }, 30000);
+  //   return () => clearInterval(interval);
+  // }, [user]);
 
-    return () => clearInterval(interval);
-  }, [user]);
-
-  const checkLowStockProducts = () => {
-    // Mock produtos com estoque baixo
-    const lowStockProducts = [
-      { id: '7891234567894', name: 'Detergente Ypê 500ml', stock: 5, minStock: 12 }
-    ];
-
-    lowStockProducts.forEach(product => {
-      if (product.stock <= product.minStock) {
-        const existingNotification = notifications.find(n => 
-          n.type === 'stock' && 
-          n.productId === product.id && 
-          n.message.includes('estoque abaixo')
-        );
-
-        if (!existingNotification) {
-          addNotification({
-            type: 'stock',
-            title: 'Estoque Baixo',
-            message: `${product.name} está com estoque abaixo do mínimo (${product.stock} unidades)`,
-            priority: 'high',
-            productId: product.id
-          });
-        }
-      }
-    });
-  };
-
-  const simulateUserActions = () => {
-    // Simular ações aleatórias de usuários
-    const actions = [
-      {
-        type: 'user_action' as NotificationType,
-        title: 'Novo Usuário',
-        message: 'Ana Costa foi adicionada como Operador de Caixa',
-        priority: 'medium' as const,
-        actionBy: 'Sistema'
-      },
-      {
-        type: 'user_action' as NotificationType,
-        title: 'Categoria Criada',
-        message: 'Pedro Lima criou uma nova categoria: Bebidas Geladas',
-        priority: 'low' as const,
-        actionBy: 'Pedro Lima'
-      }
-    ];
-
-    // Chance de 10% de gerar uma nova notificação a cada verificação
-    if (Math.random() < 0.1) {
-      const randomAction = actions[Math.floor(Math.random() * actions.length)];
-      addNotification(randomAction);
-    }
-  };
+  // checkLowStockProducts removida - notificações agora vêm do backend real
 
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     const newNotification: Notification = {
