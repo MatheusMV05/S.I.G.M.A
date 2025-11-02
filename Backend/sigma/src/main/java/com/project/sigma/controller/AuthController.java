@@ -5,6 +5,7 @@ import com.project.sigma.dto.LoginResponse;
 import com.project.sigma.model.Usuario;
 import com.project.sigma.service.JwtService;
 import com.project.sigma.service.UserDetailServiceImpl;
+import com.project.sigma.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,9 @@ public class AuthController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private UsuarioService usuarioService;
 
 
     @PostMapping("/login")
@@ -51,6 +55,15 @@ public class AuthController {
 
             if (userDetails != null) {
                 System.out.println("✅ Usuário autenticado - ID: " + userDetails.getId_pessoa() + ", Role: " + userDetails.getRole());
+
+                // Atualizar último acesso do usuário
+                try {
+                    usuarioService.atualizarUltimoAcesso(userDetails.getId_pessoa());
+                    System.out.println("✅ Último acesso atualizado para usuário: " + userDetails.getId_pessoa());
+                } catch (Exception e) {
+                    System.err.println("⚠️ Falha ao atualizar último acesso: " + e.getMessage());
+                    // Não interrompe o fluxo de login
+                }
 
                 final String token = jwtService.generateToken(userDetails);
                 System.out.println("✅ Token JWT gerado: " + token.substring(0, 20) + "...");

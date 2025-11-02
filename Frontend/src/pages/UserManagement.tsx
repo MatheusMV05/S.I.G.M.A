@@ -96,6 +96,31 @@ export default function UserManagement() {
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  const getTimeSinceLastAccess = (dateString: string) => {
+    if (!dateString) return { text: 'Nunca acessou', variant: 'secondary' as const };
+    
+    const now = new Date();
+    const lastAccess = new Date(dateString);
+    const diffMs = now.getTime() - lastAccess.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMinutes < 1) {
+      return { text: 'Agora mesmo', variant: 'default' as const };
+    } else if (diffMinutes < 60) {
+      return { text: `${diffMinutes} min atrás`, variant: 'default' as const };
+    } else if (diffHours < 24) {
+      return { text: `${diffHours}h atrás`, variant: 'default' as const };
+    } else if (diffDays === 1) {
+      return { text: 'Ontem', variant: 'secondary' as const };
+    } else if (diffDays < 7) {
+      return { text: `${diffDays} dias atrás`, variant: 'secondary' as const };
+    } else {
+      return { text: formatDate(dateString), variant: 'outline' as const };
+    }
+  };
+
   const getRoleBadge = (role: string) => {
     // Mapear role do backend para exibição
     const displayRole = roleMap[role] || 'CASHIER';
@@ -395,6 +420,7 @@ export default function UserManagement() {
                 filteredUsers.map((userData) => {
                   const roleInfo = getRoleBadge(userData.role);
                   const statusInfo = getStatusBadge(userData.status);
+                  const lastAccessInfo = getTimeSinceLastAccess(userData.ultimoAcesso || '');
                   const RoleIcon = roleInfo.icon;
                   const StatusIcon = statusInfo.icon;
                   
@@ -420,9 +446,16 @@ export default function UserManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">
-                          {formatDateTime(userData.ultimoAcesso || '')}
-                        </span>
+                        <div className="flex flex-col">
+                          <Badge variant={lastAccessInfo.variant} className="w-fit text-xs">
+                            {lastAccessInfo.text}
+                          </Badge>
+                          {userData.ultimoAcesso && (
+                            <span className="text-xs text-muted-foreground mt-1">
+                              {formatDateTime(userData.ultimoAcesso)}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-success">
