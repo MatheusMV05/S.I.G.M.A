@@ -123,8 +123,8 @@ const systemItems = [
 
 const reportItems = [
   {
-    title: 'Relatórios',
-    url: '/reports',
+    title: 'Insights',
+    url: '/insights',
     icon: BarChart3,
     roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
   },
@@ -286,7 +286,7 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Relatórios - Admin, Gerente e Supervisor */}
+        {/* Insights e Análises - Admin, Gerente e Supervisor */}
         {hasPermission(['ADMIN', 'MANAGER', 'SUPERVISOR']) && (
           <SidebarGroup>
             <SidebarGroupLabel>Análises</SidebarGroupLabel>

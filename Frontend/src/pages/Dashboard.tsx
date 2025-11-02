@@ -28,7 +28,9 @@ import {
   CreditCard,
   Activity,
   ArrowRight,
-  TrendingDown as TrendingDownIcon
+  TrendingDown as TrendingDownIcon,
+  Award,
+  Crown
 } from 'lucide-react';
 import {
   Area,
@@ -187,7 +189,7 @@ export default function Dashboard() {
 
   // Funções de navegação
   const handleNewSale = () => navigate('/pos');
-  const handleViewReports = () => navigate('/reports');
+  const handleViewReports = () => navigate('/insights');
   const handleNewProduct = () => navigate('/products');
   const handleNewCustomer = () => navigate('/customers');
   const handleViewInventory = () => navigate('/inventory');
@@ -212,7 +214,7 @@ export default function Dashboard() {
             className="hover:scale-105 transition-all duration-200 flex-1 sm:flex-none"
           >
             <FileText className="h-4 w-4 mr-2" />
-            Relatórios
+            Insights
           </Button>
           <Button 
             size="sm" 
@@ -738,6 +740,176 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">
+          {/* Métricas Financeiras Avançadas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Receita Total</p>
+                    <p className="text-2xl font-bold text-success">R$ {kpis.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <TrendingUp className="h-3 w-3 text-success" />
+                      <span className="text-sm text-success font-medium">+{kpis.monthlyGrowth.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-success" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Lucro Estimado</p>
+                    <p className="text-2xl font-bold text-primary">R$ {(kpis.monthRevenue * 0.297).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <TrendingUp className="h-3 w-3 text-success" />
+                      <span className="text-sm text-success font-medium">+2.1%</span>
+                    </div>
+                  </div>
+                  <Award className="h-8 w-8 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Margem</p>
+                    <p className="text-2xl font-bold">29.7%</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <TrendingUp className="h-3 w-3 text-success" />
+                      <span className="text-sm text-success font-medium">+2.1%</span>
+                    </div>
+                  </div>
+                  <Target className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Análise de Custos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Análise de Custos Operacionais</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  { category: 'Custo dos Produtos', value: kpis.monthRevenue * 0.703, percentage: 70.3, color: 'bg-primary' },
+                  { category: 'Funcionários', value: kpis.monthRevenue * 0.145, percentage: 14.5, color: 'bg-blue-500' },
+                  { category: 'Operacionais', value: kpis.monthRevenue * 0.103, percentage: 10.3, color: 'bg-green-500' },
+                  { category: 'Marketing', value: kpis.monthRevenue * 0.034, percentage: 3.4, color: 'bg-orange-500' },
+                  { category: 'Outros', value: kpis.monthRevenue * 0.015, percentage: 1.5, color: 'bg-gray-500' }
+                ].map((cost, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${cost.color}`} />
+                      <span className="font-medium">{cost.category}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Progress value={cost.percentage} className="w-24 h-2" />
+                      <div className="text-right min-w-[120px]">
+                        <p className="font-semibold">R$ {cost.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        <p className="text-sm text-muted-foreground">{cost.percentage}%</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gráfico Receita vs Lucro */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Receita vs Lucro - Últimos 12 Meses</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={[
+                  { month: 'Jan', vendas: 45000, lucro: 12000 },
+                  { month: 'Fev', vendas: 52000, lucro: 14500 },
+                  { month: 'Mar', vendas: 48000, lucro: 13200 },
+                  { month: 'Abr', vendas: 61000, lucro: 17800 },
+                  { month: 'Mai', vendas: 55000, lucro: 15200 },
+                  { month: 'Jun', vendas: 67000, lucro: 19500 },
+                  { month: 'Jul', vendas: 58000, lucro: 16100 },
+                  { month: 'Ago', vendas: 71000, lucro: 20800 },
+                  { month: 'Set', vendas: 63000, lucro: 18200 },
+                  { month: 'Out', vendas: 69000, lucro: 19800 },
+                  { month: 'Nov', vendas: 74000, lucro: 21600 },
+                  { month: 'Dez', vendas: 82000, lucro: 24500 }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.3} />
+                  <XAxis dataKey="month" stroke="#888" />
+                  <YAxis stroke="#888" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a1a', 
+                      border: '1px solid #333',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, '']}
+                  />
+                  <Legend />
+                  <Area 
+                    type="monotone" 
+                    dataKey="vendas" 
+                    name="Receita"
+                    stackId="1"
+                    stroke="#9333ea" 
+                    fill="#9333ea" 
+                    fillOpacity={0.6}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="lucro" 
+                    name="Lucro"
+                    stackId="2"
+                    stroke="#ec4899" 
+                    fill="#ec4899" 
+                    fillOpacity={0.8}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Métricas de Clientes por Segmento */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Segmentação de Clientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                  { segment: 'VIP', customers: 45, revenue: 125000, avgTicket: 2777.78, color: 'border-purple-500' },
+                  { segment: 'Premium', customers: 128, revenue: 89600, avgTicket: 700.00, color: 'border-blue-500' },
+                  { segment: 'Regular', customers: 456, revenue: 164160, avgTicket: 360.00, color: 'border-green-500' },
+                  { segment: 'Básico', customers: 892, revenue: 134280, avgTicket: 150.50, color: 'border-gray-500' }
+                ].map((segment) => (
+                  <div key={segment.segment} className={`p-4 border-l-4 ${segment.color} rounded-lg bg-muted/30`}>
+                    <div className="text-center space-y-2">
+                      <Badge variant="outline" className="mb-2">{segment.segment}</Badge>
+                      <p className="text-2xl font-bold">{segment.customers}</p>
+                      <p className="text-sm text-muted-foreground">clientes</p>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-success">
+                          R$ {segment.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Ticket: R$ {segment.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Vendas por Hora */}
             <Card className="lg:col-span-2">
@@ -931,7 +1103,7 @@ export default function Dashboard() {
               onClick={handleViewReports}
             >
               <FileText className="h-6 w-6 group-hover:text-primary transition-colors" />
-              <span className="text-sm font-medium">Relatórios</span>
+              <span className="text-sm font-medium">Insights</span>
             </Button>
           </div>
         </CardContent>

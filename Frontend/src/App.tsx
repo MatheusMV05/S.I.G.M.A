@@ -15,7 +15,7 @@ import LoginPage from "@/pages/LoginPage";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import Inventory from "@/pages/Inventory";
-import Reports from "@/pages/Reports";
+import Insights from "@/pages/Insights";
 import Customers from "@/pages/Customers";
 import Registrations from "@/pages/Registrations";
 import SuppliersManagement from "@/pages/SuppliersManagement";
@@ -98,7 +98,8 @@ function AppRoutes() {
       <Route path="/pos" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR', 'CASHIER']}><POS /></ProtectedRoute>} />
       <Route path="/products" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'STOCK']}><Products /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR', 'STOCK']}><Inventory /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Reports /></ProtectedRoute>} />
+      <Route path="/insights" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Insights /></ProtectedRoute>} />
+      <Route path="/reports" element={<Navigate to="/insights" replace />} />
       <Route path="/charts" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Charts /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Customers /></ProtectedRoute>} />
       <Route path="/registrations" element={<ProtectedRoute requiredRoles={['ADMIN']}><Registrations /></ProtectedRoute>} />
