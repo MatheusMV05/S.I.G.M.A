@@ -70,6 +70,20 @@ public class FornecedorController {
     }
 
     /**
+     * Busca produtos associados a um fornecedor
+     * GET /api/fornecedores/{id}/produtos
+     */
+    @GetMapping("/{id}/produtos")
+    public ResponseEntity<List<Map<String, Object>>> listarProdutosFornecedor(@PathVariable Long id) {
+        try {
+            List<Map<String, Object>> produtos = fornecedorService.listarProdutosFornecedor(id);
+            return ResponseEntity.ok(produtos);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
      * Cria um novo fornecedor
      * POST /api/fornecedores
      */
@@ -104,14 +118,25 @@ public class FornecedorController {
      * DELETE /api/fornecedores/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarFornecedor(@PathVariable Long id) {
+    public ResponseEntity<?> deletarFornecedor(@PathVariable Long id) {
+        System.out.println("DEBUG CONTROLLER: Recebida requisição DELETE para fornecedor ID: " + id);
         try {
             fornecedorService.deletarFornecedor(id);
+            System.out.println("DEBUG CONTROLLER: Fornecedor deletado com sucesso ID: " + id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            System.out.println("DEBUG CONTROLLER: Fornecedor não encontrado: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            System.out.println("DEBUG CONTROLLER: Conflito ao deletar: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            System.out.println("DEBUG CONTROLLER: Erro inesperado: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Erro ao deletar fornecedor: " + e.getMessage()));
         }
     }
 

@@ -31,6 +31,19 @@ export const apiRequest = async <T>(
       console.error('Headers sent:', config.headers);
       console.error('Token present:', !!localStorage.getItem('auth_token'));
       
+      // Tentar extrair mensagem de erro do backend
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        // Se não conseguir parsear JSON, usar mensagens padrão
+      }
+      
       if (response.status === 403) {
         const token = localStorage.getItem('auth_token');
         if (!token) {
@@ -40,8 +53,20 @@ export const apiRequest = async <T>(
         }
       }
       
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      if (response.status === 409) {
+        // Conflito - mensagem do backend já está em errorMessage
+        throw new Error(errorMessage);
+      }
+      
+      if (response.status === 404) {
+        throw new Error(errorMessage || 'Recurso não encontrado.');
+      }
+      
+      if (response.status === 400) {
+        throw new Error(errorMessage || 'Dados inválidos.');
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const contentType = response.headers.get('content-type');

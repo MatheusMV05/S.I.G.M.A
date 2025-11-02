@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supplierService, type Fornecedor, type CreateFornecedorRequest } from '@/services/supplierService';
+import { supplierService, type Fornecedor, type CreateFornecedorRequest, type SupplierProduct } from '@/services/supplierService';
 import { useNotifications } from '@/contexts/NotificationContext';
 
 export function useSuppliers() {
@@ -106,6 +106,15 @@ export function useSuppliers() {
     }
   };
 
+  const getSupplierProducts = async (id: number): Promise<SupplierProduct[]> => {
+    try {
+      return await supplierService.getSupplierProducts(id);
+    } catch (err) {
+      console.error('Erro ao buscar produtos do fornecedor:', err);
+      return [];
+    }
+  };
+
   const toggleStatus = async (id: number, ativo: boolean): Promise<boolean> => {
     try {
       setLoading(true);
@@ -144,6 +153,7 @@ export function useSuppliers() {
     createSupplier,
     updateSupplier,
     deleteSupplier,
+    getSupplierProducts,
     toggleStatus,
   };
 }

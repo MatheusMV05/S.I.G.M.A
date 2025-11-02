@@ -64,6 +64,10 @@ public class FornecedorRepository implements BaseRepository<Fornecedor, Long> {
             "SELECT COALESCE(SUM(quantidade_recebida * valor_de_compra), 0) " +
             "FROM Fornece WHERE id_fornecedor = ?";
 
+    private static final String SELECT_PRODUTOS_SQL =
+            "SELECT id_produto, nome, marca, codigo_barras, estoque " +
+            "FROM Produto WHERE id_fornecedor = ? ORDER BY nome";
+
     @Override
     public Fornecedor save(Fornecedor fornecedor) {
         if (fornecedor.getId_fornecedor() != null && existsById(fornecedor.getId_fornecedor())) {
@@ -183,6 +187,25 @@ public class FornecedorRepository implements BaseRepository<Fornecedor, Long> {
 
     public BigDecimal sumCompras(Long idFornecedor) {
         return jdbcTemplate.queryForObject(SUM_COMPRAS_SQL, BigDecimal.class, idFornecedor);
+    }
+
+    /**
+     * Busca lista simplificada de produtos do fornecedor
+     * Retorna: Map com id_produto, nome, marca, codigo_barras, estoque
+     */
+    public List<java.util.Map<String, Object>> findProdutosByFornecedor(Long idFornecedor) {
+        return jdbcTemplate.query(SELECT_PRODUTOS_SQL, 
+            (rs, rowNum) -> {
+                java.util.Map<String, Object> produto = new java.util.HashMap<>();
+                produto.put("id_produto", rs.getLong("id_produto"));
+                produto.put("nome", rs.getString("nome"));
+                produto.put("marca", rs.getString("marca"));
+                produto.put("codigo_barras", rs.getString("codigo_barras"));
+                produto.put("estoque", rs.getInt("estoque"));
+                return produto;
+            }, 
+            idFornecedor
+        );
     }
 
     private RowMapper<Fornecedor> fornecedorRowMapper() {

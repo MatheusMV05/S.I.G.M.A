@@ -92,6 +92,16 @@ public class FornecedorService {
     }
 
     /**
+     * Lista produtos associados a um fornecedor
+     */
+    public List<java.util.Map<String, Object>> listarProdutosFornecedor(Long id) {
+        if (!fornecedorRepository.existsById(id)) {
+            throw new IllegalArgumentException("Fornecedor não encontrado com ID: " + id);
+        }
+        return fornecedorRepository.findProdutosByFornecedor(id);
+    }
+
+    /**
      * Atualiza um fornecedor existente
      */
     @Transactional
@@ -122,20 +132,28 @@ public class FornecedorService {
      */
     @Transactional
     public void deletarFornecedor(Long id) {
+        System.out.println("DEBUG: Tentando deletar fornecedor ID: " + id);
+        
         if (!fornecedorRepository.existsById(id)) {
+            System.out.println("DEBUG: Fornecedor não encontrado ID: " + id);
             throw new IllegalArgumentException("Fornecedor não encontrado com ID: " + id);
         }
         
         // Verificar se tem produtos associados
         Integer totalProdutos = fornecedorRepository.countProdutos(id);
-        if (totalProdutos > 0) {
+        System.out.println("DEBUG: Total de produtos associados ao fornecedor " + id + ": " + totalProdutos);
+        
+        if (totalProdutos != null && totalProdutos > 0) {
+            System.out.println("DEBUG: Bloqueando exclusão - fornecedor tem produtos associados");
             throw new IllegalStateException(
                 "Não é possível excluir o fornecedor pois existem " + totalProdutos + 
                 " produtos associados a ele. Inative o fornecedor ao invés de excluí-lo."
             );
         }
         
+        System.out.println("DEBUG: Executando delete no banco para fornecedor ID: " + id);
         fornecedorRepository.deleteById(id);
+        System.out.println("DEBUG: Fornecedor deletado com sucesso ID: " + id);
     }
 
     /**

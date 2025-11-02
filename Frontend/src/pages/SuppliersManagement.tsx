@@ -29,17 +29,19 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSuppliers } from '@/hooks/useSuppliers';
-import type { Fornecedor, CreateFornecedorRequest } from '@/services/supplierService';
+import type { Fornecedor, CreateFornecedorRequest, SupplierProduct } from '@/services/supplierService';
 import { LoadingScreen } from '@/components/LoadingScreen';
 
 export default function SuppliersManagement() {
   const { user } = useAuth();
-  const { suppliers, loading, createSupplier, updateSupplier, deleteSupplier, fetchSuppliers } = useSuppliers();
+  const { suppliers, loading, createSupplier, updateSupplier, deleteSupplier, fetchSuppliers, getSupplierProducts } = useSuppliers();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSupplier, setSelectedSupplier] = useState<Fornecedor | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isProductsModalOpen, setIsProductsModalOpen] = useState(false);
+  const [supplierProducts, setSupplierProducts] = useState<SupplierProduct[]>([]);
   const [formData, setFormData] = useState<Partial<CreateFornecedorRequest>>({});
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -149,7 +151,18 @@ export default function SuppliersManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    await deleteSupplier(id);
+    // Primeiro verifica se há produtos associados
+    const products = await getSupplierProducts(id);
+    
+    if (products.length > 0) {
+      // Se houver produtos, mostra o modal com a lista
+      setSupplierProducts(products);
+      setSelectedSupplier(suppliers.find(s => s.id_fornecedor === id) || null);
+      setIsProductsModalOpen(true);
+    } else {
+      // Se não houver produtos, deleta direto
+      await deleteSupplier(id);
+    }
   };
 
   if (loading && suppliers.length === 0) {
@@ -751,6 +764,77 @@ export default function SuppliersManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Produtos Associados */}
+      <Dialog open={isProductsModalOpen} onOpenChange={setIsProductsModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Não é possível excluir o fornecedor
+            </DialogTitle>
+            <DialogDescription>
+              O fornecedor <strong>{selectedSupplier?.nome_fantasia}</strong> possui <strong>{supplierProducts.length}</strong> produto(s) associado(s).
+              Para excluir este fornecedor, você deve primeiro remover ou transferir os produtos abaixo para outro fornecedor.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Produtos Associados
+            </h3>
+            
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Marca</TableHead>
+                    <TableHead>Código de Barras</TableHead>
+                    <TableHead className="text-right">Estoque</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {supplierProducts.map((product) => (
+                    <TableRow key={product.id_produto}>
+                      <TableCell className="font-mono text-xs">{product.id_produto}</TableCell>
+                      <TableCell className="font-medium">{product.nome}</TableCell>
+                      <TableCell>{product.marca || '-'}</TableCell>
+                      <TableCell className="font-mono text-xs">{product.codigo_barras || '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={product.estoque > 0 ? 'default' : 'secondary'}>
+                          {product.estoque}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800 flex items-start gap-2">
+              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span>
+                <strong>Alternativa:</strong> Se você deseja desativar temporariamente este fornecedor sem excluí-lo, 
+                utilize a opção de alternar o status para "INATIVO". Isso manterá o histórico e os produtos associados.
+              </span>
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsProductsModalOpen(false)}
+            >
+              Fechar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

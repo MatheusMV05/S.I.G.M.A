@@ -24,6 +24,14 @@ export interface Fornecedor {
   valor_total_compras?: number;
 }
 
+export interface SupplierProduct {
+  id_produto: number;
+  nome: string;
+  marca: string;
+  codigo_barras: string;
+  estoque: number;
+}
+
 export interface CreateFornecedorRequest {
   nome_fantasia: string;
   razao_social?: string;
@@ -89,6 +97,13 @@ class SupplierService {
    */
   async getSupplierByCnpj(cnpj: string): Promise<Fornecedor> {
     return await apiRequest<Fornecedor>(`/fornecedores/cnpj/${cnpj}`);
+  }
+
+  /**
+   * Busca produtos associados a um fornecedor
+   */
+  async getSupplierProducts(id: number): Promise<SupplierProduct[]> {
+    return await apiRequest<SupplierProduct[]>(`/fornecedores/${id}/produtos`);
   }
 
   /**
