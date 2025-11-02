@@ -269,51 +269,51 @@ INSERT INTO Telefone (id_pessoa, numero, tipo) VALUES
 -- 3. FUNCIONÁRIOS (35 registros)
 -- =================================================================
 
-INSERT INTO Funcionario (id_pessoa, matricula, salario, cargo, setor, id_supervisor, status, data_admissao) VALUES
+INSERT INTO Funcionario (id_pessoa, matricula, salario, cargo, setor, id_supervisor, status, data_admissao, turno, tipo_contrato, carga_horaria_semanal, comissao_percentual, meta_mensal) VALUES
 -- Diretoria e Gerência
-(1, 'FUN001', 15000.00, 'Diretor Geral', 'Diretoria', NULL, 'ATIVO', '2020-01-15'),
-(2, 'FUN002', 12000.00, 'Gerente de Vendas', 'Vendas', 1, 'ATIVO', '2020-03-10'),
-(3, 'FUN003', 10000.00, 'Gerente de Estoque', 'Estoque', 1, 'ATIVO', '2020-05-20'),
-(4, 'FUN004', 8000.00, 'Supervisor de Caixa', 'Financeiro', 2, 'ATIVO', '2021-02-01'),
-(5, 'FUN005', 7500.00, 'Supervisor de Compras', 'Compras', 3, 'ATIVO', '2021-04-15'),
+(1, 'FUN001', 15000.00, 'Diretor Geral', 'Diretoria', NULL, 'ATIVO', '2020-01-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(2, 'FUN002', 12000.00, 'Gerente de Vendas', 'Vendas', 1, 'ATIVO', '2020-03-10', 'INTEGRAL', 'CLT', 44, 5.00, 150000.00),
+(3, 'FUN003', 10000.00, 'Gerente de Estoque', 'Estoque', 1, 'ATIVO', '2020-05-20', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(4, 'FUN004', 8000.00, 'Supervisor de Caixa', 'Financeiro', 2, 'ATIVO', '2021-02-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(5, 'FUN005', 7500.00, 'Supervisor de Compras', 'Compras', 3, 'ATIVO', '2021-04-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 
 -- Operadores de Caixa
-(6, 'FUN006', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-06-01'),
-(7, 'FUN007', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-07-10'),
-(8, 'FUN008', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-08-15'),
-(9, 'FUN009', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-01-05'),
-(10, 'FUN010', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-02-20'),
-(11, 'FUN011', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-03-10'),
-(12, 'FUN012', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-05-15'),
+(6, 'FUN006', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-06-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(7, 'FUN007', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-07-10', 'TARDE', 'CLT', 44, 0.00, 0.00),
+(8, 'FUN008', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2021-08-15', 'NOITE', 'CLT', 44, 0.00, 0.00),
+(9, 'FUN009', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-01-05', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(10, 'FUN010', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-02-20', 'TARDE', 'CLT', 44, 0.00, 0.00),
+(11, 'FUN011', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-03-10', 'NOITE', 'CLT', 44, 0.00, 0.00),
+(12, 'FUN012', 3500.00, 'Operador de Caixa', 'Financeiro', 4, 'ATIVO', '2022-05-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 
 -- Vendedores
-(13, 'FUN013', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-09-01'),
-(14, 'FUN014', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-10-10'),
-(15, 'FUN015', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-01-15'),
-(16, 'FUN016', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-03-01'),
-(17, 'FUN017', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-04-20'),
-(18, 'FUN018', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-06-10'),
+(13, 'FUN013', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-09-01', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(14, 'FUN014', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2021-10-10', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(15, 'FUN015', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-01-15', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(16, 'FUN016', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-03-01', 'INTEGRAL', 'CLT', 44, 3.00, 25000.00),
+(17, 'FUN017', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-04-20', 'MANHA', 'CLT', 36, 3.00, 20000.00),
+(18, 'FUN018', 4000.00, 'Vendedor', 'Vendas', 2, 'ATIVO', '2022-06-10', 'TARDE', 'CLT', 36, 3.00, 20000.00),
 
 -- Estoquistas
-(19, 'FUN019', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2021-11-01'),
-(20, 'FUN020', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-01-10'),
-(21, 'FUN021', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-02-15'),
-(22, 'FUN022', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-04-01'),
-(23, 'FUN023', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-05-20'),
+(19, 'FUN019', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2021-11-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(20, 'FUN020', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-01-10', 'TARDE', 'CLT', 44, 0.00, 0.00),
+(21, 'FUN021', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-02-15', 'NOITE', 'CLT', 44, 0.00, 0.00),
+(22, 'FUN022', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-04-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(23, 'FUN023', 3800.00, 'Estoquista', 'Estoque', 3, 'ATIVO', '2022-05-20', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 
 -- Outros setores
-(24, 'FUN024', 4500.00, 'Analista Financeiro', 'Financeiro', 1, 'ATIVO', '2021-12-01'),
-(25, 'FUN025', 4500.00, 'Analista de Compras', 'Compras', 5, 'ATIVO', '2022-01-15'),
-(26, 'FUN026', 5000.00, 'Analista de TI', 'TI', 1, 'ATIVO', '2020-06-10'),
-(27, 'FUN027', 4200.00, 'Assistente Administrativo', 'Administrativo', 1, 'ATIVO', '2022-02-01'),
-(28, 'FUN028', 4200.00, 'Assistente de RH', 'RH', 1, 'ATIVO', '2022-03-15'),
-(29, 'FUN029', 3600.00, 'Auxiliar de Limpeza', 'Serviços Gerais', 1, 'ATIVO', '2022-04-01'),
-(30, 'FUN030', 3600.00, 'Auxiliar de Manutenção', 'Manutenção', 1, 'ATIVO', '2022-05-10'),
-(31, 'FUN031', 4800.00, 'Coordenador de Marketing', 'Marketing', 2, 'ATIVO', '2021-08-01'),
-(32, 'FUN032', 3900.00, 'Recepcionista', 'Atendimento', 1, 'ATIVO', '2022-06-01'),
-(33, 'FUN033', 4000.00, 'Auxiliar Administrativo', 'Administrativo', 27, 'ATIVO', '2022-07-15'),
-(34, 'FUN034', 3500.00, 'Empacotador', 'Vendas', 2, 'ATIVO', '2022-08-01'),
-(35, 'FUN035', 3500.00, 'Repositor', 'Estoque', 3, 'INATIVO', '2022-09-10');
+(24, 'FUN024', 4500.00, 'Analista Financeiro', 'Financeiro', 1, 'ATIVO', '2021-12-01', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(25, 'FUN025', 4500.00, 'Analista de Compras', 'Compras', 5, 'ATIVO', '2022-01-15', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(26, 'FUN026', 5000.00, 'Analista de TI', 'TI', 1, 'ATIVO', '2020-06-10', 'INTEGRAL', 'PJ', 40, 0.00, 0.00),
+(27, 'FUN027', 4200.00, 'Assistente Administrativo', 'Administrativo', 1, 'ATIVO', '2022-02-01', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(28, 'FUN028', 4200.00, 'Assistente de RH', 'RH', 1, 'ATIVO', '2022-03-15', 'INTEGRAL', 'CLT', 40, 0.00, 0.00),
+(29, 'FUN029', 3600.00, 'Auxiliar de Limpeza', 'Serviços Gerais', 1, 'ATIVO', '2022-04-01', 'MANHA', 'CLT', 44, 0.00, 0.00),
+(30, 'FUN030', 3600.00, 'Auxiliar de Manutenção', 'Manutenção', 1, 'ATIVO', '2022-05-10', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(31, 'FUN031', 4800.00, 'Coordenador de Marketing', 'Marketing', 2, 'ATIVO', '2021-08-01', 'INTEGRAL', 'CLT', 40, 2.00, 50000.00),
+(32, 'FUN032', 3900.00, 'Recepcionista', 'Atendimento', 1, 'ATIVO', '2022-06-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(33, 'FUN033', 4000.00, 'Auxiliar Administrativo', 'Administrativo', 27, 'ATIVO', '2022-07-15', 'INTEGRAL', 'ESTAGIO', 30, 0.00, 0.00),
+(34, 'FUN034', 3500.00, 'Empacotador', 'Vendas', 2, 'ATIVO', '2022-08-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+(35, 'FUN035', 3500.00, 'Repositor', 'Estoque', 3, 'INATIVO', '2022-09-10', 'MANHA', 'TEMPORARIO', 44, 0.00, 0.00);
 
 -- =================================================================
 -- 4. USUÁRIOS (10 registros - funcionários com acesso ao sistema)
@@ -990,4 +990,73 @@ UPDATE Produto SET estoque = 695 WHERE id_produto = 31;
 UPDATE Produto SET estoque = 59 WHERE id_produto = 41;
 UPDATE Produto SET estoque = 47 WHERE id_produto = 42;
 UPDATE Produto SET estoque = 140 WHERE id_produto = 51;
+
+-- =================================================================
+-- DADOS DE EXEMPLO - MÓDULO RH
+-- =================================================================
+
+-- Histórico de Funcionários (eventos importantes)
+INSERT INTO HistoricoFuncionario (id_funcionario, tipo_evento, data_evento, cargo_anterior, cargo_novo, setor_anterior, setor_novo, salario_anterior, salario_novo, descricao, realizado_por) VALUES
+(1, 'ADMISSAO', '2020-01-15', NULL, 'Diretor Geral', NULL, 'Diretoria', NULL, 15000.00, 'Admissão como Diretor Geral', 1),
+(2, 'ADMISSAO', '2020-03-10', NULL, 'Gerente de Vendas', NULL, 'Vendas', NULL, 10000.00, 'Admissão como Gerente de Vendas', 1),
+(2, 'AUMENTO_SALARIAL', '2022-03-10', 'Gerente de Vendas', 'Gerente de Vendas', 'Vendas', 'Vendas', 10000.00, 12000.00, 'Aumento salarial por desempenho excepcional', 1),
+(3, 'ADMISSAO', '2020-05-20', NULL, 'Gerente de Estoque', NULL, 'Estoque', NULL, 10000.00, 'Admissão como Gerente de Estoque', 1),
+(13, 'ADMISSAO', '2021-09-01', NULL, 'Vendedor', NULL, 'Vendas', NULL, 3500.00, 'Admissão como Vendedor', 2),
+(13, 'PROMOCAO', '2023-09-01', 'Vendedor', 'Vendedor Pleno', 'Vendas', 'Vendas', 3500.00, 4000.00, 'Promoção por atingimento de metas', 2),
+(26, 'ADMISSAO', '2020-06-10', NULL, 'Analista de TI', NULL, 'TI', NULL, 5000.00, 'Admissão como Analista de TI - PJ', 1),
+(35, 'ADMISSAO', '2022-09-10', NULL, 'Repositor', NULL, 'Estoque', NULL, 3500.00, 'Admissão temporária como Repositor', 3),
+(35, 'DESLIGAMENTO', '2023-12-10', 'Repositor', NULL, 'Estoque', NULL, 3500.00, NULL, 'Término de contrato temporário', 3);
+
+-- Documentos de Funcionários (exemplos)
+INSERT INTO DocumentoFuncionario (id_funcionario, tipo_documento, numero_documento, data_emissao, data_validade, observacoes) VALUES
+(1, 'CPF', '123.456.789-01', '2000-01-01', NULL, 'CPF do Diretor'),
+(1, 'RG', '12.345.678-9', '2000-01-01', NULL, 'RG do Diretor'),
+(1, 'CNH', '12345678901', '2020-01-01', '2025-01-01', 'Carteira de Habilitação categoria B'),
+(2, 'CPF', '234.567.890-12', '1995-05-10', NULL, NULL),
+(2, 'CTPS', '123456-7890', '2010-01-01', NULL, 'Carteira de Trabalho'),
+(3, 'CPF', '345.678.901-23', '1992-08-15', NULL, NULL),
+(26, 'CPF', '456.789.012-34', '1990-03-20', NULL, NULL),
+(26, 'CERTIFICADO', 'CERT-TI-2024', '2024-01-15', '2027-01-15', 'Certificação em Segurança da Informação');
+
+-- Férias de Funcionários (programadas e concluídas)
+INSERT INTO FeriasFuncionario (id_funcionario, periodo_aquisitivo_inicio, periodo_aquisitivo_fim, data_inicio_ferias, data_fim_ferias, dias_gozados, abono_pecuniario, status_ferias, observacoes) VALUES
+(1, '2023-01-15', '2024-01-14', '2024-01-15', '2024-02-14', 30, FALSE, 'CONCLUIDAS', 'Férias anuais'),
+(2, '2023-03-10', '2024-03-09', '2024-07-01', '2024-07-20', 20, TRUE, 'CONCLUIDAS', 'Férias de 20 dias + 10 dias vendidos'),
+(3, '2023-05-20', '2024-05-19', '2024-12-20', '2025-01-08', 20, FALSE, 'PROGRAMADAS', 'Férias de final de ano'),
+(13, '2024-09-01', '2025-08-31', '2025-01-10', '2025-01-24', 15, FALSE, 'PROGRAMADAS', 'Primeira parcela de férias'),
+(26, '2024-06-10', '2025-06-09', '2025-03-01', '2025-03-30', 30, FALSE, 'PROGRAMADAS', 'Férias completas de 30 dias');
+
+-- Ponto Eletrônico (últimos 5 dias - exemplos para alguns funcionários)
+INSERT INTO PontoEletronico (id_funcionario, data_ponto, hora_entrada, hora_saida_almoco, hora_retorno_almoco, hora_saida, horas_trabalhadas, horas_extras, status_ponto, observacoes) VALUES
+-- Funcionário 6 (Operador de Caixa - Turno Manhã)
+(6, '2025-10-28', '06:00:00', '10:00:00', '11:00:00', '14:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(6, '2025-10-29', '06:00:00', '10:00:00', '11:00:00', '14:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(6, '2025-10-30', '06:00:00', '10:00:00', '11:00:00', '14:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(6, '2025-10-31', '06:00:00', '10:00:00', '11:00:00', '14:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(6, '2025-11-01', '06:00:00', '10:00:00', '11:00:00', '14:30:00', 7.50, 0.50, 'NORMAL', 'Horário estendido para inventário'),
+
+-- Funcionário 7 (Operador de Caixa - Turno Tarde)
+(7, '2025-10-28', '12:00:00', '16:00:00', '17:00:00', '20:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(7, '2025-10-29', '12:00:00', '16:00:00', '17:00:00', '20:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(7, '2025-10-30', '12:00:00', '16:00:00', '17:00:00', '20:00:00', 7.00, 0.00, 'NORMAL', NULL),
+(7, '2025-10-31', NULL, NULL, NULL, NULL, 0.00, 0.00, 'FALTA', 'Atestado médico apresentado'),
+(7, '2025-11-01', '12:00:00', '16:00:00', '17:00:00', '20:00:00', 7.00, 0.00, 'NORMAL', NULL),
+
+-- Funcionário 13 (Vendedor)
+(13, '2025-10-28', '08:00:00', '12:00:00', '13:00:00', '18:00:00', 9.00, 1.00, 'NORMAL', 'Hora extra para fechamento de vendas'),
+(13, '2025-10-29', '08:00:00', '12:00:00', '13:00:00', '17:00:00', 8.00, 0.00, 'NORMAL', NULL),
+(13, '2025-10-30', '08:00:00', '12:00:00', '13:00:00', '17:00:00', 8.00, 0.00, 'NORMAL', NULL),
+(13, '2025-10-31', '08:00:00', '12:00:00', '13:00:00', '17:00:00', 8.00, 0.00, 'NORMAL', NULL),
+(13, '2025-11-01', '08:00:00', '12:00:00', '13:00:00', '19:00:00', 10.00, 2.00, 'NORMAL', 'Horas extras - Black Friday'),
+
+-- Funcionário 1 (Diretor)
+(1, '2025-10-28', '07:00:00', '12:00:00', '13:00:00', '18:00:00', 10.00, 0.00, 'NORMAL', NULL),
+(1, '2025-10-29', '07:00:00', '12:00:00', '13:00:00', '18:00:00', 10.00, 0.00, 'NORMAL', NULL),
+(1, '2025-10-30', '07:00:00', '12:00:00', '13:00:00', '19:00:00', 11.00, 0.00, 'NORMAL', 'Reunião estratégica estendida'),
+(1, '2025-10-31', '07:00:00', '12:00:00', '13:00:00', '18:00:00', 10.00, 0.00, 'NORMAL', NULL),
+(1, '2025-11-01', '07:00:00', '12:00:00', '13:00:00', '18:00:00', 10.00, 0.00, 'NORMAL', NULL);
+
+-- =================================================================
+-- FIM DO SCRIPT DE INSERÇÃO
+-- =================================================================
 

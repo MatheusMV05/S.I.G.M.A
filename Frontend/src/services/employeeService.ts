@@ -1,9 +1,117 @@
 import { apiRequest } from './api';
-import type { 
-  Employee, 
-  CreateEmployeeRequest, 
-  PaginatedResponse 
-} from './types';
+
+// Enums baseados no backend
+export enum StatusFuncionario {
+  ATIVO = 'ATIVO',
+  INATIVO = 'INATIVO'
+}
+
+export enum TurnoTrabalho {
+  MANHA = 'MANHA',
+  TARDE = 'TARDE',
+  NOITE = 'NOITE',
+  INTEGRAL = 'INTEGRAL'
+}
+
+export enum TipoContrato {
+  CLT = 'CLT',
+  PJ = 'PJ',
+  ESTAGIO = 'ESTAGIO',
+  TEMPORARIO = 'TEMPORARIO',
+  AUTONOMO = 'AUTONOMO'
+}
+
+// Interface completa do Funcionário (DTO do backend)
+export interface Funcionario {
+  id_funcionario: number;
+  id_pessoa: number;
+  matricula: string;
+  cargo: string;
+  setor: string;
+  salario: number;
+  data_admissao: string;
+  id_supervisor?: number;
+  status: StatusFuncionario;
+  
+  // Novos campos de RH
+  turno: TurnoTrabalho;
+  tipo_contrato: TipoContrato;
+  carga_horaria_semanal: number;
+  data_desligamento?: string;
+  motivo_desligamento?: string;
+  beneficios?: string;
+  observacoes?: string;
+  foto_url?: string;
+  data_ultima_promocao?: string;
+  comissao_percentual: number;
+  meta_mensal: number;
+  
+  // Dados da pessoa (do JOIN)
+  nome: string;
+  cpf: string;
+  data_nascimento?: string;
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  email?: string;
+  
+  // Telefones (array)
+  telefones: string[];
+  
+  // Campos calculados
+  meses_empresa?: number;
+  anos_empresa?: number;
+  vendas_mes_atual?: number;
+  valor_vendas_mes_atual?: number;
+  usuario_sistema?: string;
+  perfil_sistema?: string;
+  nome_supervisor?: string;
+}
+
+// Request para criar funcionário
+export interface CreateFuncionarioRequest {
+  // Dados da Pessoa
+  nome: string;
+  cpf: string;
+  data_nascimento?: string;
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  email?: string;
+  telefones?: string[];
+  
+  // Dados do Funcionário
+  matricula: string;
+  cargo: string;
+  setor: string;
+  salario: number;
+  data_admissao: string;
+  id_supervisor?: number;
+  turno?: TurnoTrabalho;
+  tipo_contrato?: TipoContrato;
+  carga_horaria_semanal?: number;
+  comissao_percentual?: number;
+  meta_mensal?: number;
+  beneficios?: string;
+  observacoes?: string;
+  foto_url?: string;
+}
+
+// Estatísticas por setor
+export interface EstatisticasSetor {
+  setor: string;
+  total_funcionarios: number;
+  funcionarios_ativos: number;
+  funcionarios_inativos: number;
+  salario_medio: number;
+  salario_total: number;
+}
 
 class EmployeeService {
   private static instance: EmployeeService;
@@ -16,50 +124,56 @@ class EmployeeService {
   }
 
   /**
-   * Busca funcionários com paginação e filtros
+   * Busca todos os funcionários com filtros opcionais
+   * Endpoint: GET /api/funcionarios?cargo=&setor=&status=
    */
   async getEmployees(params?: {
-    page?: number;
-    size?: number;
-    search?: string;
-    department?: string;
-    position?: string;
-    active?: boolean;
-  }): Promise<PaginatedResponse<Employee>> {
+    cargo?: string;
+    setor?: string;
+    status?: StatusFuncionario;
+  }): Promise<Funcionario[]> {
     const queryParams = new URLSearchParams();
     
-    if (params?.page !== undefined) queryParams.set('page', params.page.toString());
-    if (params?.size !== undefined) queryParams.set('size', params.size.toString());
-    if (params?.search) queryParams.set('search', params.search);
-    if (params?.department) queryParams.set('department', params.department);
-    if (params?.position) queryParams.set('position', params.position);
-    if (params?.active !== undefined) queryParams.set('active', params.active.toString());
+    if (params?.cargo) queryParams.set('cargo', params.cargo);
+    if (params?.setor) queryParams.set('setor', params.setor);
+    if (params?.status) queryParams.set('status', params.status);
 
     const queryString = queryParams.toString();
-    const endpoint = `/employees${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/funcionarios${queryString ? `?${queryString}` : ''}`;
 
-    return await apiRequest<PaginatedResponse<Employee>>(endpoint);
+    return await apiRequest<Funcionario[]>(endpoint);
+  }
+
+  /**
+   * Busca apenas funcionários ativos (para dropdowns)
+   * Endpoint: GET /api/funcionarios/ativos
+   */
+  async getActiveEmployees(): Promise<Funcionario[]> {
+    return await apiRequest<Funcionario[]>('/funcionarios/ativos');
   }
 
   /**
    * Busca funcionário por ID
+   * Endpoint: GET /api/funcionarios/{id}
    */
-  async getEmployeeById(id: string): Promise<Employee> {
-    return await apiRequest<Employee>(`/employees/${id}`);
+  async getEmployeeById(id: number): Promise<Funcionario> {
+    return await apiRequest<Funcionario>(`/funcionarios/${id}`);
   }
 
   /**
-   * Busca funcionário por CPF
+   * Busca funcionário por matrícula
+   * Endpoint: GET /api/funcionarios/matricula/{matricula}
    */
-  async getEmployeeByDocument(document: string): Promise<Employee> {
-    return await apiRequest<Employee>(`/employees/document/${document}`);
+  async getEmployeeByMatricula(matricula: string): Promise<Funcionario> {
+    return await apiRequest<Funcionario>(`/funcionarios/matricula/${matricula}`);
   }
 
   /**
    * Cria um novo funcionário
+   * Endpoint: POST /api/funcionarios
    */
-  async createEmployee(employeeData: CreateEmployeeRequest): Promise<Employee> {
-    return await apiRequest<Employee>('/employees', {
+  async createEmployee(employeeData: CreateFuncionarioRequest): Promise<Funcionario> {
+    return await apiRequest<Funcionario>('/funcionarios', {
       method: 'POST',
       body: JSON.stringify(employeeData),
     });
@@ -67,9 +181,10 @@ class EmployeeService {
 
   /**
    * Atualiza um funcionário existente
+   * Endpoint: PUT /api/funcionarios/{id}
    */
-  async updateEmployee(id: string, employeeData: Partial<CreateEmployeeRequest>): Promise<Employee> {
-    return await apiRequest<Employee>(`/employees/${id}`, {
+  async updateEmployee(id: number, employeeData: Partial<CreateFuncionarioRequest>): Promise<Funcionario> {
+    return await apiRequest<Funcionario>(`/funcionarios/${id}`, {
       method: 'PUT',
       body: JSON.stringify(employeeData),
     });
@@ -77,153 +192,109 @@ class EmployeeService {
 
   /**
    * Exclui um funcionário
+   * Endpoint: DELETE /api/funcionarios/{id}
    */
-  async deleteEmployee(id: string): Promise<void> {
-    await apiRequest<void>(`/employees/${id}`, {
+  async deleteEmployee(id: number): Promise<void> {
+    await apiRequest<void>(`/funcionarios/${id}`, {
       method: 'DELETE',
     });
   }
 
   /**
    * Ativa/desativa um funcionário
+   * Endpoint: PATCH /api/funcionarios/{id}/status
    */
-  async toggleEmployeeStatus(id: string, active: boolean): Promise<Employee> {
-    return await apiRequest<Employee>(`/employees/${id}/status`, {
+  async toggleEmployeeStatus(id: number): Promise<Funcionario> {
+    return await apiRequest<Funcionario>(`/funcionarios/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ active }),
     });
   }
 
   /**
-   * Busca funcionários ativos por departamento
+   * Busca estatísticas agrupadas por setor
+   * Endpoint: GET /api/funcionarios/stats/setor
    */
-  async getEmployeesByDepartment(department: string): Promise<Employee[]> {
-    return await apiRequest<Employee[]>(`/employees/department/${department}`);
+  async getStatsByDepartment(): Promise<EstatisticasSetor[]> {
+    return await apiRequest<EstatisticasSetor[]>('/funcionarios/stats/setor');
   }
 
   /**
-   * Busca todos os departamentos
+   * Busca funcionários por turno
+   * Endpoint personalizado (pode criar no controller se necessário)
+   */
+  async getEmployeesByShift(turno: TurnoTrabalho): Promise<Funcionario[]> {
+    return await apiRequest<Funcionario[]>(`/funcionarios?turno=${turno}`);
+  }
+
+  /**
+   * Busca setores únicos
    */
   async getDepartments(): Promise<string[]> {
-    return await apiRequest<string[]>('/employees/departments');
+    try {
+      const employees = await this.getActiveEmployees();
+      return Array.from(new Set(employees.map(emp => emp.setor))).sort();
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      return [];
+    }
   }
 
   /**
-   * Busca todos os cargos
+   * Busca cargos únicos
    */
   async getPositions(): Promise<string[]> {
-    return await apiRequest<string[]>('/employees/positions');
+    try {
+      const employees = await this.getActiveEmployees();
+      return Array.from(new Set(employees.map(emp => emp.cargo))).sort();
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      return [];
+    }
   }
 
   /**
-   * Atualiza salário de um funcionário
+   * Formata enum de turno para exibição
    */
-  async updateEmployeeSalary(id: string, salary: number, effectiveDate: string): Promise<Employee> {
-    return await apiRequest<Employee>(`/employees/${id}/salary`, {
-      method: 'PATCH',
-      body: JSON.stringify({ salary, effectiveDate }),
-    });
-  }
-
-  /**
-   * Busca histórico salarial de um funcionário
-   */
-  async getEmployeeSalaryHistory(id: string): Promise<Array<{
-    id: string;
-    salary: number;
-    effectiveDate: string;
-    createdAt: string;
-  }>> {
-    return await apiRequest(`/employees/${id}/salary-history`);
-  }
-
-  /**
-   * Busca aniversariantes do mês
-   */
-  async getBirthdayEmployees(month?: number): Promise<Employee[]> {
-    const currentMonth = month || new Date().getMonth() + 1;
-    return await apiRequest<Employee[]>(`/employees/birthdays?month=${currentMonth}`);
-  }
-
-  /**
-   * Busca funcionários admitidos recentemente
-   */
-  async getRecentHires(days = 30): Promise<Employee[]> {
-    return await apiRequest<Employee[]>(`/employees/recent-hires?days=${days}`);
-  }
-
-  /**
-   * Valida CPF
-   */
-  async validateDocument(document: string): Promise<{ valid: boolean; message?: string }> {
-    return await apiRequest<{ valid: boolean; message?: string }>('/employees/validate-document', {
-      method: 'POST',
-      body: JSON.stringify({ document }),
-    });
-  }
-
-  /**
-   * Busca estatísticas dos funcionários
-   */
-  async getEmployeesStats(): Promise<{
-    totalEmployees: number;
-    activeEmployees: number;
-    inactiveEmployees: number;
-    employeesByDepartment: Record<string, number>;
-    employeesByPosition: Record<string, number>;
-    averageSalary: number;
-    averageServiceTime: number;
-  }> {
-    return await apiRequest('/employees/stats');
-  }
-
-  /**
-   * Exporta lista de funcionários
-   */
-  async exportEmployees(filters?: {
-    department?: string;
-    position?: string;
-    active?: boolean;
-  }): Promise<Blob> {
-    const queryParams = new URLSearchParams();
-    
-    if (filters?.department) queryParams.set('department', filters.department);
-    if (filters?.position) queryParams.set('position', filters.position);
-    if (filters?.active !== undefined) queryParams.set('active', filters.active.toString());
-
-    const queryString = queryParams.toString();
-    const endpoint = `/employees/export${queryString ? `?${queryString}` : ''}`;
-
-    return await apiRequest<Blob>(endpoint, {
-      headers: {
-        ...await this.getHeaders(),
-        'Accept': 'text/csv',
-      },
-    });
-  }
-
-  /**
-   * Atualiza foto do funcionário
-   */
-  async updateEmployeePhoto(id: string, photo: File): Promise<Employee> {
-    const formData = new FormData();
-    formData.append('photo', photo);
-
-    return await apiRequest<Employee>(`/employees/${id}/photo`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-    });
-  }
-
-  private async getHeaders() {
-    const token = localStorage.getItem('auth_token');
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+  formatShift(turno: TurnoTrabalho): string {
+    const shifts = {
+      MANHA: 'Manhã (06:00 - 14:00)',
+      TARDE: 'Tarde (14:00 - 22:00)',
+      NOITE: 'Noite (22:00 - 06:00)',
+      INTEGRAL: 'Integral (08:00 - 18:00)'
     };
+    return shifts[turno] || turno;
+  }
+
+  /**
+   * Formata enum de tipo de contrato para exibição
+   */
+  formatContractType(tipo: TipoContrato): string {
+    const types = {
+      CLT: 'CLT - Consolidação das Leis do Trabalho',
+      PJ: 'PJ - Pessoa Jurídica',
+      ESTAGIO: 'Estágio',
+      TEMPORARIO: 'Temporário',
+      AUTONOMO: 'Autônomo'
+    };
+    return types[tipo] || tipo;
+  }
+
+  /**
+   * Calcula tempo de empresa em formato legível
+   */
+  calculateServiceTime(dataAdmissao: string): string {
+    const admissionDate = new Date(dataAdmissao);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - admissionDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const anos = Math.floor(diffDays / 365);
+    const meses = Math.floor((diffDays % 365) / 30);
+    
+    if (anos > 0) {
+      return meses > 0 ? `${anos} ano(s) e ${meses} mês(es)` : `${anos} ano(s)`;
+    }
+    return `${meses} mês(es)`;
   }
 }
 

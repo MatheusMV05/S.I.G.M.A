@@ -51,12 +51,32 @@ CREATE TABLE Funcionario (
                              id_supervisor BIGINT NULL,
                              status ENUM('ATIVO', 'INATIVO') NOT NULL DEFAULT 'ATIVO',
                              data_admissao DATE,
+                             turno ENUM('MANHA', 'TARDE', 'NOITE', 'INTEGRAL') DEFAULT 'INTEGRAL',
+                             tipo_contrato ENUM('CLT', 'PJ', 'ESTAGIO', 'TEMPORARIO', 'AUTONOMO') DEFAULT 'CLT',
+                             carga_horaria_semanal INT DEFAULT 40,
+                             data_desligamento DATE NULL,
+                             motivo_desligamento TEXT NULL,
+                             beneficios TEXT NULL,
+                             observacoes TEXT NULL,
+                             foto_url VARCHAR(500) NULL,
+                             data_ultima_promocao DATE NULL,
+                             comissao_percentual DECIMAL(5,2) DEFAULT 0.00,
+                             meta_mensal DECIMAL(10,2) DEFAULT 0.00,
 
                              FOREIGN KEY (id_pessoa) REFERENCES Pessoa(id_pessoa) ON DELETE CASCADE,
                              FOREIGN KEY (id_supervisor) REFERENCES Funcionario(id_pessoa) ON DELETE SET NULL,
 
-                             CONSTRAINT chk_funcionario_salario_positivo CHECK (salario > 0)
-) COMMENT 'Funcionários da empresa.';
+                             CONSTRAINT chk_funcionario_salario_positivo CHECK (salario > 0),
+                             CONSTRAINT chk_carga_horaria CHECK (carga_horaria_semanal BETWEEN 1 AND 60),
+                             CONSTRAINT chk_comissao CHECK (comissao_percentual BETWEEN 0 AND 100),
+                             CONSTRAINT chk_meta CHECK (meta_mensal >= 0),
+                             
+                             INDEX idx_funcionario_status (status),
+                             INDEX idx_funcionario_setor (setor),
+                             INDEX idx_funcionario_cargo (cargo),
+                             INDEX idx_funcionario_matricula (matricula),
+                             INDEX idx_funcionario_supervisor (id_supervisor)
+) COMMENT 'Funcionários da empresa com informações completas de RH.';
 
 -- Tabela de Usuários do Sistema (funcionários com acesso ao sistema)
 CREATE TABLE Usuario (
@@ -69,6 +89,98 @@ CREATE TABLE Usuario (
 
                          FOREIGN KEY (id_pessoa) REFERENCES Funcionario(id_pessoa) ON DELETE CASCADE
 ) COMMENT 'Usuários que podem acessar o sistema (subconjunto de funcionários).';
+
+-- =================================================================
+-- TABELAS DE GESTÃO DE RH - FUNCIONÁRIOS
+-- =================================================================
+
+-- Tabela de Histórico de Cargos e Salários
+CREATE TABLE HistoricoFuncionario (
+    id_historico BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id_funcionario BIGINT NOT NULL,
+    tipo_evento ENUM('ADMISSAO', 'PROMOCAO', 'AUMENTO_SALARIAL', 'MUDANCA_CARGO', 'MUDANCA_SETOR', 'DESLIGAMENTO', 'FERIAS', 'AFASTAMENTO') NOT NULL,
+    data_evento DATE NOT NULL,
+    cargo_anterior VARCHAR(100),
+    cargo_novo VARCHAR(100),
+    setor_anterior VARCHAR(100),
+    setor_novo VARCHAR(100),
+    salario_anterior DECIMAL(10,2),
+    salario_novo DECIMAL(10,2),
+    descricao TEXT,
+    realizado_por BIGINT COMMENT 'ID do usuário que realizou a ação',
+    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (id_funcionario) REFERENCES Funcionario(id_pessoa) ON DELETE CASCADE,
+    FOREIGN KEY (realizado_por) REFERENCES Usuario(id_pessoa) ON DELETE SET NULL,
+    
+    INDEX idx_historico_funcionario (id_funcionario),
+    INDEX idx_historico_tipo (tipo_evento),
+    INDEX idx_historico_data (data_evento)
+) COMMENT 'Histórico de alterações e eventos importantes dos funcionários';
+
+-- Tabela de Documentos dos Funcionários
+CREATE TABLE DocumentoFuncionario (
+    id_documento BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id_funcionario BIGINT NOT NULL,
+    tipo_documento ENUM('RG', 'CPF', 'CNH', 'CTPS', 'TITULO_ELEITOR', 'CERTIFICADO', 'CONTRATO', 'EXAME_ADMISSIONAL', 'OUTRO') NOT NULL,
+    numero_documento VARCHAR(100),
+    arquivo_url VARCHAR(500),
+    data_emissao DATE,
+    data_validade DATE,
+    observacoes TEXT,
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (id_funcionario) REFERENCES Funcionario(id_pessoa) ON DELETE CASCADE,
+    
+    INDEX idx_documento_funcionario (id_funcionario),
+    INDEX idx_documento_tipo (tipo_documento),
+    INDEX idx_documento_validade (data_validade)
+) COMMENT 'Documentos dos funcionários';
+
+-- Tabela de Férias
+CREATE TABLE FeriasFuncionario (
+    id_ferias BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id_funcionario BIGINT NOT NULL,
+    periodo_aquisitivo_inicio DATE NOT NULL,
+    periodo_aquisitivo_fim DATE NOT NULL,
+    data_inicio_ferias DATE NOT NULL,
+    data_fim_ferias DATE NOT NULL,
+    dias_gozados INT NOT NULL,
+    abono_pecuniario BOOLEAN DEFAULT FALSE COMMENT 'Vendeu 1/3 das férias',
+    status_ferias ENUM('PROGRAMADAS', 'EM_ANDAMENTO', 'CONCLUIDAS', 'CANCELADAS') DEFAULT 'PROGRAMADAS',
+    observacoes TEXT,
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (id_funcionario) REFERENCES Funcionario(id_pessoa) ON DELETE CASCADE,
+    
+    CONSTRAINT chk_dias_ferias CHECK (dias_gozados BETWEEN 1 AND 30),
+    
+    INDEX idx_ferias_funcionario (id_funcionario),
+    INDEX idx_ferias_status (status_ferias),
+    INDEX idx_ferias_periodo (data_inicio_ferias, data_fim_ferias)
+) COMMENT 'Controle de férias dos funcionários';
+
+-- Tabela de Ponto Eletrônico
+CREATE TABLE PontoEletronico (
+    id_ponto BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id_funcionario BIGINT NOT NULL,
+    data_ponto DATE NOT NULL,
+    hora_entrada TIME,
+    hora_saida_almoco TIME,
+    hora_retorno_almoco TIME,
+    hora_saida TIME,
+    horas_trabalhadas DECIMAL(5,2) COMMENT 'Total de horas trabalhadas no dia',
+    horas_extras DECIMAL(5,2) DEFAULT 0.00,
+    observacoes TEXT,
+    status_ponto ENUM('NORMAL', 'FALTA', 'ATESTADO', 'FERIAS', 'FOLGA') DEFAULT 'NORMAL',
+    data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (id_funcionario) REFERENCES Funcionario(id_pessoa) ON DELETE CASCADE,
+    
+    UNIQUE KEY unique_ponto_dia (id_funcionario, data_ponto),
+    INDEX idx_ponto_funcionario (id_funcionario),
+    INDEX idx_ponto_data (data_ponto)
+) COMMENT 'Registro de ponto eletrônico dos funcionários';
 
 -- =================================================================
 -- TABELAS DE CLIENTES
@@ -647,3 +759,264 @@ FROM Venda v
 WHERE v.status = 'CONCLUIDA'
 GROUP BY DATE(v.data_venda)
 ORDER BY data DESC;
+
+-- =================================================================
+-- VIEWS DE RH E FUNCIONÁRIOS
+-- =================================================================
+
+-- View de funcionários com informações completas
+CREATE OR REPLACE VIEW vw_funcionarios_completo AS
+SELECT 
+    f.id_pessoa,
+    f.matricula,
+    p.nome,
+    p.email,
+    CONCAT(p.rua, ', ', IFNULL(p.numero, 'S/N'), ' - ', IFNULL(p.bairro, ''), ', ', IFNULL(p.cidade, ''), ' - ', IFNULL(p.cep, '')) as endereco_completo,
+    f.cargo,
+    f.setor,
+    f.salario,
+    f.turno,
+    f.tipo_contrato,
+    f.carga_horaria_semanal,
+    f.comissao_percentual,
+    f.meta_mensal,
+    f.status,
+    f.data_admissao,
+    f.data_desligamento,
+    TIMESTAMPDIFF(MONTH, f.data_admissao, COALESCE(f.data_desligamento, CURDATE())) as meses_empresa,
+    TIMESTAMPDIFF(YEAR, f.data_admissao, COALESCE(f.data_desligamento, CURDATE())) as anos_empresa,
+    sup.nome as nome_supervisor,
+    sup_f.cargo as cargo_supervisor,
+    (SELECT GROUP_CONCAT(t.numero SEPARATOR ', ') 
+     FROM Telefone t 
+     WHERE t.id_pessoa = f.id_pessoa) as telefones,
+    (SELECT COUNT(*) 
+     FROM Venda v 
+     WHERE v.id_funcionario = f.id_pessoa 
+     AND MONTH(v.data_venda) = MONTH(CURDATE()) 
+     AND YEAR(v.data_venda) = YEAR(CURDATE())) as vendas_mes_atual,
+    (SELECT COALESCE(SUM(v.valor_final), 0) 
+     FROM Venda v 
+     WHERE v.id_funcionario = f.id_pessoa 
+     AND MONTH(v.data_venda) = MONTH(CURDATE()) 
+     AND YEAR(v.data_venda) = YEAR(CURDATE())) as valor_vendas_mes_atual,
+    u.username as usuario_sistema,
+    u.role as perfil_sistema
+FROM Funcionario f
+INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
+LEFT JOIN Funcionario sup_f ON f.id_supervisor = sup_f.id_pessoa
+LEFT JOIN Pessoa sup ON sup_f.id_pessoa = sup.id_pessoa
+LEFT JOIN Usuario u ON f.id_pessoa = u.id_pessoa;
+
+-- View de estatísticas por setor
+CREATE OR REPLACE VIEW vw_estatisticas_setor AS
+SELECT 
+    IFNULL(setor, 'SEM SETOR') as setor,
+    COUNT(*) as total_funcionarios,
+    COUNT(CASE WHEN status = 'ATIVO' THEN 1 END) as funcionarios_ativos,
+    COUNT(CASE WHEN status = 'INATIVO' THEN 1 END) as funcionarios_inativos,
+    AVG(salario) as salario_medio,
+    MIN(salario) as menor_salario,
+    MAX(salario) as maior_salario,
+    SUM(CASE WHEN status = 'ATIVO' THEN salario ELSE 0 END) as folha_pagamento_total
+FROM Funcionario
+GROUP BY setor
+ORDER BY total_funcionarios DESC;
+
+-- View de aniversariantes do mês (tempo de empresa)
+CREATE OR REPLACE VIEW vw_aniversariantes_empresa_mes AS
+SELECT 
+    f.id_pessoa,
+    f.matricula,
+    p.nome,
+    p.email,
+    f.cargo,
+    f.setor,
+    YEAR(CURDATE()) - YEAR(f.data_admissao) as anos_empresa,
+    DAY(f.data_admissao) as dia_aniversario,
+    f.data_admissao,
+    (SELECT GROUP_CONCAT(t.numero SEPARATOR ', ') 
+     FROM Telefone t 
+     WHERE t.id_pessoa = f.id_pessoa) as telefones
+FROM Funcionario f
+INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
+WHERE MONTH(f.data_admissao) = MONTH(CURDATE())
+  AND f.status = 'ATIVO'
+ORDER BY DAY(f.data_admissao);
+
+-- View de funcionários com férias vencidas
+CREATE OR REPLACE VIEW vw_ferias_vencidas AS
+SELECT 
+    f.id_pessoa,
+    f.matricula,
+    p.nome,
+    f.cargo,
+    f.setor,
+    f.data_admissao,
+    TIMESTAMPDIFF(MONTH, f.data_admissao, CURDATE()) as meses_empresa,
+    COALESCE(
+        (SELECT MAX(ff.periodo_aquisitivo_fim) 
+         FROM FeriasFuncionario ff 
+         WHERE ff.id_funcionario = f.id_pessoa 
+         AND ff.status_ferias = 'CONCLUIDAS'), 
+        f.data_admissao
+    ) as ultima_ferias,
+    TIMESTAMPDIFF(MONTH, 
+        COALESCE(
+            (SELECT MAX(ff.periodo_aquisitivo_fim) 
+             FROM FeriasFuncionario ff 
+             WHERE ff.id_funcionario = f.id_pessoa 
+             AND ff.status_ferias = 'CONCLUIDAS'), 
+            f.data_admissao
+        ), 
+        CURDATE()
+    ) as meses_sem_ferias
+FROM Funcionario f
+INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
+WHERE f.status = 'ATIVO'
+  AND TIMESTAMPDIFF(MONTH, 
+        COALESCE(
+            (SELECT MAX(ff.periodo_aquisitivo_fim) 
+             FROM FeriasFuncionario ff 
+             WHERE ff.id_funcionario = f.id_pessoa 
+             AND ff.status_ferias = 'CONCLUIDAS'), 
+            f.data_admissao
+        ), 
+        CURDATE()
+    ) >= 12
+ORDER BY meses_sem_ferias DESC;
+
+-- View de performance de vendas por funcionário
+CREATE OR REPLACE VIEW vw_performance_vendas_funcionario AS
+SELECT 
+    f.id_pessoa,
+    f.matricula,
+    p.nome,
+    f.cargo,
+    f.setor,
+    f.meta_mensal,
+    f.comissao_percentual,
+    COUNT(v.id_venda) as total_vendas_mes,
+    COALESCE(SUM(v.valor_final), 0) as valor_vendas_mes,
+    COALESCE(SUM(v.valor_final), 0) - f.meta_mensal as diferenca_meta,
+    CASE 
+        WHEN f.meta_mensal > 0 THEN 
+            ROUND((COALESCE(SUM(v.valor_final), 0) / f.meta_mensal) * 100, 2)
+        ELSE 0 
+    END as percentual_meta,
+    CASE
+        WHEN f.meta_mensal > 0 AND COALESCE(SUM(v.valor_final), 0) >= f.meta_mensal THEN 'ATINGIU'
+        WHEN f.meta_mensal > 0 AND COALESCE(SUM(v.valor_final), 0) >= (f.meta_mensal * 0.8) THEN 'PROXIMO'
+        WHEN f.meta_mensal > 0 THEN 'ABAIXO'
+        ELSE 'SEM META'
+    END as status_meta,
+    ROUND(COALESCE(SUM(v.valor_final), 0) * (f.comissao_percentual / 100), 2) as comissao_calculada
+FROM Funcionario f
+INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
+LEFT JOIN Venda v ON f.id_pessoa = v.id_funcionario 
+    AND MONTH(v.data_venda) = MONTH(CURDATE())
+    AND YEAR(v.data_venda) = YEAR(CURDATE())
+    AND v.status = 'CONCLUIDA'
+WHERE f.status = 'ATIVO'
+GROUP BY f.id_pessoa, f.matricula, p.nome, f.cargo, f.setor, f.meta_mensal, f.comissao_percentual
+ORDER BY valor_vendas_mes DESC;
+
+-- =================================================================
+-- PROCEDURES DE RH
+-- =================================================================
+
+-- Procedure para registrar admissão
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS sp_registrar_admissao(
+    IN p_id_funcionario BIGINT,
+    IN p_cargo VARCHAR(100),
+    IN p_setor VARCHAR(100),
+    IN p_salario DECIMAL(10,2),
+    IN p_realizado_por BIGINT
+)
+BEGIN
+    INSERT INTO HistoricoFuncionario (
+        id_funcionario, tipo_evento, data_evento, 
+        cargo_novo, setor_novo, salario_novo, 
+        descricao, realizado_por
+    ) VALUES (
+        p_id_funcionario, 'ADMISSAO', CURDATE(),
+        p_cargo, p_setor, p_salario,
+        CONCAT('Admissão no cargo de ', p_cargo, ' no setor ', p_setor), 
+        p_realizado_por
+    );
+END //
+DELIMITER ;
+
+-- Procedure para registrar promoção
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS sp_registrar_promocao(
+    IN p_id_funcionario BIGINT,
+    IN p_cargo_anterior VARCHAR(100),
+    IN p_cargo_novo VARCHAR(100),
+    IN p_salario_anterior DECIMAL(10,2),
+    IN p_salario_novo DECIMAL(10,2),
+    IN p_realizado_por BIGINT
+)
+BEGIN
+    -- Registrar no histórico
+    INSERT INTO HistoricoFuncionario (
+        id_funcionario, tipo_evento, data_evento,
+        cargo_anterior, cargo_novo,
+        salario_anterior, salario_novo,
+        descricao, realizado_por
+    ) VALUES (
+        p_id_funcionario, 'PROMOCAO', CURDATE(),
+        p_cargo_anterior, p_cargo_novo,
+        p_salario_anterior, p_salario_novo,
+        CONCAT('Promoção de ', p_cargo_anterior, ' para ', p_cargo_novo, 
+               '. Salário ajustado de R$ ', p_salario_anterior, ' para R$ ', p_salario_novo),
+        p_realizado_por
+    );
+    
+    -- Atualizar data da última promoção
+    UPDATE Funcionario 
+    SET data_ultima_promocao = CURDATE()
+    WHERE id_pessoa = p_id_funcionario;
+END //
+DELIMITER ;
+
+-- Procedure para calcular férias disponíveis
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS sp_calcular_dias_ferias(
+    IN p_id_funcionario BIGINT,
+    OUT p_dias_disponiveis INT
+)
+BEGIN
+    DECLARE v_meses_trabalhados INT;
+    DECLARE v_dias_gozados INT;
+    
+    -- Calcular meses trabalhados desde a admissão ou última férias
+    SELECT TIMESTAMPDIFF(MONTH, 
+        COALESCE(
+            (SELECT MAX(periodo_aquisitivo_fim) 
+             FROM FeriasFuncionario 
+             WHERE id_funcionario = p_id_funcionario 
+             AND status_ferias = 'CONCLUIDAS'), 
+            (SELECT data_admissao FROM Funcionario WHERE id_pessoa = p_id_funcionario)
+        ), 
+        CURDATE()
+    ) INTO v_meses_trabalhados;
+    
+    -- Calcular dias já gozados no período aquisitivo atual
+    SELECT COALESCE(SUM(dias_gozados), 0) 
+    INTO v_dias_gozados
+    FROM FeriasFuncionario
+    WHERE id_funcionario = p_id_funcionario
+    AND status_ferias IN ('PROGRAMADAS', 'EM_ANDAMENTO', 'CONCLUIDAS')
+    AND periodo_aquisitivo_inicio >= DATE_SUB(CURDATE(), INTERVAL v_meses_trabalhados MONTH);
+    
+    -- Calcular dias disponíveis (2.5 dias por mês trabalhado)
+    SET p_dias_disponiveis = LEAST(30, FLOOR(v_meses_trabalhados * 2.5)) - v_dias_gozados;
+    
+    IF p_dias_disponiveis < 0 THEN
+        SET p_dias_disponiveis = 0;
+    END IF;
+END //
+DELIMITER ;
+

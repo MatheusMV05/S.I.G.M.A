@@ -19,6 +19,19 @@ public class Funcionario {
     private Long id_supervisor;
     private StatusFuncionario status;
     private LocalDate data_admissao;
+    
+    // Novos campos de RH
+    private TurnoTrabalho turno;
+    private TipoContrato tipo_contrato;
+    private Integer carga_horaria_semanal;
+    private LocalDate data_desligamento;
+    private String motivo_desligamento;
+    private String beneficios;
+    private String observacoes;
+    private String foto_url;
+    private LocalDate data_ultima_promocao;
+    private BigDecimal comissao_percentual;
+    private BigDecimal meta_mensal;
 
     // Not stored in DB, populated when needed
     private Pessoa pessoa;
@@ -26,6 +39,14 @@ public class Funcionario {
 
     public enum StatusFuncionario {
         ATIVO, INATIVO
+    }
+    
+    public enum TurnoTrabalho {
+        MANHA, TARDE, NOITE, INTEGRAL
+    }
+    
+    public enum TipoContrato {
+        CLT, PJ, ESTAGIO, TEMPORARIO, AUTONOMO
     }
 
     public Funcionario(Long id_pessoa, String matricula, BigDecimal salario, String cargo, String setor, LocalDate data_admissao) {
@@ -36,5 +57,10 @@ public class Funcionario {
         this.setor = setor;
         this.data_admissao = data_admissao;
         this.status = StatusFuncionario.ATIVO;
+        this.turno = TurnoTrabalho.INTEGRAL;
+        this.tipo_contrato = TipoContrato.CLT;
+        this.carga_horaria_semanal = 40;
+        this.comissao_percentual = BigDecimal.ZERO;
+        this.meta_mensal = BigDecimal.ZERO;
     }
 }

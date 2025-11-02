@@ -30,6 +30,16 @@ export { promotionService } from './promotionService';
 export { employeeService } from './employeeService';
 export { reportsService } from './reportsService';
 
+// Exportar tipos e enums do employeeService
+export { 
+  StatusFuncionario, 
+  TurnoTrabalho, 
+  TipoContrato,
+  type Funcionario,
+  type CreateFuncionarioRequest,
+  type EstatisticasSetor
+} from './employeeService';
+
 // Objeto com todos os serviços para facilitar importação
 export const services = {
   auth: authService,

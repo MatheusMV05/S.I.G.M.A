@@ -82,6 +82,30 @@ public class FuncionarioService {
         funcionario.setStatus(Funcionario.StatusFuncionario.ATIVO);
         funcionario.setData_admissao(funcionarioDTO.getData_admissao() != null ?
             funcionarioDTO.getData_admissao() : LocalDate.now());
+            
+        // Novos campos
+        if (StringUtils.hasText(funcionarioDTO.getTurno())) {
+            funcionario.setTurno(Funcionario.TurnoTrabalho.valueOf(funcionarioDTO.getTurno()));
+        } else {
+            funcionario.setTurno(Funcionario.TurnoTrabalho.INTEGRAL);
+        }
+        
+        if (StringUtils.hasText(funcionarioDTO.getTipo_contrato())) {
+            funcionario.setTipo_contrato(Funcionario.TipoContrato.valueOf(funcionarioDTO.getTipo_contrato()));
+        } else {
+            funcionario.setTipo_contrato(Funcionario.TipoContrato.CLT);
+        }
+        
+        funcionario.setCarga_horaria_semanal(funcionarioDTO.getCarga_horaria_semanal() != null ? 
+            funcionarioDTO.getCarga_horaria_semanal() : 40);
+        funcionario.setComissao_percentual(funcionarioDTO.getComissao_percentual() != null ? 
+            funcionarioDTO.getComissao_percentual() : BigDecimal.ZERO);
+        funcionario.setMeta_mensal(funcionarioDTO.getMeta_mensal() != null ? 
+            funcionarioDTO.getMeta_mensal() : BigDecimal.ZERO);
+        funcionario.setBeneficios(funcionarioDTO.getBeneficios());
+        funcionario.setObservacoes(funcionarioDTO.getObservacoes());
+        funcionario.setFoto_url(funcionarioDTO.getFoto_url());
+        
         funcionario = funcionarioRepository.save(funcionario);
 
         return convertToDTO(funcionario);
@@ -158,6 +182,28 @@ public class FuncionarioService {
         if (StringUtils.hasText(funcionarioDTO.getStatus())) {
             funcionario.setStatus(Funcionario.StatusFuncionario.valueOf(funcionarioDTO.getStatus()));
         }
+        
+        // Atualizar novos campos
+        if (StringUtils.hasText(funcionarioDTO.getTurno())) {
+            funcionario.setTurno(Funcionario.TurnoTrabalho.valueOf(funcionarioDTO.getTurno()));
+        }
+        if (StringUtils.hasText(funcionarioDTO.getTipo_contrato())) {
+            funcionario.setTipo_contrato(Funcionario.TipoContrato.valueOf(funcionarioDTO.getTipo_contrato()));
+        }
+        if (funcionarioDTO.getCarga_horaria_semanal() != null) {
+            funcionario.setCarga_horaria_semanal(funcionarioDTO.getCarga_horaria_semanal());
+        }
+        if (funcionarioDTO.getComissao_percentual() != null) {
+            funcionario.setComissao_percentual(funcionarioDTO.getComissao_percentual());
+        }
+        if (funcionarioDTO.getMeta_mensal() != null) {
+            funcionario.setMeta_mensal(funcionarioDTO.getMeta_mensal());
+        }
+        funcionario.setBeneficios(funcionarioDTO.getBeneficios());
+        funcionario.setObservacoes(funcionarioDTO.getObservacoes());
+        funcionario.setFoto_url(funcionarioDTO.getFoto_url());
+        funcionario.setData_ultima_promocao(funcionarioDTO.getData_ultima_promocao());
+        
         funcionario = funcionarioRepository.save(funcionario);
 
         return convertToDTO(funcionario);
@@ -214,6 +260,19 @@ public class FuncionarioService {
         dto.setStatus(funcionario.getStatus().name());
         dto.setData_admissao(funcionario.getData_admissao());
         dto.setAtivo(funcionario.getStatus() == Funcionario.StatusFuncionario.ATIVO);
+        
+        // Novos campos
+        dto.setTurno(funcionario.getTurno() != null ? funcionario.getTurno().name() : null);
+        dto.setTipo_contrato(funcionario.getTipo_contrato() != null ? funcionario.getTipo_contrato().name() : null);
+        dto.setCarga_horaria_semanal(funcionario.getCarga_horaria_semanal());
+        dto.setData_desligamento(funcionario.getData_desligamento());
+        dto.setMotivo_desligamento(funcionario.getMotivo_desligamento());
+        dto.setBeneficios(funcionario.getBeneficios());
+        dto.setObservacoes(funcionario.getObservacoes());
+        dto.setFoto_url(funcionario.getFoto_url());
+        dto.setData_ultima_promocao(funcionario.getData_ultima_promocao());
+        dto.setComissao_percentual(funcionario.getComissao_percentual());
+        dto.setMeta_mensal(funcionario.getMeta_mensal());
 
         // Get Pessoa data
         Optional<Pessoa> pessoaOpt = pessoaRepository.findById(funcionario.getId_pessoa());
@@ -240,6 +299,20 @@ public class FuncionarioService {
             if (supervisorPessoaOpt.isPresent()) {
                 dto.setNomeSupervisor(supervisorPessoaOpt.get().getNome());
             }
+        }
+        
+        // Get calculated stats (vendas, tempo de empresa)
+        try {
+            java.util.Map<String, Object> stats = funcionarioRepository.getStatsFuncionario(funcionario.getId_pessoa());
+            dto.setMeses_empresa((Integer) stats.get("meses_empresa"));
+            dto.setAnos_empresa((Integer) stats.get("anos_empresa"));
+            dto.setVendas_mes_atual((Integer) stats.get("vendas_mes_atual"));
+            dto.setValor_vendas_mes_atual((BigDecimal) stats.get("valor_vendas_mes_atual"));
+        } catch (Exception e) {
+            dto.setMeses_empresa(0);
+            dto.setAnos_empresa(0);
+            dto.setVendas_mes_atual(0);
+            dto.setValor_vendas_mes_atual(BigDecimal.ZERO);
         }
 
         return dto;
