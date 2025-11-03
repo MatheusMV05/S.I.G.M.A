@@ -1,8 +1,3 @@
--- ================================================================
--- CONSULTAS AVANÇADAS COM JOINS E SUBCONSULTAS
--- Sistema S.I.G.M.A - Etapa 04
--- Requisitos: 1 Anti Join, 1 Full Outer Join, 2 Subconsultas
--- ================================================================
 
 USE SIGMA;
 

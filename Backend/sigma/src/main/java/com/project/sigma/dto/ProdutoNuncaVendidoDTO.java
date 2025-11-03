@@ -8,22 +8,16 @@ import java.math.BigDecimal;
 public class ProdutoNuncaVendidoDTO {
     private Integer idProduto;
     private String produtoNome;
+    private String marca;
     private BigDecimal precoVenda;
-    private Integer quantidadeEstoque;
+    private Integer estoque;
     private String categoriaNome;
-    private BigDecimal valorEstoqueParado;
+    private String fornecedorNome;
+    private BigDecimal valorInvestido;
+    private BigDecimal valorPotencialVenda;
+    private Integer diasSemVenda;
 
     public ProdutoNuncaVendidoDTO() {
-    }
-
-    public ProdutoNuncaVendidoDTO(Integer idProduto, String produtoNome, BigDecimal precoVenda, 
-                                  Integer quantidadeEstoque, String categoriaNome, BigDecimal valorEstoqueParado) {
-        this.idProduto = idProduto;
-        this.produtoNome = produtoNome;
-        this.precoVenda = precoVenda;
-        this.quantidadeEstoque = quantidadeEstoque;
-        this.categoriaNome = categoriaNome;
-        this.valorEstoqueParado = valorEstoqueParado;
     }
 
     // Getters and Setters
@@ -43,6 +37,14 @@ public class ProdutoNuncaVendidoDTO {
         this.produtoNome = produtoNome;
     }
 
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
+    }
+
     public BigDecimal getPrecoVenda() {
         return precoVenda;
     }
@@ -51,12 +53,12 @@ public class ProdutoNuncaVendidoDTO {
         this.precoVenda = precoVenda;
     }
 
-    public Integer getQuantidadeEstoque() {
-        return quantidadeEstoque;
+    public Integer getEstoque() {
+        return estoque;
     }
 
-    public void setQuantidadeEstoque(Integer quantidadeEstoque) {
-        this.quantidadeEstoque = quantidadeEstoque;
+    public void setEstoque(Integer estoque) {
+        this.estoque = estoque;
     }
 
     public String getCategoriaNome() {
@@ -67,11 +69,35 @@ public class ProdutoNuncaVendidoDTO {
         this.categoriaNome = categoriaNome;
     }
 
-    public BigDecimal getValorEstoqueParado() {
-        return valorEstoqueParado;
+    public String getFornecedorNome() {
+        return fornecedorNome;
     }
 
-    public void setValorEstoqueParado(BigDecimal valorEstoqueParado) {
-        this.valorEstoqueParado = valorEstoqueParado;
+    public void setFornecedorNome(String fornecedorNome) {
+        this.fornecedorNome = fornecedorNome;
+    }
+
+    public BigDecimal getValorInvestido() {
+        return valorInvestido;
+    }
+
+    public void setValorInvestido(BigDecimal valorInvestido) {
+        this.valorInvestido = valorInvestido;
+    }
+
+    public BigDecimal getValorPotencialVenda() {
+        return valorPotencialVenda;
+    }
+
+    public void setValorPotencialVenda(BigDecimal valorPotencialVenda) {
+        this.valorPotencialVenda = valorPotencialVenda;
+    }
+
+    public Integer getDiasSemVenda() {
+        return diasSemVenda;
+    }
+
+    public void setDiasSemVenda(Integer diasSemVenda) {
+        this.diasSemVenda = diasSemVenda;
     }
 }

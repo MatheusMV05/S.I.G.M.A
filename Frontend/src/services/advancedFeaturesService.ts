@@ -5,37 +5,56 @@ import { apiRequest } from './api';
 // ============================================
 
 export interface ProdutoNuncaVendido {
-  produtoId: number;
-  nome: string;
-  categoria: string;
+  idProduto: number;
+  produtoNome: string;
+  marca: string;
   precoVenda: number;
-  quantidadeEstoque: number;
+  estoque: number;
+  categoriaNome: string;
+  fornecedorNome: string;
+  valorInvestido: number;
+  valorPotencialVenda: number;
+  diasSemVenda: number;
 }
 
 export interface ProdutoFornecedor {
-  produtoId: number;
-  produtoNome: string;
-  fornecedorId: number | null;
+  idProduto: number | null;
+  produtoNome: string | null;
+  precoVenda: number | null;
+  estoque: number | null;
+  idFornecedor: number | null;
   fornecedorNome: string | null;
-  telefone: string | null;
-  email: string | null;
+  fornecedorTelefone: string | null;
+  fornecedorStatus: string | null;
+  statusVinculo: string;
 }
 
 export interface ProdutoAcimaMedia {
-  produtoId: number;
-  nome: string;
+  idProduto: number;
+  produtoNome: string;
+  marca: string;
   precoVenda: number;
-  precoMedio: number;
-  diferencaPreco: number;
+  precoCusto: number;
+  margemLucro: number;
+  categoriaNome: string;
+  precoMedioCategoria: number;
+  diferencaMedia: number;
+  percentualAcimaMedia: number;
 }
 
 export interface ClienteVIP {
-  clienteId: number;
-  nome: string;
-  cpf: string;
-  telefone: string;
+  idPessoa: number;
+  clienteNome: string;
+  clienteEmail: string;
+  tipoPessoa: string;
+  ranking: number;
   totalGasto: number;
-  mediaGeral: number;
+  dataUltimaCompra: string;
+  totalCompras: number;
+  ticketMedio: number;
+  mediaGastoGeral: number;
+  diferencaMedia: number;
+  percentualAcimaMedia: number;
 }
 
 export interface RelatorioVenda {
@@ -112,7 +131,7 @@ export const advancedQueriesService = {
 
   // FULL OUTER JOIN - Produtos e Fornecedores
   getProdutosEFornecedores: async (): Promise<ProdutoFornecedor[]> => {
-    return await apiRequest<ProdutoFornecedor[]>('/advanced-queries/produtos-fornecedores-full');
+    return await apiRequest<ProdutoFornecedor[]>('/advanced-queries/produtos-fornecedores');
   },
 
   // SUBCONSULTA 1 - Produtos acima da média de preço
@@ -127,12 +146,12 @@ export const advancedQueriesService = {
 
   // VIEW 1 - Relatório de Vendas
   getRelatorioVendas: async (): Promise<RelatorioVenda[]> => {
-    return await apiRequest<RelatorioVenda[]>('/advanced-queries/view-relatorio-vendas');
+    return await apiRequest<RelatorioVenda[]>('/advanced-queries/relatorio-vendas');
   },
 
   // VIEW 2 - Estoque Completo
   getEstoqueCompleto: async (): Promise<EstoqueCompleto[]> => {
-    return await apiRequest<EstoqueCompleto[]>('/advanced-queries/view-estoque-completo');
+    return await apiRequest<EstoqueCompleto[]>('/advanced-queries/estoque-completo');
   },
 };
 

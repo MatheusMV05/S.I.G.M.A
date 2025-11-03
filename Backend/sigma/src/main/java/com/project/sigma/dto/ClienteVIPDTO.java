@@ -1,43 +1,35 @@
 package com.project.sigma.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * DTO para consulta de clientes VIP (SUBCONSULTA)
  */
 public class ClienteVIPDTO {
-    private Integer idCliente;
+    private Long idPessoa;
     private String clienteNome;
-    private String cpf;
-    private String telefone;
+    private String clienteEmail;
+    private String tipoPessoa;
+    private Integer ranking;
+    private BigDecimal totalGasto;
+    private LocalDate dataUltimaCompra;
     private Long totalCompras;
     private BigDecimal ticketMedio;
-    private BigDecimal valorTotalGasto;
-    private BigDecimal mediaComprasGeral;
+    private BigDecimal mediaGastoGeral;
+    private BigDecimal diferencaMedia;
+    private BigDecimal percentualAcimaMedia;
 
     public ClienteVIPDTO() {
     }
 
-    public ClienteVIPDTO(Integer idCliente, String clienteNome, String cpf, String telefone,
-                        Long totalCompras, BigDecimal ticketMedio, BigDecimal valorTotalGasto,
-                        BigDecimal mediaComprasGeral) {
-        this.idCliente = idCliente;
-        this.clienteNome = clienteNome;
-        this.cpf = cpf;
-        this.telefone = telefone;
-        this.totalCompras = totalCompras;
-        this.ticketMedio = ticketMedio;
-        this.valorTotalGasto = valorTotalGasto;
-        this.mediaComprasGeral = mediaComprasGeral;
-    }
-
     // Getters and Setters
-    public Integer getIdCliente() {
-        return idCliente;
+    public Long getIdPessoa() {
+        return idPessoa;
     }
 
-    public void setIdCliente(Integer idCliente) {
-        this.idCliente = idCliente;
+    public void setIdPessoa(Long idPessoa) {
+        this.idPessoa = idPessoa;
     }
 
     public String getClienteNome() {
@@ -48,20 +40,44 @@ public class ClienteVIPDTO {
         this.clienteNome = clienteNome;
     }
 
-    public String getCpf() {
-        return cpf;
+    public String getClienteEmail() {
+        return clienteEmail;
     }
 
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
+    public void setClienteEmail(String clienteEmail) {
+        this.clienteEmail = clienteEmail;
     }
 
-    public String getTelefone() {
-        return telefone;
+    public String getTipoPessoa() {
+        return tipoPessoa;
     }
 
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
+    public void setTipoPessoa(String tipoPessoa) {
+        this.tipoPessoa = tipoPessoa;
+    }
+
+    public Integer getRanking() {
+        return ranking;
+    }
+
+    public void setRanking(Integer ranking) {
+        this.ranking = ranking;
+    }
+
+    public BigDecimal getTotalGasto() {
+        return totalGasto;
+    }
+
+    public void setTotalGasto(BigDecimal totalGasto) {
+        this.totalGasto = totalGasto;
+    }
+
+    public LocalDate getDataUltimaCompra() {
+        return dataUltimaCompra;
+    }
+
+    public void setDataUltimaCompra(LocalDate dataUltimaCompra) {
+        this.dataUltimaCompra = dataUltimaCompra;
     }
 
     public Long getTotalCompras() {
@@ -80,19 +96,27 @@ public class ClienteVIPDTO {
         this.ticketMedio = ticketMedio;
     }
 
-    public BigDecimal getValorTotalGasto() {
-        return valorTotalGasto;
+    public BigDecimal getMediaGastoGeral() {
+        return mediaGastoGeral;
     }
 
-    public void setValorTotalGasto(BigDecimal valorTotalGasto) {
-        this.valorTotalGasto = valorTotalGasto;
+    public void setMediaGastoGeral(BigDecimal mediaGastoGeral) {
+        this.mediaGastoGeral = mediaGastoGeral;
     }
 
-    public BigDecimal getMediaComprasGeral() {
-        return mediaComprasGeral;
+    public BigDecimal getDiferencaMedia() {
+        return diferencaMedia;
     }
 
-    public void setMediaComprasGeral(BigDecimal mediaComprasGeral) {
-        this.mediaComprasGeral = mediaComprasGeral;
+    public void setDiferencaMedia(BigDecimal diferencaMedia) {
+        this.diferencaMedia = diferencaMedia;
+    }
+
+    public BigDecimal getPercentualAcimaMedia() {
+        return percentualAcimaMedia;
+    }
+
+    public void setPercentualAcimaMedia(BigDecimal percentualAcimaMedia) {
+        this.percentualAcimaMedia = percentualAcimaMedia;
     }
 }

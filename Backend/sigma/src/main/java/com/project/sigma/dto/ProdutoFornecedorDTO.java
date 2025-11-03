@@ -9,24 +9,14 @@ public class ProdutoFornecedorDTO {
     private Integer idProduto;
     private String produtoNome;
     private BigDecimal precoVenda;
+    private Integer estoque;
     private Integer idFornecedor;
     private String fornecedorNome;
     private String fornecedorTelefone;
+    private String fornecedorStatus;
     private String statusVinculo;
 
     public ProdutoFornecedorDTO() {
-    }
-
-    public ProdutoFornecedorDTO(Integer idProduto, String produtoNome, BigDecimal precoVenda,
-                                Integer idFornecedor, String fornecedorNome, String fornecedorTelefone,
-                                String statusVinculo) {
-        this.idProduto = idProduto;
-        this.produtoNome = produtoNome;
-        this.precoVenda = precoVenda;
-        this.idFornecedor = idFornecedor;
-        this.fornecedorNome = fornecedorNome;
-        this.fornecedorTelefone = fornecedorTelefone;
-        this.statusVinculo = statusVinculo;
     }
 
     // Getters and Setters
@@ -54,6 +44,14 @@ public class ProdutoFornecedorDTO {
         this.precoVenda = precoVenda;
     }
 
+    public Integer getEstoque() {
+        return estoque;
+    }
+
+    public void setEstoque(Integer estoque) {
+        this.estoque = estoque;
+    }
+
     public Integer getIdFornecedor() {
         return idFornecedor;
     }
@@ -76,6 +74,14 @@ public class ProdutoFornecedorDTO {
 
     public void setFornecedorTelefone(String fornecedorTelefone) {
         this.fornecedorTelefone = fornecedorTelefone;
+    }
+
+    public String getFornecedorStatus() {
+        return fornecedorStatus;
+    }
+
+    public void setFornecedorStatus(String fornecedorStatus) {
+        this.fornecedorStatus = fornecedorStatus;
     }
 
     public String getStatusVinculo() {

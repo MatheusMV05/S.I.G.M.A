@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,15 +27,21 @@ public class ConsultasAvancadasRepository {
         String sql = "SELECT " +
                     "    p.id_produto, " +
                     "    p.nome AS produto_nome, " +
+                    "    p.marca, " +
                     "    p.preco_venda, " +
-                    "    p.quantidade_estoque, " +
+                    "    p.estoque, " +
                     "    c.nome AS categoria_nome, " +
-                    "    (p.preco_venda * p.quantidade_estoque) AS valor_estoque_parado " +
+                    "    f.nome_fantasia AS fornecedor_nome, " +
+                    "    (p.preco_custo * p.estoque) AS valor_investido, " +
+                    "    (p.preco_venda * p.estoque) AS valor_potencial_venda, " +
+                    "    DATEDIFF(CURDATE(), p.data_cadastro) AS dias_sem_venda " +
                     "FROM Produto p " +
-                    "LEFT JOIN ItemVenda iv ON p.id_produto = iv.id_produto " +
-                    "INNER JOIN Categoria c ON p.id_categoria = c.id_categoria " +
-                    "WHERE iv.id_item IS NULL " +
-                    "ORDER BY valor_estoque_parado DESC";
+                    "LEFT JOIN VendaItem vi ON p.id_produto = vi.id_produto " +
+                    "LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria " +
+                    "LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor " +
+                    "WHERE vi.id_venda_item IS NULL " +
+                    "  AND p.status = 'ATIVO' " +
+                    "ORDER BY valor_investido DESC, dias_sem_venda DESC";
 
         return jdbcTemplate.query(sql, produtoNuncaVendidoRowMapper());
     }
@@ -49,13 +54,15 @@ public class ConsultasAvancadasRepository {
                     "    p.id_produto, " +
                     "    p.nome AS produto_nome, " +
                     "    p.preco_venda, " +
+                    "    p.estoque, " +
                     "    f.id_fornecedor, " +
-                    "    f.nome AS fornecedor_nome, " +
+                    "    f.nome_fantasia AS fornecedor_nome, " +
                     "    f.telefone AS fornecedor_telefone, " +
+                    "    f.status AS fornecedor_status, " +
                     "    CASE " +
                     "        WHEN p.id_produto IS NULL THEN 'Fornecedor sem produtos cadastrados' " +
                     "        WHEN f.id_fornecedor IS NULL THEN 'Produto sem fornecedor vinculado' " +
-                    "        ELSE 'Relação completa' " +
+                    "        ELSE 'Relacionamento OK' " +
                     "    END AS status_vinculo " +
                     "FROM Produto p " +
                     "LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor " +
@@ -64,17 +71,19 @@ public class ConsultasAvancadasRepository {
                     "    p.id_produto, " +
                     "    p.nome AS produto_nome, " +
                     "    p.preco_venda, " +
+                    "    p.estoque, " +
                     "    f.id_fornecedor, " +
-                    "    f.nome AS fornecedor_nome, " +
+                    "    f.nome_fantasia AS fornecedor_nome, " +
                     "    f.telefone AS fornecedor_telefone, " +
+                    "    f.status AS fornecedor_status, " +
                     "    CASE " +
                     "        WHEN p.id_produto IS NULL THEN 'Fornecedor sem produtos cadastrados' " +
                     "        WHEN f.id_fornecedor IS NULL THEN 'Produto sem fornecedor vinculado' " +
-                    "        ELSE 'Relação completa' " +
+                    "        ELSE 'Relacionamento OK' " +
                     "    END AS status_vinculo " +
                     "FROM Produto p " +
                     "RIGHT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor " +
-                    "ORDER BY status_vinculo, fornecedor_nome";
+                    "ORDER BY status_vinculo DESC, fornecedor_nome";
 
         return jdbcTemplate.query(sql, produtoFornecedorRowMapper());
     }
@@ -86,14 +95,31 @@ public class ConsultasAvancadasRepository {
         String sql = "SELECT " +
                     "    p.id_produto, " +
                     "    p.nome AS produto_nome, " +
+                    "    p.marca, " +
                     "    p.preco_venda, " +
+                    "    p.preco_custo, " +
+                    "    p.margem_lucro, " +
                     "    c.nome AS categoria_nome, " +
-                    "    ROUND((p.preco_venda - (SELECT AVG(preco_venda) FROM Produto)), 2) AS diferenca_media, " +
-                    "    ROUND(((p.preco_venda / (SELECT AVG(preco_venda) FROM Produto)) - 1) * 100, 2) AS percentual_acima_media " +
+                    "    (SELECT ROUND(AVG(p2.preco_venda), 2) " +
+                    "     FROM Produto p2 " +
+                    "     WHERE p2.id_categoria = p.id_categoria " +
+                    "       AND p2.status = 'ATIVO') AS preco_medio_categoria, " +
+                    "    ROUND(p.preco_venda - (SELECT AVG(p2.preco_venda) " +
+                    "                           FROM Produto p2 " +
+                    "                           WHERE p2.id_categoria = p.id_categoria " +
+                    "                             AND p2.status = 'ATIVO'), 2) AS diferenca_media, " +
+                    "    ROUND(((p.preco_venda / (SELECT AVG(p2.preco_venda) " +
+                    "                             FROM Produto p2 " +
+                    "                             WHERE p2.id_categoria = p.id_categoria " +
+                    "                               AND p2.status = 'ATIVO')) - 1) * 100, 2) AS percentual_acima_media " +
                     "FROM Produto p " +
                     "INNER JOIN Categoria c ON p.id_categoria = c.id_categoria " +
-                    "WHERE p.preco_venda > (SELECT AVG(preco_venda) FROM Produto) " +
-                    "ORDER BY p.preco_venda DESC";
+                    "WHERE p.preco_venda > (SELECT AVG(p2.preco_venda) " +
+                    "                       FROM Produto p2 " +
+                    "                       WHERE p2.id_categoria = p.id_categoria " +
+                    "                         AND p2.status = 'ATIVO') " +
+                    "  AND p.status = 'ATIVO' " +
+                    "ORDER BY percentual_acima_media DESC";
 
         return jdbcTemplate.query(sql, produtoAcimaMediaRowMapper());
     }
@@ -103,33 +129,35 @@ public class ConsultasAvancadasRepository {
     // ================================================================
     public List<ClienteVIPDTO> clientesCompraramAcimaMedia() {
         String sql = "SELECT " +
-                    "    c.id_cliente, " +
-                    "    c.nome AS cliente_nome, " +
-                    "    c.cpf, " +
-                    "    c.telefone, " +
+                    "    c.id_pessoa, " +
+                    "    p.nome AS cliente_nome, " +
+                    "    p.email AS cliente_email, " +
+                    "    c.tipo_pessoa, " +
+                    "    c.ranking, " +
+                    "    c.total_gasto, " +
+                    "    c.data_ultima_compra, " +
                     "    COUNT(v.id_venda) AS total_compras, " +
-                    "    ROUND(AVG(v.valor_total), 2) AS ticket_medio, " +
-                    "    ROUND(SUM(v.valor_total), 2) AS valor_total_gasto, " +
-                    "    ( " +
-                    "        SELECT ROUND(AVG(compras_por_cliente), 2) " +
-                    "        FROM ( " +
-                    "            SELECT COUNT(*) as compras_por_cliente " +
-                    "            FROM Venda " +
-                    "            GROUP BY id_cliente " +
-                    "        ) AS subquery " +
-                    "    ) AS media_compras_geral " +
+                    "    ROUND(c.total_gasto / NULLIF(COUNT(v.id_venda), 0), 2) AS ticket_medio, " +
+                    "    (SELECT ROUND(AVG(total_gasto), 2) " +
+                    "     FROM Cliente " +
+                    "     WHERE ativo = TRUE) AS media_gasto_geral, " +
+                    "    ROUND(c.total_gasto - (SELECT AVG(total_gasto) " +
+                    "                           FROM Cliente " +
+                    "                           WHERE ativo = TRUE), 2) AS diferenca_media, " +
+                    "    ROUND(((c.total_gasto / (SELECT AVG(total_gasto) " +
+                    "                             FROM Cliente " +
+                    "                             WHERE ativo = TRUE)) - 1) * 100, 2) AS percentual_acima_media " +
                     "FROM Cliente c " +
-                    "INNER JOIN Venda v ON c.id_cliente = v.id_cliente " +
-                    "GROUP BY c.id_cliente, c.nome, c.cpf, c.telefone " +
-                    "HAVING COUNT(v.id_venda) > ( " +
-                    "    SELECT AVG(compras_por_cliente) " +
-                    "    FROM ( " +
-                    "        SELECT COUNT(*) as compras_por_cliente " +
-                    "        FROM Venda " +
-                    "        GROUP BY id_cliente " +
-                    "    ) AS subquery2 " +
-                    ") " +
-                    "ORDER BY total_compras DESC, valor_total_gasto DESC";
+                    "INNER JOIN Pessoa p ON c.id_pessoa = p.id_pessoa " +
+                    "LEFT JOIN Venda v ON c.id_pessoa = v.id_cliente AND v.status = 'CONCLUIDA' " +
+                    "WHERE c.ativo = TRUE " +
+                    "  AND c.total_gasto > (SELECT AVG(total_gasto) " +
+                    "                       FROM Cliente " +
+                    "                       WHERE ativo = TRUE) " +
+                    "GROUP BY c.id_pessoa, p.nome, p.email, c.tipo_pessoa, c.ranking, " +
+                    "         c.total_gasto, c.data_ultima_compra " +
+                    "HAVING COUNT(v.id_venda) > 0 " +
+                    "ORDER BY c.total_gasto DESC, total_compras DESC";
 
         return jdbcTemplate.query(sql, clienteVIPRowMapper());
     }
@@ -194,10 +222,14 @@ public class ConsultasAvancadasRepository {
             ProdutoNuncaVendidoDTO dto = new ProdutoNuncaVendidoDTO();
             dto.setIdProduto(rs.getInt("id_produto"));
             dto.setProdutoNome(rs.getString("produto_nome"));
+            dto.setMarca(rs.getString("marca"));
             dto.setPrecoVenda(rs.getBigDecimal("preco_venda"));
-            dto.setQuantidadeEstoque(rs.getInt("quantidade_estoque"));
+            dto.setEstoque(rs.getInt("estoque"));
             dto.setCategoriaNome(rs.getString("categoria_nome"));
-            dto.setValorEstoqueParado(rs.getBigDecimal("valor_estoque_parado"));
+            dto.setFornecedorNome(rs.getString("fornecedor_nome"));
+            dto.setValorInvestido(rs.getBigDecimal("valor_investido"));
+            dto.setValorPotencialVenda(rs.getBigDecimal("valor_potencial_venda"));
+            dto.setDiasSemVenda(rs.getInt("dias_sem_venda"));
             return dto;
         };
     }
@@ -208,9 +240,11 @@ public class ConsultasAvancadasRepository {
             dto.setIdProduto((Integer) rs.getObject("id_produto"));
             dto.setProdutoNome(rs.getString("produto_nome"));
             dto.setPrecoVenda(rs.getBigDecimal("preco_venda"));
+            dto.setEstoque((Integer) rs.getObject("estoque"));
             dto.setIdFornecedor((Integer) rs.getObject("id_fornecedor"));
             dto.setFornecedorNome(rs.getString("fornecedor_nome"));
             dto.setFornecedorTelefone(rs.getString("fornecedor_telefone"));
+            dto.setFornecedorStatus(rs.getString("fornecedor_status"));
             dto.setStatusVinculo(rs.getString("status_vinculo"));
             return dto;
         };
@@ -221,8 +255,12 @@ public class ConsultasAvancadasRepository {
             ProdutoAcimaMediaDTO dto = new ProdutoAcimaMediaDTO();
             dto.setIdProduto(rs.getInt("id_produto"));
             dto.setProdutoNome(rs.getString("produto_nome"));
+            dto.setMarca(rs.getString("marca"));
             dto.setPrecoVenda(rs.getBigDecimal("preco_venda"));
+            dto.setPrecoCusto(rs.getBigDecimal("preco_custo"));
+            dto.setMargemLucro(rs.getBigDecimal("margem_lucro"));
             dto.setCategoriaNome(rs.getString("categoria_nome"));
+            dto.setPrecoMedioCategoria(rs.getBigDecimal("preco_medio_categoria"));
             dto.setDiferencaMedia(rs.getBigDecimal("diferenca_media"));
             dto.setPercentualAcimaMedia(rs.getBigDecimal("percentual_acima_media"));
             return dto;
@@ -232,14 +270,23 @@ public class ConsultasAvancadasRepository {
     private RowMapper<ClienteVIPDTO> clienteVIPRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             ClienteVIPDTO dto = new ClienteVIPDTO();
-            dto.setIdCliente(rs.getInt("id_cliente"));
+            dto.setIdPessoa(rs.getLong("id_pessoa"));
             dto.setClienteNome(rs.getString("cliente_nome"));
-            dto.setCpf(rs.getString("cpf"));
-            dto.setTelefone(rs.getString("telefone"));
+            dto.setClienteEmail(rs.getString("cliente_email"));
+            dto.setTipoPessoa(rs.getString("tipo_pessoa"));
+            dto.setRanking(rs.getInt("ranking"));
+            dto.setTotalGasto(rs.getBigDecimal("total_gasto"));
+            
+            java.sql.Date dataUltimaCompra = rs.getDate("data_ultima_compra");
+            if (dataUltimaCompra != null) {
+                dto.setDataUltimaCompra(dataUltimaCompra.toLocalDate());
+            }
+            
             dto.setTotalCompras(rs.getLong("total_compras"));
             dto.setTicketMedio(rs.getBigDecimal("ticket_medio"));
-            dto.setValorTotalGasto(rs.getBigDecimal("valor_total_gasto"));
-            dto.setMediaComprasGeral(rs.getBigDecimal("media_compras_geral"));
+            dto.setMediaGastoGeral(rs.getBigDecimal("media_gasto_geral"));
+            dto.setDiferencaMedia(rs.getBigDecimal("diferenca_media"));
+            dto.setPercentualAcimaMedia(rs.getBigDecimal("percentual_acima_media"));
             return dto;
         };
     }

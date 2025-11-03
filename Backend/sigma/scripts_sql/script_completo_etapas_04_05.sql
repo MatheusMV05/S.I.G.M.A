@@ -183,29 +183,6 @@ LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
 LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
 
 
--- ================================================================
--- ETAPA 05 - PARTE 1: TABELA DE AUDITORIA
--- ================================================================
-
-DROP TABLE IF EXISTS AuditoriaLog;
-CREATE TABLE AuditoriaLog (
-    id_log BIGINT AUTO_INCREMENT PRIMARY KEY,
-    tabela_afetada VARCHAR(50) NOT NULL,
-    operacao ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    id_registro BIGINT,
-    id_usuario BIGINT,
-    dados_antigos TEXT,
-    dados_novos TEXT,
-    ip_origem VARCHAR(45),
-    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    descricao VARCHAR(500),
-    
-    INDEX idx_tabela_operacao (tabela_afetada, operacao),
-    INDEX idx_data_hora (data_hora),
-    INDEX idx_id_registro (id_registro),
-    
-    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_pessoa) ON DELETE SET NULL
-) COMMENT 'Log de auditoria para rastreamento de alterações no banco de dados';
 
 
 -- ================================================================

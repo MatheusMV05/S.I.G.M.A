@@ -8,22 +8,16 @@ import java.math.BigDecimal;
 public class ProdutoAcimaMediaDTO {
     private Integer idProduto;
     private String produtoNome;
+    private String marca;
     private BigDecimal precoVenda;
+    private BigDecimal precoCusto;
+    private BigDecimal margemLucro;
     private String categoriaNome;
+    private BigDecimal precoMedioCategoria;
     private BigDecimal diferencaMedia;
     private BigDecimal percentualAcimaMedia;
 
     public ProdutoAcimaMediaDTO() {
-    }
-
-    public ProdutoAcimaMediaDTO(Integer idProduto, String produtoNome, BigDecimal precoVenda,
-                                String categoriaNome, BigDecimal diferencaMedia, BigDecimal percentualAcimaMedia) {
-        this.idProduto = idProduto;
-        this.produtoNome = produtoNome;
-        this.precoVenda = precoVenda;
-        this.categoriaNome = categoriaNome;
-        this.diferencaMedia = diferencaMedia;
-        this.percentualAcimaMedia = percentualAcimaMedia;
     }
 
     // Getters and Setters
@@ -43,6 +37,14 @@ public class ProdutoAcimaMediaDTO {
         this.produtoNome = produtoNome;
     }
 
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
+    }
+
     public BigDecimal getPrecoVenda() {
         return precoVenda;
     }
@@ -51,12 +53,36 @@ public class ProdutoAcimaMediaDTO {
         this.precoVenda = precoVenda;
     }
 
+    public BigDecimal getPrecoCusto() {
+        return precoCusto;
+    }
+
+    public void setPrecoCusto(BigDecimal precoCusto) {
+        this.precoCusto = precoCusto;
+    }
+
+    public BigDecimal getMargemLucro() {
+        return margemLucro;
+    }
+
+    public void setMargemLucro(BigDecimal margemLucro) {
+        this.margemLucro = margemLucro;
+    }
+
     public String getCategoriaNome() {
         return categoriaNome;
     }
 
     public void setCategoriaNome(String categoriaNome) {
         this.categoriaNome = categoriaNome;
+    }
+
+    public BigDecimal getPrecoMedioCategoria() {
+        return precoMedioCategoria;
+    }
+
+    public void setPrecoMedioCategoria(BigDecimal precoMedioCategoria) {
+        this.precoMedioCategoria = precoMedioCategoria;
     }
 
     public BigDecimal getDiferencaMedia() {

@@ -1,12 +1,6 @@
--- ================================================================
--- ÍNDICES ESTRATÉGICOS PARA OTIMIZAÇÃO DE CONSULTAS
--- Sistema S.I.G.M.A - Etapa 04
--- Requisito: 2 novos índices utilizados nas consultas/views
--- ================================================================
-
 USE SIGMA;
 
--- Remover índices caso existam (para permitir re-execução do script)
+-- Remover índices caso existam
 SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
                WHERE table_schema = 'SIGMA' 
                AND table_name = 'Produto' 
@@ -40,14 +34,3 @@ CREATE INDEX idx_produto_fornecedor_status ON Produto(id_fornecedor, status);
 -- Usado nas subconsultas de clientes VIP e relatórios de vendas
 -- Essencial para dashboards que filtram vendas por cliente e período
 CREATE INDEX idx_venda_cliente_data ON Venda(id_cliente, data_venda);
-
--- ================================================================
--- VERIFICAÇÃO DOS ÍNDICES CRIADOS
--- ================================================================
--- Para verificar os índices criados, execute:
--- SHOW INDEX FROM Produto WHERE Key_name = 'idx_produto_fornecedor_status';
--- SHOW INDEX FROM Venda WHERE Key_name = 'idx_venda_cliente_data';
-
--- Para verificar uso dos índices nas consultas:
--- EXPLAIN SELECT * FROM Produto WHERE id_fornecedor = 1 AND status = 'ATIVO';
--- EXPLAIN SELECT * FROM Venda WHERE id_cliente = 1 AND data_venda >= '2025-01-01';

@@ -1,8 +1,3 @@
--- ================================================================
--- VIEWS (VISÕES) PARA CONSULTAS COMPLEXAS
--- Sistema S.I.G.M.A - Etapa 04
--- Requisito: 2 views com pelo menos 3 joins e justificativa semântica
--- ================================================================
 
 USE SIGMA;
 
@@ -141,37 +136,4 @@ LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
 LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
 
 
--- ================================================================
--- CONSULTAS DE EXEMPLO PARA AS VIEWS
--- ================================================================
 
--- Exemplo 1: Vendas do mês atual com perfil de cliente
--- SELECT * FROM vw_analise_vendas_completa 
--- WHERE MONTH(data_venda) = MONTH(CURDATE()) 
---   AND YEAR(data_venda) = YEAR(CURDATE())
---   AND status_venda = 'CONCLUIDA'
--- ORDER BY data_venda DESC;
-
--- Exemplo 2: Produtos com estoque crítico e fornecedor
--- SELECT * FROM vw_inventario_rentabilidade 
--- WHERE status_estoque IN ('CRÍTICO - SEM ESTOQUE', 'ALERTA - ESTOQUE BAIXO')
---   AND status_produto = 'ATIVO'
--- ORDER BY estoque ASC;
-
--- Exemplo 3: Top 10 produtos mais rentáveis
--- SELECT produto_nome, categoria_nome, margem_lucro_percentual, 
---        lucro_potencial_estoque, classificacao_rentabilidade
--- FROM vw_inventario_rentabilidade
--- WHERE status_produto = 'ATIVO'
--- ORDER BY lucro_potencial_estoque DESC
--- LIMIT 10;
-
--- Exemplo 4: Análise de vendas por vendedor
--- SELECT vendedor_nome, vendedor_setor,
---        COUNT(*) AS total_vendas,
---        SUM(valor_final) AS faturamento_total,
---        ROUND(AVG(valor_final), 2) AS ticket_medio
--- FROM vw_analise_vendas_completa
--- WHERE status_venda = 'CONCLUIDA'
--- GROUP BY vendedor_nome, vendedor_setor
--- ORDER BY faturamento_total DESC;
