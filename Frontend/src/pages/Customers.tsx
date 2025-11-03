@@ -79,6 +79,17 @@ export default function Customers() {
     }
   });
 
+  // Estado para estatísticas do backend
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    individuals: 0,
+    businesses: 0,
+    totalRevenue: 0,
+    averageTicket: 0
+  });
+
   const fetchCustomers = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -101,17 +112,13 @@ export default function Customers() {
         size: 10, // Você pode ajustar o tamanho da página
         search: searchFilter,
         customerType: customerTypeFilter,
-        active: activeFilter,
+        active: activeFilter
       };
 
-      // O customerService já faz o mapeamento!
-      // Agora 'params' tem o tipo exato que a função espera.
       const response = await customerService.getCustomers(params);
-      
-      setCustomers(response.content);
-      setTotalPages(response.totalPages);
-      setTotalElements(response.totalElements);
-
+      setCustomers(response.content || []);
+      setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
       toast.error("Falha ao carregar clientes.");
@@ -120,24 +127,29 @@ export default function Customers() {
     }
   }, [currentPage, searchTerm, selectedType, selectedStatus]);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const statsData = await customerService.getStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas:", error);
+      toast.error("Falha ao carregar estatísticas.");
+    }
+  }, []);
+
   useEffect(() => {
     fetchCustomers();
-  }, [fetchCustomers]);
+    fetchStats();
+  }, [fetchCustomers, fetchStats]);
 
-  // Reset page quando os filtros mudam
   useEffect(() => {
-    setCurrentPage(0);
-  }, [searchTerm, selectedType, selectedStatus]);
+    const delayDebounce = setTimeout(() => {
+      setCurrentPage(0);
+      fetchCustomers();
+    }, 300);
 
-  // Estatísticas
-  const stats = {
-    total: totalElements, // Agora usa o total de elementos da API
-    active: customers.filter(c => c.status === 'active').length,
-    individuals: customers.filter(c => c.type === 'individual').length,
-    businesses: customers.filter(c => c.type === 'business').length,
-    totalRevenue: customers.reduce((sum, c) => sum + c.totalSpent, 0),
-    averageTicket: customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.reduce((sum, c) => sum + c.totalPurchases, 0) || 0
-  };
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, selectedType, selectedStatus]);
 
   const handleAddCustomer = async () => {
     try {
@@ -160,6 +172,7 @@ export default function Customers() {
         companyInfo: { tradeName: '', stateRegistration: '', municipalRegistration: '' }
       });
       fetchCustomers(); // Recarrega a lista
+      fetchStats(); // Recarrega as estatísticas
     } catch (error) {
       console.error("Erro ao criar cliente:", error);
       toast.error("Falha ao cadastrar cliente.");
@@ -174,6 +187,7 @@ export default function Customers() {
       toast.success("Cliente atualizado com sucesso!");
       setEditingCustomer(null);
       fetchCustomers(); // Recarrega a lista
+      fetchStats(); // Recarrega as estatísticas
     } catch (error) {
       console.error("Erro ao atualizar cliente:", error);
       toast.error("Falha ao atualizar cliente.");
@@ -185,6 +199,7 @@ export default function Customers() {
       await customerService.deleteCustomer(customerId);
       toast.success("Cliente excluído com sucesso!");
       fetchCustomers(); // Recarrega a lista
+      fetchStats(); // Recarrega as estatísticas
     } catch (error) {
       console.error("Erro ao excluir cliente:", error);
       toast.error("Falha ao excluir cliente.");

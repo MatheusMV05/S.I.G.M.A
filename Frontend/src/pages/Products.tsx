@@ -788,22 +788,22 @@ export default function Products() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="info" className="w-full">
+                  <Tabs defaultValue="auditoria" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="info">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Informações
-                      </TabsTrigger>
                       <TabsTrigger value="auditoria">
                         <History className="h-4 w-4 mr-2" />
-                        Auditoria ({historicoProduto.length})
+                        Alterações ({historicoProduto.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="insights">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Análise Financeira
                       </TabsTrigger>
                     </TabsList>
-                    
-                    <TabsContent value="info" className="space-y-4 mt-4">
+
+                    <TabsContent value="insights" className="space-y-4 mt-4">
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-base">📊 Resumo Executivo</CardTitle>
+                          <CardTitle className="text-base">📊 Análise Financeira e Margens</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           {/* Margem de Lucro */}
@@ -824,83 +824,67 @@ export default function Products() {
                             </div>
                           </div>
 
-                          {/* Estoque e Validade */}
+                          {/* Valor Total em Estoque */}
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="text-sm font-medium text-muted-foreground">Estoque Atual</label>
-                              <p className="text-lg font-semibold">{selectedProduct.estoque || 0} unidades</p>
-                              {selectedProduct.estoque_minimo && (
-                                <p className="text-xs text-muted-foreground">
-                                  Mínimo: {selectedProduct.estoque_minimo} | 
-                                  {selectedProduct.estoque_maximo && ` Máximo: ${selectedProduct.estoque_maximo}`}
-                                </p>
-                              )}
+                            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                              <label className="text-xs font-medium text-purple-600">Valor Total (Custo)</label>
+                              <p className="text-lg font-bold text-purple-900">
+                                {formatCurrency((selectedProduct.preco_custo || 0) * (selectedProduct.estoque || 0))}
+                              </p>
+                              <p className="text-xs text-purple-700 mt-1">
+                                {selectedProduct.estoque || 0} unidades × {formatCurrency(selectedProduct.preco_custo || 0)}
+                              </p>
                             </div>
-                            <div>
-                              <label className="text-sm font-medium text-muted-foreground">Valor em Estoque</label>
-                              <p className="text-lg font-semibold text-green-600">
+                            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                              <label className="text-xs font-medium text-green-600">Valor Total (Venda)</label>
+                              <p className="text-lg font-bold text-green-900">
                                 {formatCurrency((selectedProduct.preco_venda || 0) * (selectedProduct.estoque || 0))}
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                Custo: {formatCurrency((selectedProduct.preco_custo || 0) * (selectedProduct.estoque || 0))}
+                              <p className="text-xs text-green-700 mt-1">
+                                {selectedProduct.estoque || 0} unidades × {formatCurrency(selectedProduct.preco_venda || 0)}
                               </p>
                             </div>
                           </div>
 
-                          {/* Datas do Sistema */}
-                          <div className="pt-4 border-t">
-                            <label className="text-sm font-medium text-muted-foreground mb-2 block">📅 Informações Temporais</label>
-                            <div className="grid grid-cols-2 gap-4">
-                              {selectedProduct.data_criacao && (
-                                <div>
-                                  <label className="text-xs font-medium text-muted-foreground">Cadastrado em</label>
-                                  <p className="text-sm">{new Date(selectedProduct.data_criacao).toLocaleDateString('pt-BR', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}</p>
-                                </div>
-                              )}
-                              {selectedProduct.data_atualizacao && (
-                                <div>
-                                  <label className="text-xs font-medium text-muted-foreground">Última alteração</label>
-                                  <p className="text-sm">{new Date(selectedProduct.data_atualizacao).toLocaleDateString('pt-BR', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}</p>
-                                </div>
-                              )}
-                              {selectedProduct.data_validade && (
-                                <div>
-                                  <label className="text-xs font-medium text-muted-foreground">Data de Validade</label>
-                                  <p className="text-sm">{new Date(selectedProduct.data_validade).toLocaleDateString('pt-BR')}</p>
-                                </div>
-                              )}
-                            </div>
+                          {/* Lucro Potencial Total */}
+                          <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                            <label className="text-sm font-medium text-green-700">💰 Lucro Potencial Total do Estoque</label>
+                            <p className="text-3xl font-bold text-green-900 mt-2">
+                              {formatCurrency(((selectedProduct.preco_venda || 0) - (selectedProduct.preco_custo || 0)) * (selectedProduct.estoque || 0))}
+                            </p>
+                            <p className="text-xs text-green-700 mt-1">
+                              Se todo o estoque for vendido ao preço atual
+                            </p>
                           </div>
 
                           {/* Alertas e Insights */}
                           <div className="space-y-2">
-                            {selectedProduct.estoque <= selectedProduct.estoque_minimo && (
-                              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
-                                <div>
-                                  <p className="text-sm font-medium text-orange-900">Estoque Crítico</p>
-                                  <p className="text-xs text-orange-700">Este produto está abaixo do estoque mínimo. Considere reabastecer.</p>
-                                </div>
-                              </div>
-                            )}
                             {selectedProduct.preco_venda < selectedProduct.preco_custo && (
                               <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
                                 <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-medium text-red-900">Atenção: Prejuízo</p>
-                                  <p className="text-xs text-red-700">O preço de venda está menor que o custo!</p>
+                                  <p className="text-sm font-medium text-red-900">⚠️ Alerta: Prejuízo</p>
+                                  <p className="text-xs text-red-700">O preço de venda está menor que o custo! Prejuízo de {formatCurrency(selectedProduct.preco_custo - selectedProduct.preco_venda)} por unidade.</p>
+                                </div>
+                              </div>
+                            )}
+                            {selectedProduct.estoque <= selectedProduct.estoque_minimo && (
+                              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-medium text-orange-900">⚠️ Estoque Crítico</p>
+                                  <p className="text-xs text-orange-700">Este produto está abaixo do estoque mínimo ({selectedProduct.estoque_minimo} unidades). Considere reabastecer.</p>
+                                </div>
+                              </div>
+                            )}
+                            {selectedProduct.preco_venda > selectedProduct.preco_custo && (
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                                <TrendingUp className="h-4 w-4 text-green-600 mt-0.5" />
+                                <div>
+                                  <p className="text-sm font-medium text-green-900">✅ Margem Positiva</p>
+                                  <p className="text-xs text-green-700">
+                                    Produto com margem de lucro saudável de {(((selectedProduct.preco_venda - selectedProduct.preco_custo) / selectedProduct.preco_venda) * 100).toFixed(1)}%
+                                  </p>
                                 </div>
                               </div>
                             )}

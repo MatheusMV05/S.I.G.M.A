@@ -254,6 +254,21 @@ class CustomerService {
   }
 
   /**
+   * Busca estatísticas gerais de todos os clientes
+   */
+  async getStats(): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+    individuals: number;
+    businesses: number;
+    totalRevenue: number;
+    averageTicket: number;
+  }> {
+    return await apiRequest('/customers/stats');
+  }
+
+  /**
    * Valida documento (CPF ou CNPJ)
    */
   async validateDocument(document: string, type: 'CPF' | 'CNPJ'): Promise<{ valid: boolean; message?: string }> {

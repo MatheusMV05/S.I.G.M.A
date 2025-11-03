@@ -375,5 +375,63 @@ public class ClienteService {
         System.out.println("✅ Classificação retornada: " + classificacao);
         return classificacao;
     }
+
+    /**
+     * 📊 Obter estatísticas gerais dos clientes
+     * 
+     * Retorna:
+     * - total: Total de clientes cadastrados
+     * - active: Total de clientes ativos
+     * - inactive: Total de clientes inativos
+     * - individuals: Total de clientes pessoa física (PF)
+     * - businesses: Total de clientes pessoa jurídica (PJ)
+     * - totalRevenue: Receita total gerada por todos os clientes
+     * - averageTicket: Ticket médio por compra (receita total / total de compras)
+     */
+    public java.util.Map<String, Object> obterEstatisticas() {
+        System.out.println("📊 Service: Calculando estatísticas de clientes");
+        
+        // Buscar todos os clientes (sem paginação)
+        List<Cliente> todosClientes = clienteRepository.findAll();
+        
+        // Calcular estatísticas
+        long total = todosClientes.size();
+        long ativos = todosClientes.stream().filter(Cliente::getAtivo).count();
+        long inativos = total - ativos;
+        long pessoasFisicas = todosClientes.stream()
+            .filter(c -> c.getTipo_pessoa() == Cliente.TipoPessoa.FISICA)
+            .count();
+        long pessoasJuridicas = todosClientes.stream()
+            .filter(c -> c.getTipo_pessoa() == Cliente.TipoPessoa.JURIDICA)
+            .count();
+        
+        // Receita total (soma de total_gasto de todos os clientes)
+        BigDecimal receitaTotal = todosClientes.stream()
+            .map(c -> c.getTotal_gasto() != null ? c.getTotal_gasto() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // Ticket médio: receita total / número total de vendas
+        // Para calcular o total de compras, precisamos buscar do banco
+        Integer totalCompras = clienteRepository.contarTotalCompras();
+        double ticketMedio = totalCompras > 0 
+            ? receitaTotal.doubleValue() / totalCompras 
+            : 0.0;
+        
+        // Montar resposta
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("total", total);
+        stats.put("active", ativos);
+        stats.put("inactive", inativos);
+        stats.put("individuals", pessoasFisicas);
+        stats.put("businesses", pessoasJuridicas);
+        stats.put("totalRevenue", receitaTotal.doubleValue());
+        stats.put("averageTicket", ticketMedio);
+        
+        System.out.println("✅ Estatísticas: Total=" + total + ", Ativos=" + ativos + 
+                         ", PF=" + pessoasFisicas + ", PJ=" + pessoasJuridicas + 
+                         ", Receita=" + receitaTotal + ", Ticket Médio=" + ticketMedio);
+        
+        return stats;
+    }
 }
 

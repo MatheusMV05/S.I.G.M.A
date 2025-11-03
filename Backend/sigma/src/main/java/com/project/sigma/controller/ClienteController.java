@@ -89,4 +89,25 @@ public class ClienteController {
                     .body("BRONZE");
         }
     }
+
+    /**
+     * Endpoint para obter estatísticas gerais dos clientes.
+     * HTTP GET /api/customers/stats
+     * 
+     * Retorna:
+     * - total: Total de clientes
+     * - active: Clientes ativos
+     * - inactive: Clientes inativos
+     * - individuals: Pessoas físicas
+     * - businesses: Pessoas jurídicas
+     * - totalRevenue: Receita total gerada
+     * - averageTicket: Ticket médio por compra
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<java.util.Map<String, Object>> getEstatisticasClientes() {
+        System.out.println("📊 GET /api/customers/stats - Obtendo estatísticas de clientes");
+        java.util.Map<String, Object> stats = clienteService.obterEstatisticas();
+        System.out.println("✅ Estatísticas calculadas: " + stats);
+        return ResponseEntity.ok(stats);
+    }
 }

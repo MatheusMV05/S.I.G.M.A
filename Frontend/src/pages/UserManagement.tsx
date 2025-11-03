@@ -333,7 +333,7 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="text-center">
               <Crown className="h-6 w-6 mx-auto mb-1 text-yellow-500" />
-              <p className="text-xs text-muted-foreground">Admins</p>
+              <p className="text-xs text-muted-foreground">Administradores</p>
               <p className="text-lg font-bold">{calculatedStats.admins}</p>
             </div>
           </CardContent>
@@ -342,7 +342,7 @@ export default function UserManagement() {
           <CardContent className="p-4">
             <div className="text-center">
               <UserCheck className="h-6 w-6 mx-auto mb-1 text-blue-500" />
-              <p className="text-xs text-muted-foreground">Usuários</p>
+              <p className="text-xs text-muted-foreground">Usuários Comuns</p>
               <p className="text-lg font-bold">{calculatedStats.users}</p>
             </div>
           </CardContent>

@@ -221,6 +221,19 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
         return jdbcTemplate.queryForObject(sql, String.class, idCliente);
     }
 
+    /**
+     * Conta o total de compras (vendas) realizadas por todos os clientes
+     * Usado para calcular o ticket médio
+     */
+    public Integer contarTotalCompras() {
+        String sql = """
+            SELECT COUNT(*) 
+            FROM Venda 
+            WHERE status = 'CONCLUIDA'
+            """;
+        return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+
     private RowMapper<Cliente> clienteRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             Cliente cliente = new Cliente();

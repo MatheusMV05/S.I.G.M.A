@@ -230,11 +230,21 @@ public class UsuarioService {
     public Map<String, Object> obterEstatisticas() {
         List<Usuario> todos = usuarioRepository.findAllWithFuncionarioInfo();
         
+        long admins = todos.stream().filter(u -> u.getRole() == Usuario.Role.ADMIN).count();
+        long users = todos.stream().filter(u -> u.getRole() == Usuario.Role.USER).count();
+        long ativos = todos.stream().filter(u -> u.getStatus() == Usuario.StatusUsuario.ATIVO).count();
+        
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", todos.size());
-        stats.put("ativos", usuarioRepository.countActive());
-        stats.put("admins", usuarioRepository.countByRole("ADMIN"));
-        stats.put("users", usuarioRepository.countByRole("USER"));
+        stats.put("ativos", ativos);
+        stats.put("admins", admins);
+        stats.put("users", users);
+        
+        System.out.println("📊 Estatísticas de usuários:");
+        System.out.println("   Total: " + todos.size());
+        System.out.println("   Ativos: " + ativos);
+        System.out.println("   Admins (role=ADMIN): " + admins);
+        System.out.println("   Users (role=USER): " + users);
         
         return stats;
     }
