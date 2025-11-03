@@ -598,10 +598,6 @@ CREATE INDEX idx_cliente_tipo ON Cliente(tipo_pessoa);
 CREATE INDEX idx_cliente_ativo ON Cliente(ativo);
 CREATE INDEX idx_cliente_ranking ON Cliente(ranking);
 
--- Índices para Funcionario
-CREATE INDEX idx_funcionario_status ON Funcionario(status);
-CREATE INDEX idx_funcionario_setor ON Funcionario(setor);
-
 -- Índices para Promocao
 CREATE INDEX idx_promocao_status ON PROMOCAO(status);
 CREATE INDEX idx_promocao_datas ON PROMOCAO(data_inicio, data_fim);
