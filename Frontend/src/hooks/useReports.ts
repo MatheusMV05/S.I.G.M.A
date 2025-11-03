@@ -133,6 +133,15 @@ export const useReceitaLucroMensal = (meses: number = 12) => {
   });
 };
 
+// Hook para segmentação de clientes
+export const useCustomerSegmentation = () => {
+  return useQuery({
+    queryKey: [...reportKeys.all, 'customer-segmentation'] as const,
+    queryFn: () => apiRequest(`/reports/customer-segmentation`),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+};
+
 // Hook para relatório de vendas
 export const useSalesReport = (
   startDate: string,

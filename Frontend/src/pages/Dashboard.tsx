@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useDashboardKPIs, useDailyRevenue, useTopProducts, useHourlySales, useSalesByCategory, useSalesStatistics, useSalesDistribution, useSalesByWeekday, usePaymentMethods, useReceitaLucroMensal } from '@/hooks/useReports';
+import { useDashboardKPIs, useDailyRevenue, useTopProducts, useHourlySales, useSalesByCategory, useSalesStatistics, useSalesDistribution, useSalesByWeekday, usePaymentMethods, useReceitaLucroMensal, useCustomerSegmentation } from '@/hooks/useReports';
 import { useLowStockProducts } from '@/hooks/useProducts';
 import { useProdutosCriticos } from '@/hooks/useProdutosCriticos';
 import {
@@ -142,6 +142,7 @@ export default function Dashboard() {
   const { data: salesByWeekday, isLoading: isLoadingWeekday } = useSalesByWeekday(selectedPeriod);
   const { data: paymentMethods, isLoading: isLoadingPayments } = usePaymentMethods(selectedPeriod);
   const { data: receitaLucroMensal, isLoading: isLoadingReceitaLucro } = useReceitaLucroMensal(12);
+  const { data: customerSegmentation, isLoading: isLoadingSegmentation } = useCustomerSegmentation();
   
   // Buscar produtos com estoque baixo (método antigo - será substituído)
   const { data: lowStockProducts, isLoading: isLoadingLowStock } = useLowStockProducts();
@@ -751,10 +752,25 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Receita Total</p>
-                    <p className="text-2xl font-bold text-success">R$ {kpis.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-2xl font-bold text-success">
+                      R$ {kpis.monthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="h-3 w-3 text-success" />
-                      <span className="text-sm text-success font-medium">+{kpis.monthlyGrowth.toFixed(1)}%</span>
+                      {kpis.monthlyGrowth >= 0 ? (
+                        <>
+                          <TrendingUp className="h-3 w-3 text-success" />
+                          <span className="text-sm text-success font-medium">
+                            +{kpis.monthlyGrowth.toFixed(1)}%
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="h-3 w-3 text-destructive" />
+                          <span className="text-sm text-destructive font-medium">
+                            {kpis.monthlyGrowth.toFixed(1)}%
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <DollarSign className="h-8 w-8 text-success" />
@@ -765,11 +781,26 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Lucro Estimado</p>
-                    <p className="text-2xl font-bold text-primary">R$ {(kpis.monthRevenue * 0.297).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Lucro Real</p>
+                    <p className="text-2xl font-bold text-primary">
+                      R$ {(kpis.monthProfit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="h-3 w-3 text-success" />
-                      <span className="text-sm text-success font-medium">+2.1%</span>
+                      {(kpis.profitGrowth || 0) >= 0 ? (
+                        <>
+                          <TrendingUp className="h-3 w-3 text-success" />
+                          <span className="text-sm text-success font-medium">
+                            +{(kpis.profitGrowth || 0).toFixed(1)}%
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="h-3 w-3 text-destructive" />
+                          <span className="text-sm text-destructive font-medium">
+                            {(kpis.profitGrowth || 0).toFixed(1)}%
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <Award className="h-8 w-8 text-primary" />
@@ -780,11 +811,26 @@ export default function Dashboard() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Margem</p>
-                    <p className="text-2xl font-bold">29.7%</p>
+                    <p className="text-sm font-medium text-muted-foreground">Margem de Lucro</p>
+                    <p className="text-2xl font-bold">
+                      {(kpis.profitMargin || 0).toFixed(1)}%
+                    </p>
                     <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="h-3 w-3 text-success" />
-                      <span className="text-sm text-success font-medium">+2.1%</span>
+                      {(kpis.marginGrowth || 0) >= 0 ? (
+                        <>
+                          <TrendingUp className="h-3 w-3 text-success" />
+                          <span className="text-sm text-success font-medium">
+                            +{(kpis.marginGrowth || 0).toFixed(1)}%
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown className="h-3 w-3 text-destructive" />
+                          <span className="text-sm text-destructive font-medium">
+                            {(kpis.marginGrowth || 0).toFixed(1)}%
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <Target className="h-8 w-8 text-blue-500" />
@@ -861,30 +907,31 @@ export default function Dashboard() {
               <CardTitle>Segmentação de Clientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[
-                  { segment: 'VIP', customers: 45, revenue: 125000, avgTicket: 2777.78, color: 'border-purple-500' },
-                  { segment: 'Premium', customers: 128, revenue: 89600, avgTicket: 700.00, color: 'border-blue-500' },
-                  { segment: 'Regular', customers: 456, revenue: 164160, avgTicket: 360.00, color: 'border-green-500' },
-                  { segment: 'Básico', customers: 892, revenue: 134280, avgTicket: 150.50, color: 'border-gray-500' }
-                ].map((segment) => (
-                  <div key={segment.segment} className={`p-4 border-l-4 ${segment.color} rounded-lg bg-muted/30`}>
-                    <div className="text-center space-y-2">
-                      <Badge variant="outline" className="mb-2">{segment.segment}</Badge>
-                      <p className="text-2xl font-bold">{segment.customers}</p>
-                      <p className="text-sm text-muted-foreground">clientes</p>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-success">
-                          R$ {segment.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Ticket: R$ {segment.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
+              {isLoadingSegmentation ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm text-muted-foreground">Carregando segmentação...</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {(customerSegmentation as any[] || []).map((segment: any) => (
+                    <div key={segment.segment} className={`p-4 border-l-4 ${segment.color} rounded-lg bg-muted/30`}>
+                      <div className="text-center space-y-2">
+                        <Badge variant="outline" className="mb-2">{segment.segment}</Badge>
+                        <p className="text-2xl font-bold">{segment.customers}</p>
+                        <p className="text-sm text-muted-foreground">clientes</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-success">
+                            R$ {segment.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Ticket: R$ {segment.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

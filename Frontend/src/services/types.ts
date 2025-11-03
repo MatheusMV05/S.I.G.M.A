@@ -317,6 +317,12 @@ export interface DashboardKPIs {
   monthRevenue: number;
   lastMonthRevenue: number;
   monthlyGrowth: number;
+  monthProfit: number;
+  lastMonthProfit: number;
+  profitGrowth: number;
+  profitMargin: number;
+  lastMonthProfitMargin: number;
+  marginGrowth: number;
   weekRevenue: number;
   lastWeekRevenue: number;
   weeklyGrowth: number;

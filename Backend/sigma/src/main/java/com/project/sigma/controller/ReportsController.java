@@ -354,6 +354,55 @@ public class ReportsController {
                 : 0.0;
             kpis.put("monthlyGrowth", monthlyGrowth);
 
+            // ========== CÁLCULO DE LUCRO E MARGEM ==========
+            
+            // Lucro do mês atual
+            // Lucro = SUM((preco_unitario_venda - preco_custo) * quantidade)
+            String monthProfitQuery = 
+                "SELECT COALESCE(SUM((vi.preco_unitario_venda - COALESCE(p.preco_custo, 0)) * vi.quantidade), 0) " +
+                "FROM VendaItem vi " +
+                "INNER JOIN Venda v ON vi.id_venda = v.id_venda " +
+                "INNER JOIN Produto p ON vi.id_produto = p.id_produto " +
+                "WHERE MONTH(v.data_venda) = MONTH(CURDATE()) " +
+                "  AND YEAR(v.data_venda) = YEAR(CURDATE()) " +
+                "  AND v.status = 'CONCLUIDA'";
+            Double monthProfit = jdbcTemplate.queryForObject(monthProfitQuery, Double.class);
+            kpis.put("monthProfit", monthProfit != null ? monthProfit : 0.0);
+
+            // Lucro do mês passado
+            String lastMonthProfitQuery = 
+                "SELECT COALESCE(SUM((vi.preco_unitario_venda - COALESCE(p.preco_custo, 0)) * vi.quantidade), 0) " +
+                "FROM VendaItem vi " +
+                "INNER JOIN Venda v ON vi.id_venda = v.id_venda " +
+                "INNER JOIN Produto p ON vi.id_produto = p.id_produto " +
+                "WHERE MONTH(v.data_venda) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) " +
+                "  AND YEAR(v.data_venda) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) " +
+                "  AND v.status = 'CONCLUIDA'";
+            Double lastMonthProfit = jdbcTemplate.queryForObject(lastMonthProfitQuery, Double.class);
+            kpis.put("lastMonthProfit", lastMonthProfit != null ? lastMonthProfit : 0.0);
+
+            // Crescimento do lucro (percentual)
+            Double profitGrowth = lastMonthProfit != null && lastMonthProfit > 0
+                ? ((monthProfit - lastMonthProfit) / lastMonthProfit) * 100
+                : 0.0;
+            kpis.put("profitGrowth", profitGrowth);
+
+            // Margem de lucro do mês atual (Lucro / Receita * 100)
+            Double profitMargin = monthRevenue != null && monthRevenue > 0
+                ? (monthProfit / monthRevenue) * 100
+                : 0.0;
+            kpis.put("profitMargin", profitMargin);
+
+            // Margem de lucro do mês passado
+            Double lastMonthProfitMargin = lastMonthRevenue != null && lastMonthRevenue > 0
+                ? (lastMonthProfit / lastMonthRevenue) * 100
+                : 0.0;
+            kpis.put("lastMonthProfitMargin", lastMonthProfitMargin);
+
+            // Crescimento da margem (diferença em pontos percentuais)
+            Double marginGrowth = profitMargin - lastMonthProfitMargin;
+            kpis.put("marginGrowth", marginGrowth);
+
             // Faturamento da semana atual
             String weekRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
@@ -427,6 +476,12 @@ public class ReportsController {
             kpis.put("monthRevenue", 0.0);
             kpis.put("lastMonthRevenue", 0.0);
             kpis.put("monthlyGrowth", 0.0);
+            kpis.put("monthProfit", 0.0);
+            kpis.put("lastMonthProfit", 0.0);
+            kpis.put("profitGrowth", 0.0);
+            kpis.put("profitMargin", 0.0);
+            kpis.put("lastMonthProfitMargin", 0.0);
+            kpis.put("marginGrowth", 0.0);
             kpis.put("weekRevenue", 0.0);
             kpis.put("lastWeekRevenue", 0.0);
             kpis.put("weeklyGrowth", 0.0);
@@ -767,5 +822,154 @@ public class ReportsController {
             e.printStackTrace();
             return ResponseEntity.ok(new ArrayList<>());
         }
+    }
+
+    /**
+     * Endpoint: Segmentação de Clientes
+     * GET /api/reports/customer-segmentation
+     * Segmenta clientes em 4 categorias baseado no valor total de compras:
+     * - VIP: Top 5% clientes (maior valor)
+     * - Premium: Próximos 15%
+     * - Regular: Próximos 30%
+     * - Básico: Restantes 50%
+     */
+    @GetMapping("/customer-segmentation")
+    public ResponseEntity<List<Map<String, Object>>> getCustomerSegmentation() {
+        System.out.println("👥 GET /api/reports/customer-segmentation - Segmentação de clientes");
+
+        try {
+            // Query para calcular total gasto por cliente e classificar em segmentos
+            String query = 
+                "WITH ClienteValor AS ( " +
+                "    SELECT " +
+                "        c.id_cliente, " +
+                "        c.nome, " +
+                "        COALESCE(SUM(v.valor_total), 0) as total_gasto, " +
+                "        COALESCE(AVG(v.valor_total), 0) as ticket_medio, " +
+                "        COUNT(v.id_venda) as numero_compras " +
+                "    FROM Cliente c " +
+                "    LEFT JOIN Venda v ON c.id_cliente = v.id_cliente AND v.status = 'CONCLUIDA' " +
+                "    WHERE c.ativo = TRUE " +
+                "    GROUP BY c.id_cliente, c.nome " +
+                "), " +
+                "ClienteRanked AS ( " +
+                "    SELECT *, " +
+                "        PERCENT_RANK() OVER (ORDER BY total_gasto DESC) as percentil " +
+                "    FROM ClienteValor " +
+                "    WHERE total_gasto > 0 " +
+                "), " +
+                "ClienteSegmento AS ( " +
+                "    SELECT *, " +
+                "        CASE " +
+                "            WHEN percentil <= 0.05 THEN 'VIP' " +
+                "            WHEN percentil <= 0.20 THEN 'Premium' " +
+                "            WHEN percentil <= 0.50 THEN 'Regular' " +
+                "            ELSE 'Básico' " +
+                "        END as segmento " +
+                "    FROM ClienteRanked " +
+                ") " +
+                "SELECT " +
+                "    segmento as segment, " +
+                "    COUNT(*) as customers, " +
+                "    COALESCE(SUM(total_gasto), 0) as revenue, " +
+                "    COALESCE(AVG(ticket_medio), 0) as avgTicket, " +
+                "    COALESCE(SUM(numero_compras), 0) as totalPurchases " +
+                "FROM ClienteSegmento " +
+                "GROUP BY segmento " +
+                "ORDER BY " +
+                "    CASE segmento " +
+                "        WHEN 'VIP' THEN 1 " +
+                "        WHEN 'Premium' THEN 2 " +
+                "        WHEN 'Regular' THEN 3 " +
+                "        WHEN 'Básico' THEN 4 " +
+                "    END";
+
+            List<Map<String, Object>> results = jdbcTemplate.query(query, 
+                (rs, rowNum) -> {
+                    Map<String, Object> row = new HashMap<>();
+                    String segment = rs.getString("segment");
+                    
+                    row.put("segment", segment);
+                    row.put("customers", rs.getInt("customers"));
+                    row.put("revenue", rs.getDouble("revenue"));
+                    row.put("avgTicket", Math.round(rs.getDouble("avgTicket") * 100.0) / 100.0);
+                    row.put("totalPurchases", rs.getInt("totalPurchases"));
+                    
+                    // Adicionar cor baseada no segmento
+                    String color = switch (segment) {
+                        case "VIP" -> "border-purple-500";
+                        case "Premium" -> "border-blue-500";
+                        case "Regular" -> "border-green-500";
+                        default -> "border-gray-500";
+                    };
+                    row.put("color", color);
+                    
+                    return row;
+                }
+            );
+
+            // Se não houver resultados, retornar segmentos vazios
+            if (results.isEmpty()) {
+                System.out.println("⚠️ Nenhum cliente com compras encontrado");
+                results = List.of(
+                    createEmptySegment("VIP", "border-purple-500"),
+                    createEmptySegment("Premium", "border-blue-500"),
+                    createEmptySegment("Regular", "border-green-500"),
+                    createEmptySegment("Básico", "border-gray-500")
+                );
+            } else {
+                // Garantir que todos os 4 segmentos existam
+                List<String> existingSegments = results.stream()
+                    .map(r -> (String) r.get("segment"))
+                    .toList();
+                
+                List<Map<String, Object>> allSegments = new ArrayList<>(results);
+                
+                if (!existingSegments.contains("VIP")) {
+                    allSegments.add(0, createEmptySegment("VIP", "border-purple-500"));
+                }
+                if (!existingSegments.contains("Premium")) {
+                    allSegments.add(1, createEmptySegment("Premium", "border-blue-500"));
+                }
+                if (!existingSegments.contains("Regular")) {
+                    allSegments.add(2, createEmptySegment("Regular", "border-green-500"));
+                }
+                if (!existingSegments.contains("Básico")) {
+                    allSegments.add(3, createEmptySegment("Básico", "border-gray-500"));
+                }
+                
+                results = allSegments;
+            }
+
+            System.out.println("✅ Retornando " + results.size() + " segmentos de clientes");
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar segmentação de clientes: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Retornar segmentos vazios em caso de erro
+            List<Map<String, Object>> emptyResults = List.of(
+                createEmptySegment("VIP", "border-purple-500"),
+                createEmptySegment("Premium", "border-blue-500"),
+                createEmptySegment("Regular", "border-green-500"),
+                createEmptySegment("Básico", "border-gray-500")
+            );
+            
+            return ResponseEntity.ok(emptyResults);
+        }
+    }
+
+    /**
+     * Helper para criar segmento vazio
+     */
+    private Map<String, Object> createEmptySegment(String segment, String color) {
+        Map<String, Object> emptySegment = new HashMap<>();
+        emptySegment.put("segment", segment);
+        emptySegment.put("customers", 0);
+        emptySegment.put("revenue", 0.0);
+        emptySegment.put("avgTicket", 0.0);
+        emptySegment.put("totalPurchases", 0);
+        emptySegment.put("color", color);
+        return emptySegment;
     }
 }
