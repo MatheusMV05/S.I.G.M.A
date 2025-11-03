@@ -117,16 +117,15 @@ public class UsuarioRepository implements BaseRepository<Usuario, Long> {
      * Busca todos os usuários com informações do funcionário associado
      */
     public List<Usuario> findAllWithFuncionarioInfo() {
-        String sql = "SELECT u.*, " +
+        String sql = "SELECT DISTINCT u.*, " +
                     "p.nome, p.email, " +
-                    "t.numero as telefone, " +
+                    "(SELECT numero FROM Telefone WHERE id_pessoa = p.id_pessoa LIMIT 1) as telefone, " +
                     "f.cpf, f.matricula, f.salario, f.cargo, f.setor, f.data_admissao, " +
                     "f.turno, f.tipo_contrato, f.carga_horaria_semanal, " +
                     "f.comissao_percentual, f.meta_mensal, f.id_supervisor " +
                     "FROM Usuario u " +
-                    "INNER JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
-                    "INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa " +
-                    "LEFT JOIN Telefone t ON p.id_pessoa = t.id_pessoa";
+                    "LEFT JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
+                    "INNER JOIN Pessoa p ON u.id_pessoa = p.id_pessoa";
         
         return jdbcTemplate.query(sql, usuarioComFuncionarioRowMapper());
     }
@@ -137,15 +136,14 @@ public class UsuarioRepository implements BaseRepository<Usuario, Long> {
     public Optional<Usuario> findByIdWithFuncionarioInfo(Long id) {
         String sql = "SELECT u.*, " +
                     "p.nome, p.email, " +
-                    "t.numero as telefone, " +
+                    "(SELECT numero FROM Telefone WHERE id_pessoa = p.id_pessoa LIMIT 1) as telefone, " +
                     "f.cpf, f.matricula, f.salario, f.cargo, f.setor, f.data_admissao, " +
                     "f.turno, f.tipo_contrato, f.carga_horaria_semanal, " +
                     "f.comissao_percentual, f.meta_mensal, f.id_supervisor, " +
                     "s.nome as supervisor_nome " +
                     "FROM Usuario u " +
-                    "INNER JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
-                    "INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa " +
-                    "LEFT JOIN Telefone t ON p.id_pessoa = t.id_pessoa " +
+                    "LEFT JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
+                    "INNER JOIN Pessoa p ON u.id_pessoa = p.id_pessoa " +
                     "LEFT JOIN Funcionario sf ON f.id_supervisor = sf.id_pessoa " +
                     "LEFT JOIN Pessoa s ON sf.id_pessoa = s.id_pessoa " +
                     "WHERE u.id_pessoa = ?";
@@ -162,16 +160,15 @@ public class UsuarioRepository implements BaseRepository<Usuario, Long> {
      * Busca usuários filtrados por role
      */
     public List<Usuario> findByRole(String role) {
-        String sql = "SELECT u.*, " +
+        String sql = "SELECT DISTINCT u.*, " +
                     "p.nome, p.email, " +
-                    "t.numero as telefone, " +
+                    "(SELECT numero FROM Telefone WHERE id_pessoa = p.id_pessoa LIMIT 1) as telefone, " +
                     "f.cpf, f.matricula, f.salario, f.cargo, f.setor, f.data_admissao, " +
                     "f.turno, f.tipo_contrato, f.carga_horaria_semanal, " +
                     "f.comissao_percentual, f.meta_mensal, f.id_supervisor " +
                     "FROM Usuario u " +
-                    "INNER JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
-                    "INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa " +
-                    "LEFT JOIN Telefone t ON p.id_pessoa = t.id_pessoa " +
+                    "LEFT JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
+                    "INNER JOIN Pessoa p ON u.id_pessoa = p.id_pessoa " +
                     "WHERE u.role = ?";
         
         return jdbcTemplate.query(sql, usuarioComFuncionarioRowMapper(), role);
@@ -181,16 +178,15 @@ public class UsuarioRepository implements BaseRepository<Usuario, Long> {
      * Busca usuários filtrados por status
      */
     public List<Usuario> findByStatus(String status) {
-        String sql = "SELECT u.*, " +
+        String sql = "SELECT DISTINCT u.*, " +
                     "p.nome, p.email, " +
-                    "t.numero as telefone, " +
+                    "(SELECT numero FROM Telefone WHERE id_pessoa = p.id_pessoa LIMIT 1) as telefone, " +
                     "f.cpf, f.matricula, f.salario, f.cargo, f.setor, f.data_admissao, " +
                     "f.turno, f.tipo_contrato, f.carga_horaria_semanal, " +
                     "f.comissao_percentual, f.meta_mensal, f.id_supervisor " +
                     "FROM Usuario u " +
-                    "INNER JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
-                    "INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa " +
-                    "LEFT JOIN Telefone t ON p.id_pessoa = t.id_pessoa " +
+                    "LEFT JOIN Funcionario f ON u.id_pessoa = f.id_pessoa " +
+                    "INNER JOIN Pessoa p ON u.id_pessoa = p.id_pessoa " +
                     "WHERE u.status = ?";
         
         return jdbcTemplate.query(sql, usuarioComFuncionarioRowMapper(), status);

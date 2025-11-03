@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -142,12 +142,26 @@ export default function UserManagement() {
       ATIVO: { label: 'Ativo', variant: 'default' as const, icon: UserCheck },
       INATIVO: { label: 'Inativo', variant: 'secondary' as const, icon: UserX },
       SUSPENDED: { label: 'Suspenso', variant: 'destructive' as const, icon: AlertTriangle }
-    };
-    
-    return statusConfig[normalizedStatus as keyof typeof statusConfig] || statusConfig.ATIVO;
   };
+  
+  return statusConfig[normalizedStatus as keyof typeof statusConfig] || statusConfig.ATIVO;
+};
 
-  const filteredUsers = users.filter(userData => {
+  // Deduplicate users by id to avoid rendering duplicates
+  const uniqueUsers = useMemo(() => {
+    const seen = new Set<number>();
+    return users.filter(user => {
+      if (user.id && seen.has(user.id)) {
+        return false;
+      }
+      if (user.id) {
+        seen.add(user.id);
+      }
+      return true;
+    });
+  }, [users]);
+
+  const filteredUsers = uniqueUsers.filter(userData => {
     const matchesSearch = userData.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          userData.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          userData.setor?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -163,9 +177,7 @@ export default function UserManagement() {
     const matchesStatus = statusFilter === 'all' || userData.status?.toUpperCase() === statusFilter.toUpperCase();
     
     return matchesSearch && matchesRole && matchesStatus;
-  });
-
-  const handleEdit = (userData: UsuarioData) => {
+  });  const handleEdit = (userData: UsuarioData) => {
     setFormData(userData);
     setEditMode(true);
     setIsDialogOpen(true);
@@ -425,7 +437,7 @@ export default function UserManagement() {
                   const StatusIcon = statusInfo.icon;
                   
                   return (
-                    <TableRow key={userData.id}>
+                    <TableRow key={`user-${userData.id}-${userData.username}`}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{userData.nome}</p>
