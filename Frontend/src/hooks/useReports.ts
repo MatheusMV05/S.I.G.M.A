@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reportsService } from '@/services';
 import { reportService, ProdutoNuncaVendidoDTO, ProdutoAcimaMediaDTO, ClienteVIPDTO } from '@/services/reportService';
 import type { DashboardKPIs, SalesReport, InventoryReport } from '@/services/types';
@@ -330,65 +330,62 @@ export function useClientesVIP(limit: number = 10) {
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 }
- 
- 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
- / /   N o v o s   H o o k s   p a r a   I n s i g h t s   A v a n � a d o s 
- / /   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
- 
- / * * 
-   *   H o o k   p a r a   a n � l i s e   d e   s a z o n a l i d a d e   m e n s a l 
-   * / 
- e x p o r t   f u n c t i o n   u s e S a z o n a l i d a d e M e n s a l ( d i a s :   n u m b e r   =   9 0 )   { 
-     r e t u r n   u s e Q u e r y ( { 
-         q u e r y K e y :   r e p o r t K e y s . s a z o n a l i d a d e M e n s a l ( d i a s ) , 
-         q u e r y F n :   ( )   = >   a p i R e q u e s t ( / i n s i g h t s / s a z o n a l i d a d e / m e n s a l ? d i a s = + d i a s ) , 
-         s t a l e T i m e :   1 0   *   6 0   *   1 0 0 0 , 
-     } ) ; 
- } 
- 
- / * * 
-   *   H o o k   p a r a   a n � l i s e   d e   s a z o n a l i d a d e   s e m a n a l 
-   * / 
- e x p o r t   f u n c t i o n   u s e S a z o n a l i d a d e S e m a n a l ( d i a s :   n u m b e r   =   6 0 )   { 
-     r e t u r n   u s e Q u e r y ( { 
-         q u e r y K e y :   r e p o r t K e y s . s a z o n a l i d a d e S e m a n a l ( d i a s ) , 
-         q u e r y F n :   ( )   = >   a p i R e q u e s t ( / i n s i g h t s / s a z o n a l i d a d e / s e m a n a l ? d i a s = + d i a s ) , 
-         s t a l e T i m e :   1 0   *   6 0   *   1 0 0 0 , 
-     } ) ; 
- } 
- 
- / * * 
-   *   H o o k   p a r a   a n � l i s e   d e   s a z o n a l i d a d e   h o r � r i a 
-   * / 
- e x p o r t   f u n c t i o n   u s e S a z o n a l i d a d e H o r a r i a ( d i a s :   n u m b e r   =   3 0 )   { 
-     r e t u r n   u s e Q u e r y ( { 
-         q u e r y K e y :   r e p o r t K e y s . s a z o n a l i d a d e H o r a r i a ( d i a s ) , 
-         q u e r y F n :   ( )   = >   a p i R e q u e s t ( / i n s i g h t s / s a z o n a l i d a d e / h o r a r i a ? d i a s = + d i a s ) , 
-         s t a l e T i m e :   1 0   *   6 0   *   1 0 0 0 , 
-     } ) ; 
- } 
- 
- / * * 
-   *   H o o k   p a r a   p r o d u t o s   c o m   b a i x a   r o t a t i v i d a d e 
-   * / 
- e x p o r t   f u n c t i o n   u s e P r o d u t o s B a i x a R o t a t i v i d a d e ( l i m i t :   n u m b e r   =   2 0 )   { 
-     r e t u r n   u s e Q u e r y ( { 
-         q u e r y K e y :   r e p o r t K e y s . p r o d u t o s B a i x a R o t a t i v i d a d e ( l i m i t ) , 
-         q u e r y F n :   ( )   = >   a p i R e q u e s t ( / i n s i g h t s / p r o d u t o s - b a i x a - r o t a t i v i d a d e ? l i m i t = + l i m i t ) , 
-         s t a l e T i m e :   1 0   *   6 0   *   1 0 0 0 , 
-     } ) ; 
- } 
- 
- / * * 
-   *   H o o k   p a r a   a n � l i s e   A B C 
-   * / 
- e x p o r t   f u n c t i o n   u s e A n a l i s e A B C ( d i a s :   n u m b e r   =   9 0 )   { 
-     r e t u r n   u s e Q u e r y ( { 
-         q u e r y K e y :   r e p o r t K e y s . a n a l i s e A B C ( d i a s ) , 
-         q u e r y F n :   ( )   = >   a p i R e q u e s t ( / i n s i g h t s / a n a l i s e - a b c ? d i a s = + d i a s ) , 
-         s t a l e T i m e :   1 0   *   6 0   *   1 0 0 0 , 
-     } ) ; 
- } 
- 
- 
+
+// ================================================================
+// Novos Hooks para Insights Avançados
+// ================================================================
+
+/**
+ * Hook para análise de sazonalidade mensal
+ */
+export function useSazonalidadeMensal(dias: number = 90) {
+  return useQuery({
+    queryKey: reportKeys.sazonalidadeMensal(dias),
+    queryFn: () => apiRequest(`/insights/sazonalidade/mensal?dias=${dias}`),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook para análise de sazonalidade semanal
+ */
+export function useSazonalidadeSemanal(dias: number = 60) {
+  return useQuery({
+    queryKey: reportKeys.sazonalidadeSemanal(dias),
+    queryFn: () => apiRequest(`/insights/sazonalidade/semanal?dias=${dias}`),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook para análise de sazonalidade horária
+ */
+export function useSazonalidadeHoraria(dias: number = 30) {
+  return useQuery({
+    queryKey: reportKeys.sazonalidadeHoraria(dias),
+    queryFn: () => apiRequest(`/insights/sazonalidade/horaria?dias=${dias}`),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook para produtos com baixa rotatividade
+ */
+export function useProdutosBaixaRotatividade(limit: number = 20) {
+  return useQuery({
+    queryKey: reportKeys.produtosBaixaRotatividade(limit),
+    queryFn: () => apiRequest(`/insights/produtos-baixa-rotatividade?limit=${limit}`),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook para análise ABC
+ */
+export function useAnaliseABC(dias: number = 90) {
+  return useQuery({
+    queryKey: reportKeys.analiseABC(dias),
+    queryFn: () => apiRequest(`/insights/analise-abc?dias=${dias}`),
+    staleTime: 10 * 60 * 1000,
+  });
+}

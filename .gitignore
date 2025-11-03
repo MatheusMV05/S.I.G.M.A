@@ -1,0 +1,108 @@
+# ================================
+# GITIGNORE GERAL DO PROJETO S.I.G.M.A
+# ================================
+
+# ===== ARQUIVOS DO SISTEMA =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# ===== IDEs e Editores =====
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.classpath
+.project
+.settings/
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ===== LOGS =====
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== BACKEND (Java/Maven/Spring Boot) =====
+Backend/**/target/
+Backend/**/.mvn/wrapper/maven-wrapper.jar
+Backend/**/HELP.md
+!Backend/**/src/main/**/target/
+!Backend/**/src/test/**/target/
+Backend/**/build/
+!Backend/**/src/main/**/build/
+!Backend/**/src/test/**/build/
+
+# ===== FRONTEND (Node/React/Vite) =====
+Frontend/**/node_modules/
+Frontend/**/dist/
+Frontend/**/dist-ssr/
+Frontend/**/.cache/
+Frontend/**/coverage/
+Frontend/**/*.local
+Frontend/**/.env.local
+Frontend/**/.env.*.local
+
+# Lock files (use apenas um gerenciador de pacotes)
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+bun.lockb
+
+# ===== ARQUIVOS TEMPORÁRIOS =====
+*.tmp
+*.temp
+*.bak
+*.cache
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===== ARQUIVOS SENSÍVEIS =====
+*.env
+*.env.local
+*.env.production
+*.env.development
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# ===== BUILD E DEPENDÊNCIAS =====
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# ===== OUTROS =====
+.history/
+.yarn/
+.pnp.*
