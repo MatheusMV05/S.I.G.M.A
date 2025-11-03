@@ -209,15 +209,15 @@ public class ReportsController {
         try {
             String query = 
                 "SELECT " +
-                "   CONCAT(LPAD(HOUR(v.data_venda), 2, '0'), 'h') as hour, " +
-                "   HOUR(v.data_venda) as hourNum, " +
+                "   CONCAT(LPAD(HOUR(CONVERT_TZ(v.data_venda, '+00:00', '-03:00')), 2, '0'), 'h') as hour, " +
+                "   HOUR(CONVERT_TZ(v.data_venda, '+00:00', '-03:00')) as hourNum, " +
                 "   COUNT(DISTINCT v.id_venda) as sales, " +
                 "   COALESCE(SUM(v.valor_total), 0) as revenue " +
                 "FROM Venda v " +
-                "WHERE DATE(v.data_venda) = CURDATE() " +
+                "WHERE DATE(CONVERT_TZ(v.data_venda, '+00:00', '-03:00')) = CURDATE() " +
                 "  AND v.status = 'CONCLUIDA' " +
-                "GROUP BY HOUR(v.data_venda), CONCAT(LPAD(HOUR(v.data_venda), 2, '0'), 'h') " +
-                "ORDER BY HOUR(v.data_venda) ASC";
+                "GROUP BY HOUR(CONVERT_TZ(v.data_venda, '+00:00', '-03:00')), CONCAT(LPAD(HOUR(CONVERT_TZ(v.data_venda, '+00:00', '-03:00')), 2, '0'), 'h') " +
+                "ORDER BY HOUR(CONVERT_TZ(v.data_venda, '+00:00', '-03:00')) ASC";
 
             List<Map<String, Object>> results = jdbcTemplate.query(query, 
                 (rs, rowNum) -> {
@@ -246,21 +246,42 @@ public class ReportsController {
     @GetMapping("/dashboard-kpis")
     public ResponseEntity<Map<String, Object>> getDashboardKPIs() {
         System.out.println("📊 GET /api/reports/dashboard-kpis - KPIs completos");
+        System.out.println("🕐 Data/Hora do servidor: " + java.time.LocalDateTime.now());
 
         Map<String, Object> kpis = new HashMap<>();
 
         try {
+            // DEBUG: Verificar data atual do MySQL
+            String currentDateQuery = "SELECT CURDATE(), NOW()";
+            jdbcTemplate.query(currentDateQuery, rs -> {
+                System.out.println("📅 MySQL CURDATE(): " + rs.getDate(1));
+                System.out.println("🕐 MySQL NOW(): " + rs.getTimestamp(2));
+            });
+
+            // DEBUG: Contar TODAS as vendas hoje (independente do status)
+            String debugCountQuery = "SELECT COUNT(*), COALESCE(SUM(valor_total), 0) FROM Venda WHERE DATE(CONVERT_TZ(data_venda, '+00:00', '-03:00')) = CURDATE()";
+            jdbcTemplate.query(debugCountQuery, rs -> {
+                System.out.println("🔍 DEBUG: Total vendas hoje (todos status): " + rs.getInt(1) + " | Valor: R$ " + rs.getDouble(2));
+            });
+
+            // DEBUG: Contar vendas CONCLUIDAS hoje
+            String debugConcludedQuery = "SELECT COUNT(*), COALESCE(SUM(valor_total), 0) FROM Venda WHERE DATE(CONVERT_TZ(data_venda, '+00:00', '-03:00')) = CURDATE() AND status = 'CONCLUIDA'";
+            jdbcTemplate.query(debugConcludedQuery, rs -> {
+                System.out.println("✅ DEBUG: Vendas CONCLUIDAS hoje: " + rs.getInt(1) + " | Valor: R$ " + rs.getDouble(2));
+            });
+
             // Faturamento hoje
             String todayRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
-                "WHERE DATE(data_venda) = CURDATE() AND status = 'CONCLUIDA'";
+                "WHERE DATE(CONVERT_TZ(data_venda, '+00:00', '-03:00')) = CURDATE() AND status = 'CONCLUIDA'";
             Double todayRevenue = jdbcTemplate.queryForObject(todayRevenueQuery, Double.class);
             kpis.put("todayRevenue", todayRevenue != null ? todayRevenue : 0.0);
+            System.out.println("💰 Faturamento hoje calculado: R$ " + todayRevenue);
 
             // Faturamento ontem
             String yesterdayRevenueQuery = 
                 "SELECT COALESCE(SUM(valor_total), 0) FROM Venda " +
-                "WHERE DATE(data_venda) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) " +
+                "WHERE DATE(CONVERT_TZ(data_venda, '+00:00', '-03:00')) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) " +
                 "AND status = 'CONCLUIDA'";
             Double yesterdayRevenue = jdbcTemplate.queryForObject(yesterdayRevenueQuery, Double.class);
             kpis.put("yesterdayRevenue", yesterdayRevenue != null ? yesterdayRevenue : 0.0);
@@ -268,14 +289,14 @@ public class ReportsController {
             // Vendas hoje (quantidade)
             String todaySalesQuery = 
                 "SELECT COUNT(*) FROM Venda " +
-                "WHERE DATE(data_venda) = CURDATE() AND status = 'CONCLUIDA'";
+                "WHERE DATE(CONVERT_TZ(data_venda, '+00:00', '-03:00')) = CURDATE() AND status = 'CONCLUIDA'";
             Integer todaySales = jdbcTemplate.queryForObject(todaySalesQuery, Integer.class);
             kpis.put("todaySales", todaySales != null ? todaySales : 0);
 
             // Vendas ontem (quantidade)
             String yesterdaySalesQuery = 
                 "SELECT COUNT(*) FROM Venda " +
-                "WHERE DATE(data_venda) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) " +
+                "WHERE DATE(CONVERT_TZ(data_venda, '+00:00', '-03:00')) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) " +
                 "AND status = 'CONCLUIDA'";
             Integer yesterdaySales = jdbcTemplate.queryForObject(yesterdaySalesQuery, Integer.class);
             kpis.put("yesterdaySales", yesterdaySales != null ? yesterdaySales : 0);

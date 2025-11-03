@@ -28,6 +28,7 @@ import {
 
 import { promotionService } from '@/services/promotionService';
 import { productService } from '@/services/productService';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Tipos
 interface Product {
@@ -82,6 +83,7 @@ interface Promotion {
 
 export default function POS() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -429,7 +431,7 @@ export default function POS() {
 
       // Preparar dados da venda
       const salePayload: SalePayload = {
-        id_funcionario: 1, // TODO: Pegar do contexto
+        id_funcionario: user?.id_pessoa || 101, // ID do usuário logado
         id_cliente: null,
         itens: cart.map(item => {
           const details = getItemPriceDetails(item);

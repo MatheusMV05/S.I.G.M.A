@@ -25,7 +25,13 @@ public class SigmaApplication {
 
 		@Override
 		public void run(String... args) throws Exception {
-			// Update admin password to correct bcrypt hash for "admin"
+			// 1. Garantir que existe a pessoa do admin
+			ensureAdminPessoa();
+			
+			// 2. Garantir que o admin é um funcionário autorizado
+			ensureAdminFuncionario();
+			
+			// 3. Update admin password to correct bcrypt hash for "admin"
 			BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 			String correctPasswordHash = encoder.encode("admin");
 
@@ -39,7 +45,8 @@ public class SigmaApplication {
 					System.out.println("✅ Senha do administrador atualizada com sucesso!");
 					System.out.println("🔑 Login: admin / Senha: admin");
 				} else {
-					System.out.println("ℹ️ Usuário admin não encontrado para atualização.");
+					// Se não atualizou, criar o usuário admin
+					ensureAdminUser(encoder);
 				}
 			} catch (Exception e) {
 				System.out.println("❌ Erro ao atualizar senha do admin: " + e.getMessage());
@@ -47,6 +54,66 @@ public class SigmaApplication {
 
 			// Check database structure and data
 			checkDatabaseStatus();
+		}
+
+		private void ensureAdminPessoa() {
+			try {
+				// Verificar se existe pessoa com ID 101
+				Integer count = jdbcTemplate.queryForObject(
+					"SELECT COUNT(*) FROM Pessoa WHERE id_pessoa = 101", 
+					Integer.class
+				);
+				
+				if (count == 0) {
+					// Criar pessoa admin
+					jdbcTemplate.update(
+						"INSERT INTO Pessoa (id_pessoa, nome, data_nascimento, genero) VALUES (101, 'Administrador do Sistema', '1990-01-01', 'OUTRO')"
+					);
+					System.out.println("✅ Pessoa admin criada (ID: 101)");
+				}
+			} catch (Exception e) {
+				System.out.println("ℹ️ Pessoa admin já existe ou erro ao criar: " + e.getMessage());
+			}
+		}
+
+		private void ensureAdminFuncionario() {
+			try {
+				// Verificar se existe funcionário com ID 101
+				Integer count = jdbcTemplate.queryForObject(
+					"SELECT COUNT(*) FROM Funcionario WHERE id_pessoa = 101", 
+					Integer.class
+				);
+				
+				if (count == 0) {
+					// Criar funcionário admin
+					jdbcTemplate.update(
+						"INSERT INTO Funcionario (id_pessoa, cpf, matricula, salario, cargo, setor, status, data_admissao, turno, tipo_contrato, carga_horaria_semanal) " +
+						"VALUES (101, '000.000.000-00', 'ADM001', 20000.00, 'Administrador', 'TI', 'ATIVO', '2020-01-01', 'INTEGRAL', 'CLT', 44)"
+					);
+					System.out.println("✅ Funcionário admin criado com cargo 'Administrador'");
+				} else {
+					// Atualizar para garantir que tem cargo autorizado
+					jdbcTemplate.update(
+						"UPDATE Funcionario SET cargo = 'Administrador', setor = 'TI', status = 'ATIVO' WHERE id_pessoa = 101"
+					);
+					System.out.println("✅ Funcionário admin atualizado com cargo 'Administrador'");
+				}
+			} catch (Exception e) {
+				System.out.println("❌ Erro ao criar/atualizar funcionário admin: " + e.getMessage());
+			}
+		}
+
+		private void ensureAdminUser(BCryptPasswordEncoder encoder) {
+			try {
+				String passwordHash = encoder.encode("admin");
+				jdbcTemplate.update(
+					"INSERT INTO Usuario (id_pessoa, username, password, role, status) VALUES (101, 'admin', ?, 'ADMIN', 'ATIVO')",
+					passwordHash
+				);
+				System.out.println("✅ Usuário admin criado!");
+			} catch (Exception e) {
+				System.out.println("ℹ️ Usuário admin já existe no sistema.");
+			}
 		}
 
 		private void checkDatabaseStatus() {

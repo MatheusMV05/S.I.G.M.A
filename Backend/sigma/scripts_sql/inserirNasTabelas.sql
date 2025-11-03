@@ -270,6 +270,9 @@ INSERT INTO Telefone (id_pessoa, numero, tipo) VALUES
 -- =================================================================
 
 INSERT INTO Funcionario (id_pessoa, cpf, matricula, salario, cargo, setor, id_supervisor, status, data_admissao, turno, tipo_contrato, carga_horaria_semanal, comissao_percentual, meta_mensal) VALUES
+-- Administrador do Sistema (ID 101 - criado pela aplicação)
+(101, '000.000.000-00', 'ADM001', 20000.00, 'Administrador', 'TI', NULL, 'ATIVO', '2020-01-01', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
+
 -- Diretoria e Gerência
 (1, '123.456.789-01', 'FUN001', 15000.00, 'Diretor Geral', 'Diretoria', NULL, 'ATIVO', '2020-01-15', 'INTEGRAL', 'CLT', 44, 0.00, 0.00),
 (2, '234.567.890-12', 'FUN002', 12000.00, 'Gerente de Vendas', 'Vendas', 1, 'ATIVO', '2020-03-10', 'INTEGRAL', 'CLT', 44, 5.00, 150000.00),

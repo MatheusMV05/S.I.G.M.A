@@ -112,6 +112,11 @@ public class VendaService {
         // Salvar venda
         venda = vendaRepository.save(venda);
         System.out.println("✅ Venda criada com ID: " + venda.getId_venda());
+        System.out.println("   💰 Valor total: R$ " + valorTotal);
+        System.out.println("   💸 Desconto: R$ " + desconto);
+        System.out.println("   💵 Valor final: R$ " + valorFinal);
+        System.out.println("   📅 Data venda: " + venda.getData_venda());
+        System.out.println("   ✅ Status: " + venda.getStatus());
 
         // Criar itens da venda e atualizar estoque
         for (VendaRequestDTO.VendaItemDTO itemDTO : vendaDTO.getItens()) {
