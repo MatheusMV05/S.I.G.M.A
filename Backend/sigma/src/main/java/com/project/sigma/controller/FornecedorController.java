@@ -93,7 +93,8 @@ public class FornecedorController {
             FornecedorDTO novoFornecedor = fornecedorService.criarFornecedor(fornecedorDTO);
             return new ResponseEntity<>(novoFornecedor, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            System.out.println("❌ Erro ao criar fornecedor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
