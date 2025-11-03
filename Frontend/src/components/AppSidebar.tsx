@@ -37,6 +37,7 @@ import {
   EyeOff,
   ChevronUp,
   PieChart,
+  Briefcase,
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -96,6 +97,12 @@ const managementItems = [
     title: 'Funcionários',
     url: '/employees',
     icon: UserCheck,
+    roles: ['ADMIN', 'MANAGER'] as UserRole[],
+  },
+  {
+    title: 'RH',
+    url: '/rh',
+    icon: Briefcase,
     roles: ['ADMIN', 'MANAGER'] as UserRole[],
   },
   {
