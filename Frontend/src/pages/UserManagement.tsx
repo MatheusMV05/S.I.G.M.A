@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useAuth, UserRole, rolePermissions } from '@/contexts/AuthContext';
 import { useUsers } from '@/hooks/useUsers';
+import { useEmployees } from '@/hooks/useEmployees';
 import { UsuarioData } from '@/services/userService';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -60,6 +61,8 @@ export default function UserManagement() {
     deleteUser, 
     refresh 
   } = useUsers();
+  
+  const { employees } = useEmployees();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -193,7 +196,6 @@ export default function UserManagement() {
       email: '',
       cargo: '',
       setor: '',
-      salario: 0,
     });
     setEditMode(false);
     setIsDialogOpen(true);
@@ -208,6 +210,7 @@ export default function UserManagement() {
     setIsSaving(true);
     try {
       if (editMode && formData.id) {
+        // Atualizar usuário existente
         await updateUser(formData.id, formData);
         addNotification({
           type: 'success',
@@ -216,7 +219,7 @@ export default function UserManagement() {
           priority: 'medium'
         });
       } else {
-        // Criar novo usuário requer ID do funcionário
+        // Criar novo usuário - exige ID do funcionário
         if (!formData.id) {
           addNotification({
             type: 'error',
@@ -224,8 +227,21 @@ export default function UserManagement() {
             message: 'É necessário selecionar um funcionário',
             priority: 'high'
           });
+          setIsSaving(false);
           return;
         }
+        
+        if (!formData.username || !formData.password) {
+          addNotification({
+            type: 'error',
+            title: 'Erro',
+            message: 'Username e senha são obrigatórios',
+            priority: 'high'
+          });
+          setIsSaving(false);
+          return;
+        }
+        
         await createUser(formData as UsuarioData);
         addNotification({
           type: 'success',
@@ -411,20 +427,19 @@ export default function UserManagement() {
                 <TableHead>Departamento</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Último Acesso</TableHead>
-                <TableHead>Salário</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     Carregando usuários...
                   </TableCell>
                 </TableRow>
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Nenhum usuário encontrado
                   </TableCell>
                 </TableRow>
@@ -468,14 +483,6 @@ export default function UserManagement() {
                             </span>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium text-success">
-                          {userData.salario 
-                            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(userData.salario)
-                            : '--'
-                          }
-                        </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -552,6 +559,45 @@ export default function UserManagement() {
 
             {/* Dados Básicos */}
             <TabsContent value="basic" className="space-y-4">
+              {!editMode && (
+                <div className="space-y-2">
+                  <Label htmlFor="funcionario">Funcionário *</Label>
+                  <Select 
+                    value={formData.id?.toString() || ''} 
+                    onValueChange={(value) => {
+                      const selectedEmployee = employees.find(emp => emp.id_pessoa === parseInt(value));
+                      if (selectedEmployee) {
+                        setFormData({
+                          ...formData, 
+                          id: selectedEmployee.id_pessoa,
+                          nome: selectedEmployee.nome,
+                          email: selectedEmployee.email || '',
+                          telefone: selectedEmployee.telefones?.[0] || '',
+                          cargo: selectedEmployee.cargo,
+                          setor: selectedEmployee.setor,
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um funcionário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees
+                        .filter(emp => !users.find(u => u.id === emp.id_pessoa))
+                        .map((emp) => (
+                          <SelectItem key={emp.id_pessoa} value={emp.id_pessoa.toString()}>
+                            {emp.nome} - {emp.cargo} ({emp.setor})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione o funcionário para criar um usuário de acesso ao sistema
+                  </p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -561,7 +607,7 @@ export default function UserManagement() {
                       value={formData.nome || ''}
                       onChange={(e) => setFormData({...formData, nome: e.target.value})}
                       placeholder="Ex: João da Silva"
-                      disabled={editMode}
+                      disabled={true}
                     />
                   </div>
 
@@ -573,7 +619,7 @@ export default function UserManagement() {
                       value={formData.email || ''}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       placeholder="joao@comprebem.com"
-                      disabled={editMode}
+                      disabled={true}
                     />
                   </div>
 
@@ -584,7 +630,7 @@ export default function UserManagement() {
                       value={formData.telefone || ''}
                       onChange={(e) => setFormData({...formData, telefone: e.target.value})}
                       placeholder="(11) 99999-9999"
-                      disabled={editMode}
+                      disabled={true}
                     />
                   </div>
                 </div>
@@ -713,21 +759,7 @@ export default function UserManagement() {
                       type="date"
                       value={formData.dataAdmissao || ''}
                       onChange={(e) => setFormData({...formData, dataAdmissao: e.target.value})}
-                      disabled={editMode}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="salario">Salário</Label>
-                    <Input
-                      id="salario"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.salario || ''}
-                      onChange={(e) => setFormData({...formData, salario: parseFloat(e.target.value) || 0})}
-                      placeholder="0.00"
-                      disabled={editMode}
+                      disabled={true}
                     />
                   </div>
                 </div>
@@ -757,6 +789,13 @@ export default function UserManagement() {
                       </div>
                     </>
                   )}
+                  {!editMode && (
+                    <div className="p-4 bg-muted/30 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Nota:</strong> Os dados funcionais (cargo, setor, salário, etc.) são gerenciados no módulo de <strong>Funcionários</strong>.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -773,10 +812,10 @@ export default function UserManagement() {
             <Button 
               onClick={handleSave} 
               className="bg-primary hover:bg-primary-hover"
-              disabled={isSaving}
+              disabled={isSaving || (!editMode && !formData.id)}
             >
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Salvando...' : 'Salvar Usuário'}
+              {isSaving ? 'Salvando...' : (editMode ? 'Salvar Alterações' : 'Criar Usuário')}
             </Button>
           </div>
         </DialogContent>
@@ -849,19 +888,10 @@ export default function UserManagement() {
 
                   <Separator />
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Data de Admissão</Label>
                       <p className="font-medium">{selectedUser.dataAdmissao ? formatDate(selectedUser.dataAdmissao) : '--'}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Salário</Label>
-                      <p className="font-medium text-success">
-                        {selectedUser.salario 
-                          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedUser.salario)
-                          : '--'
-                        }
-                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm text-muted-foreground">Último Acesso</Label>
