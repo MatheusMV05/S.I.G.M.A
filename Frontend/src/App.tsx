@@ -23,6 +23,7 @@ import EmployeesManagement from "@/pages/EmployeesManagement";
 import CategoriesManagementBackend from "@/pages/CategoriesManagementBackend";
 import PromotionsManagement from "@/pages/PromotionsManagement";
 import UserManagement from "@/pages/UserManagement";
+import MyProfile from "@/pages/MyProfile";
 import Charts from "@/pages/Charts";
 import POS from "@/pages/POS";
 import RH from "@/pages/RH";
@@ -112,6 +113,9 @@ function AppRoutes() {
       <Route path="/categories" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER']}><CategoriesManagementBackend /></ProtectedRoute>} />
       <Route path="/promotions" element={<ProtectedRoute requiredRoles={['ADMIN']}><PromotionsManagement /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute requiredRoles={['ADMIN']}><UserManagement /></ProtectedRoute>} />
+      
+      {/* User Profile - Available to all authenticated users */}
+      <Route path="/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
 
       {/* Páginas de erro */}
       <Route

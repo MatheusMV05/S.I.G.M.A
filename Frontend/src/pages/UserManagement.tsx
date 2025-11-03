@@ -493,13 +493,19 @@ export default function UserManagement() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEdit(userData)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {/* Usuários não-ADMIN não podem editar a si mesmos na lista. Devem usar "Meu Perfil" */}
+                          {(user?.role === 'ADMIN' || String(userData.id) !== String(user?.id)) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEdit(userData)}
+                              title={String(userData.id) === String(user?.id) && user?.role !== 'ADMIN' 
+                                ? 'Use "Meu Perfil" para editar suas informações' 
+                                : 'Editar usuário'}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                           {String(userData.id) !== String(user?.id) && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>

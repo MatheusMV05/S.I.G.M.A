@@ -394,14 +394,11 @@ export function AppSidebar() {
                 
                 <DropdownMenuSeparator />
                 
-                <DropdownMenuItem onClick={() => setIsProfileDialogOpen(true)}>
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Minha Conta</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem onClick={() => setIsPasswordDialogOpen(true)}>
-                  <Key className="mr-2 h-4 w-4" />
-                  <span>Trocar Senha</span>
+                <DropdownMenuItem asChild>
+                  <NavLink to="/profile" className="cursor-pointer">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>Meu Perfil</span>
+                  </NavLink>
                 </DropdownMenuItem>
                 
                 <DropdownMenuSeparator />

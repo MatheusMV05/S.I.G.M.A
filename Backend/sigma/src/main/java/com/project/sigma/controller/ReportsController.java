@@ -842,15 +842,16 @@ public class ReportsController {
             String query = 
                 "WITH ClienteValor AS ( " +
                 "    SELECT " +
-                "        c.id_cliente, " +
-                "        c.nome, " +
+                "        c.id_pessoa, " +
+                "        p.nome, " +
                 "        COALESCE(SUM(v.valor_total), 0) as total_gasto, " +
                 "        COALESCE(AVG(v.valor_total), 0) as ticket_medio, " +
                 "        COUNT(v.id_venda) as numero_compras " +
                 "    FROM Cliente c " +
-                "    LEFT JOIN Venda v ON c.id_cliente = v.id_cliente AND v.status = 'CONCLUIDA' " +
+                "    INNER JOIN Pessoa p ON c.id_pessoa = p.id_pessoa " +
+                "    LEFT JOIN Venda v ON c.id_pessoa = v.id_cliente AND v.status = 'CONCLUIDA' " +
                 "    WHERE c.ativo = TRUE " +
-                "    GROUP BY c.id_cliente, c.nome " +
+                "    GROUP BY c.id_pessoa, p.nome " +
                 "), " +
                 "ClienteRanked AS ( " +
                 "    SELECT *, " +
