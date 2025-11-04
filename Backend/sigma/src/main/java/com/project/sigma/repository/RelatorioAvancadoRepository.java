@@ -173,13 +173,17 @@ public class RelatorioAvancadoRepository {
             try {
                 dto.setIdProduto(rs.getInt("id_produto"));
                 dto.setProdutoNome(rs.getString("produto_nome"));
+                dto.setMarca(rs.getString("marca"));
                 dto.setPrecoVenda(rs.getBigDecimal("preco_venda"));
-                dto.setQuantidadeEstoque(rs.getInt("estoque"));
+                dto.setEstoque(rs.getInt("estoque"));
                 dto.setCategoriaNome(rs.getString("categoria_nome"));
-                dto.setValorEstoqueParado(rs.getBigDecimal("valor_potencial_venda"));
+                dto.setFornecedorNome(rs.getString("fornecedor_nome"));
+                dto.setValorInvestido(rs.getBigDecimal("valor_investido"));
+                dto.setValorPotencialVenda(rs.getBigDecimal("valor_potencial_venda"));
+                dto.setDiasSemVenda(rs.getInt("dias_sem_venda"));
                 
                 System.out.println("📦 Mapeado produto: " + dto.getProdutoNome() + 
-                    " (ID: " + dto.getIdProduto() + ", Estoque: " + dto.getQuantidadeEstoque() + ")");
+                    " (ID: " + dto.getIdProduto() + ", Estoque: " + dto.getEstoque() + ")");
             } catch (Exception e) {
                 System.err.println("❌ Erro ao mapear produto: " + e.getMessage());
                 e.printStackTrace();
@@ -206,14 +210,19 @@ public class RelatorioAvancadoRepository {
     private RowMapper<ClienteVIPDTO> clienteVIPRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             ClienteVIPDTO dto = new ClienteVIPDTO();
-            dto.setIdCliente(rs.getInt("id_pessoa"));
+            dto.setIdPessoa(rs.getLong("id_pessoa"));
             dto.setClienteNome(rs.getString("cliente_nome"));
-            dto.setCpf(rs.getString("cliente_email")); // Usando email temporariamente
-            dto.setTelefone(rs.getString("tipo_pessoa")); // Placeholder
+            dto.setClienteEmail(rs.getString("cliente_email"));
+            dto.setTipoPessoa(rs.getString("tipo_pessoa"));
+            dto.setRanking(rs.getInt("ranking"));
+            dto.setTotalGasto(rs.getBigDecimal("total_gasto"));
+            dto.setDataUltimaCompra(rs.getDate("data_ultima_compra") != null ? 
+                rs.getDate("data_ultima_compra").toLocalDate() : null);
             dto.setTotalCompras(rs.getLong("total_compras"));
             dto.setTicketMedio(rs.getBigDecimal("ticket_medio"));
-            dto.setValorTotalGasto(rs.getBigDecimal("total_gasto"));
-            dto.setMediaComprasGeral(rs.getBigDecimal("media_gasto_geral"));
+            dto.setMediaGastoGeral(rs.getBigDecimal("media_gasto_geral"));
+            dto.setDiferencaMedia(rs.getBigDecimal("diferenca_media"));
+            dto.setPercentualAcimaMedia(rs.getBigDecimal("percentual_acima_media"));
             return dto;
         };
     }
