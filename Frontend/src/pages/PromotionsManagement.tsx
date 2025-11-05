@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Importado useEffect e useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import { DesktopOnlyPage } from '@/components/DesktopOnlyPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,16 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+// IMPORTAÇÕES ADICIONADAS
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import {
   Percent,
   Plus,
@@ -151,6 +161,7 @@ export default function PromotionsManagement() {
       setPromotions(response.content as unknown as Promotion[]); // Atualiza a interface
       setPagination({
         ...pagination,
+        page: response.number, // Garante que a página atual vinda do backend seja definida
         totalPages: response.totalPages,
         totalElements: response.totalElements,
       });
@@ -468,6 +479,76 @@ export default function PromotionsManagement() {
     return { totalLoaded, activeLoaded, applicationsLoaded, salesLoaded };
   }, [promotions, pagination]);
 
+  // ----- INÍCIO DAS FUNÇÕES DE PAGINAÇÃO -----
+
+  const handlePageChange = (newPage: number) => {
+    // A API espera 0-indexado
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination.page < pagination.totalPages - 1) {
+      setPagination(prev => ({ ...prev, page: prev.page + 1 }));
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (pagination.page > 0) {
+      setPagination(prev => ({ ...prev, page: prev.page - 1 }));
+    }
+  };
+
+  // Hook para criar a lista de páginas com "..."
+  const paginationRange = useMemo(() => {
+    const totalPages = pagination.totalPages;
+    const currentPage = pagination.page;
+    const siblingCount = 1; // Quantos números de página ao lado do atual
+
+    const totalPageNumbersToShow = siblingCount + 5; // 1 (atual) + 2 (siblings) + 2 (ellipsis) + 2 (primeira/última)
+
+    // 1. Se o total de páginas for menor que os números que queremos mostrar
+    if (totalPages <= totalPageNumbersToShow) {
+      return [...Array(totalPages).keys()]; // [0, 1, 2, ..., totalPages-1]
+    }
+
+    // 2. Calcular índices dos "irmãos"
+    const leftSiblingIndex = Math.max(currentPage - siblingCount, 0);
+    const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages - 1);
+
+    const shouldShowLeftEllipsis = leftSiblingIndex > 1;
+    const shouldShowRightEllipsis = rightSiblingIndex < totalPages - 2;
+
+    const firstPageIndex = 0;
+    const lastPageIndex = totalPages - 1;
+
+    // 3. Montar o range
+    // (Não mostra '...', mostra só o range da direita)
+    if (!shouldShowLeftEllipsis && shouldShowRightEllipsis) {
+      let leftItemCount = 3 + 2 * siblingCount;
+      let leftRange = Array.from({ length: leftItemCount }, (_, i) => i);
+      return [...leftRange, '...', lastPageIndex];
+    }
+
+    // (Não mostra '...', mostra só o range da esquerda)
+    if (shouldShowLeftEllipsis && !shouldShowRightEllipsis) {
+      let rightItemCount = 3 + 2 * siblingCount;
+      let rightRange = Array.from({ length: rightItemCount }, (_, i) => totalPages - rightItemCount + i);
+      return [firstPageIndex, '...', ...rightRange];
+    }
+
+    // (Mostra os dois '...')
+    if (shouldShowLeftEllipsis && shouldShowRightEllipsis) {
+      let middleRange = Array.from({ length: (rightSiblingIndex - leftSiblingIndex) + 1 }, (_, i) => leftSiblingIndex + i);
+      return [firstPageIndex, '...', ...middleRange, '...', lastPageIndex];
+    }
+
+    return []; // Fallback
+  }, [pagination.page, pagination.totalPages]);
+
+  // ----- FIM DAS FUNÇÕES DE PAGINAÇÃO -----
+
 
   return (
     <div className="p-6 space-y-6">
@@ -766,7 +847,57 @@ export default function PromotionsManagement() {
         })}
       </div>
       
-      {/* TODO: Adicionar Controles de Paginação aqui */}
+      {/* ----- INÍCIO DA SEÇÃO DE PAGINAÇÃO ADICIONADA ----- */}
+      {!isLoading && pagination.totalPages > 1 && (
+        <div className="flex justify-center pt-6">
+          <Pagination>
+            <PaginationContent>
+              {/* Botão Anterior */}
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); handlePreviousPage(); }}
+                  // Desabilita se for a primeira página (página 0)
+                  className={pagination.page === 0 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+              {/* Números da Página e Elipses */}
+              {paginationRange.map((page, index) => {
+                // Se for '...', renderiza a elipse
+                if (page === '...') {
+                  return <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>;
+                }
+                
+                const pageIndex = page as number;
+                return (
+                  <PaginationItem key={pageIndex}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); handlePageChange(pageIndex); }}
+                      isActive={pagination.page === pageIndex}
+                    >
+                      {/* Adiciona +1 para mostrar ao usuário (ex: 1, 2, 3) */}
+                      {pageIndex + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              {/* Botão Próximo */}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); handleNextPage(); }}
+                  // Desabilita se for a última página
+                  className={pagination.page === pagination.totalPages - 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+      {/* ----- FIM DA SEÇÃO DE PAGINAÇÃO ADICIONADA ----- */}
 
 
       {/* Dialog de Cadastro/Edição (Atualizado para nomes do backend) */}
@@ -1033,8 +1164,7 @@ export default function PromotionsManagement() {
                     <div>
                       <h4 className="font-semibold mb-3">Produtos com Desconto:</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {/* 
-                          1. Usar 'availableProducts' (estado da API)
+                        {/* 1. Usar 'availableProducts' (estado da API)
                           2. Filtrar por 'product.id_produto'
                           3. Usar 'product.nome' e 'product.preco_venda'
                         */}
