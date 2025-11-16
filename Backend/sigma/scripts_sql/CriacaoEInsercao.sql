@@ -1918,13 +1918,12 @@ SELECT
     p.preco_venda,
     COALESCE(c.nome, 'Sem Categoria') AS categoria_nome,
     COALESCE(f.nome_fantasia, 'Sem Fornecedor') AS fornecedor_nome,
-    COALESCE(pf.telefone, 'N/A') AS fornecedor_telefone,
+    COALESCE(f.telefone, 'N/A') AS fornecedor_telefone,
     p.data_validade,
     p.data_cadastro
 FROM Produto p
          LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
          LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor
-         LEFT JOIN Pessoa pf ON f.id_pessoa = pf.id_pessoa
 WHERE p.status = 'ATIVO'
   AND (
     p.estoque = 0  -- Sem estoque
