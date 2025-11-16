@@ -47,13 +47,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             username = jwtService.extractUsername(jwt);
+            
+            logger.info("🔐 JWT Auth Filter - Username extraído: " + username);
 
             // Verifica se o usuário não está já autenticado nesta sessão/requisição
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                
+                logger.info("🔐 JWT Auth Filter - UserDetails carregado: " + userDetails.getUsername());
+                logger.info("🔐 JWT Auth Filter - Authorities: " + userDetails.getAuthorities());
 
                 // Se o token for válido, precisamos atualizar o SecurityContext
                 if (jwtService.isTokenValid(jwt, userDetails)) {
+                    logger.info("✅ JWT Auth Filter - Token válido para: " + username);
                     // Cria o token de autenticação com os detalhes do usuário e suas permissões
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
@@ -68,11 +74,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                     // Atualiza o SecurityContextHolder. Agora o Spring sabe que o usuário está autenticado.
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.info("✅ JWT Auth Filter - SecurityContext atualizado para: " + username);
+                } else {
+                    logger.warn("❌ JWT Auth Filter - Token inválido para: " + username);
                 }
             }
         } catch (ExpiredJwtException e) {
             // Log para o erro de token expirado (opcional, mas bom para debug)
-            logger.warn("Erro no filtro JWT: " + e.getMessage());
+            logger.warn("❌ JWT Auth Filter - Token expirado: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("❌ JWT Auth Filter - Erro geral: " + e.getMessage(), e);
         }
 
         // Continua para o próximo filtro na cadeia

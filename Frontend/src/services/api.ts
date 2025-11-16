@@ -17,10 +17,21 @@ export const apiRequest = async <T>(
 ): Promise<T> => {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  // Mesclar headers corretamente - os headers de autenticação não devem ser sobrescritos
+  const authHeaders = getAuthHeaders();
   const config: RequestInit = {
-    headers: getAuthHeaders(),
     ...options,
+    headers: {
+      ...authHeaders,
+      ...(options.headers || {}),
+    },
   };
+
+  // Debug: log headers being sent (apenas em desenvolvimento)
+  if (import.meta.env.DEV && options.method === 'POST') {
+    console.log(`📤 Sending ${options.method} to ${endpoint}`);
+    console.log('📤 Headers:', config.headers);
+  }
 
   try {
     const response = await fetch(url, config);
@@ -30,18 +41,31 @@ export const apiRequest = async <T>(
       console.error(`HTTP ${response.status} on ${endpoint}`);
       console.error('Headers sent:', config.headers);
       console.error('Token present:', !!localStorage.getItem('auth_token'));
+      console.error('Token value (first 20 chars):', localStorage.getItem('auth_token')?.substring(0, 20));
       
       // Tentar extrair mensagem de erro do backend
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {
         const errorData = await response.json();
+        console.error('📛 Error response data:', errorData);
         if (errorData.error) {
           errorMessage = errorData.error;
         } else if (errorData.message) {
           errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
         }
       } catch (e) {
-        // Se não conseguir parsear JSON, usar mensagens padrão
+        // Se não conseguir parsear JSON, tentar ler como texto
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            console.error('📛 Error response text:', errorText);
+            errorMessage = errorText;
+          }
+        } catch (e2) {
+          // Usar mensagem padrão
+        }
       }
       
       if (response.status === 403) {

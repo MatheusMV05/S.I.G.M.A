@@ -72,10 +72,10 @@ const RHPage = () => {
 
   // Hooks reais
   const { employees, loading: loadingEmployees } = useEmployees();
-  const { historicos, loading: loadingHistorico } = useHistoricoFuncionario();
-  const { documentos, loading: loadingDocumentos, fetchVencidos, fetchVencendoEm, fetchStatusDocumentos } = useDocumentosFuncionario();
-  const { ferias, loading: loadingFerias, fetchStatusFerias, fetchProgramadasProximos } = useFeriasFuncionario();
-  const { pontos, loading: loadingPontos } = usePontoEletronico();
+  const { historicos, loading: loadingHistorico, createHistorico } = useHistoricoFuncionario();
+  const { documentos, loading: loadingDocumentos, fetchVencidos, fetchVencendoEm, fetchStatusDocumentos, createDocumento } = useDocumentosFuncionario();
+  const { ferias, loading: loadingFerias, fetchStatusFerias, fetchProgramadasProximos, createFerias } = useFeriasFuncionario();
+  const { pontos, loading: loadingPontos, createPonto } = usePontoEletronico();
 
   // Estados para estatísticas
   const [statusDocumentos, setStatusDocumentos] = useState({ total: 0, validos: 0, vencidos: 0, aVencer: 0 });
@@ -770,14 +770,505 @@ const RHPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Modals - Adicionar depois com os hooks reais */}
+      {/* Modal de Novo Evento no Histórico */}
       <Dialog open={isHistoricoModalOpen} onOpenChange={setIsHistoricoModalOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Registrar Novo Evento</DialogTitle>
             <DialogDescription>Adicione um novo evento ao histórico do funcionário</DialogDescription>
           </DialogHeader>
-          {/* Form content aqui */}
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const historico = {
+              idFuncionario: Number(formData.get('idFuncionario')),
+              tipoEvento: formData.get('tipoEvento') as any,
+              dataEvento: formData.get('dataEvento') as string,
+              cargoAnterior: formData.get('cargoAnterior') as string || undefined,
+              cargoNovo: formData.get('cargoNovo') as string || undefined,
+              setorAnterior: formData.get('setorAnterior') as string || undefined,
+              setorNovo: formData.get('setorNovo') as string || undefined,
+              salarioAnterior: formData.get('salarioAnterior') ? Number(formData.get('salarioAnterior')) : undefined,
+              salarioNovo: formData.get('salarioNovo') ? Number(formData.get('salarioNovo')) : undefined,
+              descricao: formData.get('descricao') as string || undefined,
+            };
+            try {
+              await createHistorico(historico);
+              setIsHistoricoModalOpen(false);
+              // Recarregar dados
+              window.location.reload();
+            } catch (err: any) {
+              console.error('Erro ao criar evento:', err);
+              const errorMessage = err?.message || 'Erro ao criar evento. Verifique os dados e tente novamente.';
+              alert(errorMessage);
+            }
+          }}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="idFuncionario">Funcionário *</Label>
+                  <Select name="idFuncionario" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o funcionário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.id_pessoa} value={emp.id_pessoa.toString()}>
+                          {emp.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="tipoEvento">Tipo de Evento *</Label>
+                  <Select name="tipoEvento" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ADMISSAO">Admissão</SelectItem>
+                      <SelectItem value="PROMOCAO">Promoção</SelectItem>
+                      <SelectItem value="MUDANCA_SETOR">Mudança de Setor</SelectItem>
+                      <SelectItem value="MUDANCA_CARGO">Mudança de Cargo</SelectItem>
+                      <SelectItem value="AUMENTO_SALARIAL">Aumento Salarial</SelectItem>
+                      <SelectItem value="DESLIGAMENTO">Desligamento</SelectItem>
+                      <SelectItem value="FERIAS">Férias</SelectItem>
+                      <SelectItem value="AFASTAMENTO">Afastamento</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="dataEvento">Data do Evento *</Label>
+                <Input type="date" name="dataEvento" required />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="cargoAnterior">Cargo Anterior</Label>
+                  <Input type="text" name="cargoAnterior" placeholder="Cargo anterior (se aplicável)" />
+                </div>
+                <div>
+                  <Label htmlFor="cargoNovo">Cargo Novo</Label>
+                  <Input type="text" name="cargoNovo" placeholder="Novo cargo (se aplicável)" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="setorAnterior">Setor Anterior</Label>
+                  <Input type="text" name="setorAnterior" placeholder="Setor anterior (se aplicável)" />
+                </div>
+                <div>
+                  <Label htmlFor="setorNovo">Setor Novo</Label>
+                  <Input type="text" name="setorNovo" placeholder="Novo setor (se aplicável)" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="salarioAnterior">Salário Anterior (R$)</Label>
+                  <Input type="number" step="0.01" name="salarioAnterior" placeholder="0.00" />
+                </div>
+                <div>
+                  <Label htmlFor="salarioNovo">Salário Novo (R$)</Label>
+                  <Input type="number" step="0.01" name="salarioNovo" placeholder="0.00" />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Input type="text" name="descricao" placeholder="Observações sobre o evento" />
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsHistoricoModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Registrar Evento
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Novo Documento */}
+      <Dialog open={isDocumentoModalOpen} onOpenChange={setIsDocumentoModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Adicionar Documento</DialogTitle>
+            <DialogDescription>Cadastre um novo documento do funcionário</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const documento = {
+              idFuncionario: Number(formData.get('idFuncionario')),
+              tipoDocumento: formData.get('tipoDocumento') as any,
+              numeroDocumento: formData.get('numeroDocumento') as string,
+              dataEmissao: formData.get('dataEmissao') as string || undefined,
+              dataValidade: formData.get('dataValidade') as string || undefined,
+              observacoes: formData.get('observacoes') as string || undefined,
+            };
+            try {
+              await createDocumento(documento);
+              setIsDocumentoModalOpen(false);
+              window.location.reload();
+            } catch (err: any) {
+              console.error('Erro ao criar documento:', err);
+              const errorMessage = err?.message || 'Erro ao criar documento. Verifique os dados e tente novamente.';
+              alert(errorMessage);
+            }
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="idFuncionario">Funcionário *</Label>
+                <Select name="idFuncionario" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o funcionário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id_pessoa} value={emp.id_pessoa.toString()}>
+                        {emp.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tipoDocumento">Tipo de Documento *</Label>
+                  <Select name="tipoDocumento" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="RG">RG</SelectItem>
+                      <SelectItem value="CPF">CPF</SelectItem>
+                      <SelectItem value="CTPS">CTPS</SelectItem>
+                      <SelectItem value="CNH">CNH</SelectItem>
+                      <SelectItem value="TITULO_ELEITOR">Título de Eleitor</SelectItem>
+                      <SelectItem value="RESERVISTA">Reservista</SelectItem>
+                      <SelectItem value="PIS_PASEP">PIS/PASEP</SelectItem>
+                      <SelectItem value="CERTIDAO_NASCIMENTO">Certidão de Nascimento</SelectItem>
+                      <SelectItem value="CERTIDAO_CASAMENTO">Certidão de Casamento</SelectItem>
+                      <SelectItem value="COMPROVANTE_RESIDENCIA">Comprovante de Residência</SelectItem>
+                      <SelectItem value="OUTRO">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="numeroDocumento">Número do Documento *</Label>
+                  <Input type="text" name="numeroDocumento" required placeholder="Ex: 12.345.678-9" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dataEmissao">Data de Emissão</Label>
+                  <Input type="date" name="dataEmissao" />
+                </div>
+                <div>
+                  <Label htmlFor="dataValidade">Data de Validade</Label>
+                  <Input type="date" name="dataValidade" />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Input type="text" name="observacoes" placeholder="Informações adicionais" />
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsDocumentoModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Adicionar Documento
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Programar Férias */}
+      <Dialog open={isFeriasModalOpen} onOpenChange={setIsFeriasModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Programar Férias</DialogTitle>
+            <DialogDescription>Programe as férias de um funcionário</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            
+            // Parse das datas corretamente
+            const dataInicioStr = formData.get('dataInicioFerias') as string;
+            const dataFimStr = formData.get('dataFimFerias') as string;
+            
+            // Criar objetos Date em UTC para evitar problemas de timezone
+            const dataInicio = new Date(dataInicioStr + 'T00:00:00');
+            const dataFim = new Date(dataFimStr + 'T00:00:00');
+            
+            // Calcular dias de férias (incluindo o primeiro e último dia)
+            const diffTime = Math.abs(dataFim.getTime() - dataInicio.getTime());
+            const diasGozados = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            console.log('📅 Calculando férias:');
+            console.log('  Data Início:', dataInicioStr, '→', dataInicio);
+            console.log('  Data Fim:', dataFimStr, '→', dataFim);
+            console.log('  Dias Gozados:', diasGozados);
+            
+            // Validação antes de enviar
+            if (diasGozados < 1 || diasGozados > 30) {
+              alert(`Erro: Quantidade de dias deve estar entre 1 e 30. Você selecionou ${diasGozados} dias.`);
+              return;
+            }
+            
+            const ferias = {
+              idFuncionario: Number(formData.get('idFuncionario')),
+              periodoAquisitivoInicio: formData.get('periodoAquisitivoInicio') as string || undefined,
+              periodoAquisitivoFim: formData.get('periodoAquisitivoFim') as string || undefined,
+              dataInicioFerias: dataInicioStr,
+              dataFimFerias: dataFimStr,
+              diasGozados: diasGozados,
+              abonoPecuniario: formData.get('abonoPecuniario') === 'on',
+              statusFerias: 'PROGRAMADAS' as any,
+              observacoes: formData.get('observacoes') as string || undefined,
+            };
+            
+            console.log('📤 Enviando férias:', ferias);
+            
+            try {
+              await createFerias(ferias);
+              setIsFeriasModalOpen(false);
+              window.location.reload();
+            } catch (err: any) {
+              console.error('Erro ao programar férias:', err);
+              const errorMessage = err?.message || 'Erro ao programar férias. Verifique os dados e tente novamente.';
+              alert(errorMessage);
+            }
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="idFuncionario">Funcionário *</Label>
+                <Select name="idFuncionario" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o funcionário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id_pessoa} value={emp.id_pessoa.toString()}>
+                        {emp.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="periodoAquisitivoInicio">Período Aquisitivo - Início</Label>
+                  <Input type="date" name="periodoAquisitivoInicio" />
+                </div>
+                <div>
+                  <Label htmlFor="periodoAquisitivoFim">Período Aquisitivo - Fim</Label>
+                  <Input type="date" name="periodoAquisitivoFim" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dataInicioFerias">Data Início das Férias *</Label>
+                  <Input type="date" name="dataInicioFerias" required />
+                </div>
+                <div>
+                  <Label htmlFor="dataFimFerias">Data Fim das Férias *</Label>
+                  <Input type="date" name="dataFimFerias" required />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input 
+                  type="checkbox" 
+                  id="abonoPecuniario" 
+                  name="abonoPecuniario"
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="abonoPecuniario" className="cursor-pointer">
+                  Abono Pecuniário (venda de 10 dias)
+                </Label>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Input type="text" name="observacoes" placeholder="Informações adicionais" />
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsFeriasModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Programar Férias
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Registrar Ponto */}
+      <Dialog open={isPontoModalOpen} onOpenChange={setIsPontoModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Registrar Ponto Eletrônico</DialogTitle>
+            <DialogDescription>Registre ou corrija o ponto de um funcionário</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            
+            // Calcular horas trabalhadas e extras
+            const entrada = formData.get('horaEntrada') as string;
+            const saidaAlmoco = formData.get('horaSaidaAlmoco') as string;
+            const retornoAlmoco = formData.get('horaRetornoAlmoco') as string;
+            const saida = formData.get('horaSaida') as string;
+            
+            let horasTrabalhadas = 0;
+            let horasExtras = 0;
+            
+            if (entrada && saida) {
+              const [hE, mE] = entrada.split(':').map(Number);
+              const [hS, mS] = saida.split(':').map(Number);
+              let minutosTrabalhados = (hS * 60 + mS) - (hE * 60 + mE);
+              
+              // Subtrair almoço se informado
+              if (saidaAlmoco && retornoAlmoco) {
+                const [hSA, mSA] = saidaAlmoco.split(':').map(Number);
+                const [hRA, mRA] = retornoAlmoco.split(':').map(Number);
+                const minutosAlmoco = (hRA * 60 + mRA) - (hSA * 60 + mSA);
+                minutosTrabalhados -= minutosAlmoco;
+              }
+              
+              horasTrabalhadas = minutosTrabalhados / 60;
+              
+              // Horas extras (acima de 8h)
+              if (horasTrabalhadas > 8) {
+                horasExtras = horasTrabalhadas - 8;
+                horasTrabalhadas = 8;
+              }
+            }
+            
+            const ponto = {
+              idFuncionario: Number(formData.get('idFuncionario')),
+              dataPonto: formData.get('dataPonto') as string,
+              horaEntrada: entrada || undefined,
+              horaSaidaAlmoco: saidaAlmoco || undefined,
+              horaRetornoAlmoco: retornoAlmoco || undefined,
+              horaSaida: saida || undefined,
+              horasTrabalhadas: horasTrabalhadas,
+              horasExtras: horasExtras,
+              statusPonto: (formData.get('statusPonto') as any) || 'NORMAL',
+              observacoes: formData.get('observacoes') as string || undefined,
+            };
+            try {
+              await createPonto(ponto);
+              setIsPontoModalOpen(false);
+              window.location.reload();
+            } catch (err: any) {
+              console.error('Erro ao registrar ponto:', err);
+              const errorMessage = err?.message || 'Erro ao registrar ponto. Verifique os dados e tente novamente.';
+              alert(errorMessage);
+            }
+          }}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="idFuncionario">Funcionário *</Label>
+                  <Select name="idFuncionario" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o funcionário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.id_pessoa} value={emp.id_pessoa.toString()}>
+                          {emp.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="dataPonto">Data do Ponto *</Label>
+                  <Input type="date" name="dataPonto" required />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="horaEntrada">Entrada</Label>
+                  <Input type="time" name="horaEntrada" placeholder="08:00" />
+                </div>
+                <div>
+                  <Label htmlFor="horaSaidaAlmoco">Saída Almoço</Label>
+                  <Input type="time" name="horaSaidaAlmoco" placeholder="12:00" />
+                </div>
+                <div>
+                  <Label htmlFor="horaRetornoAlmoco">Retorno Almoço</Label>
+                  <Input type="time" name="horaRetornoAlmoco" placeholder="13:00" />
+                </div>
+                <div>
+                  <Label htmlFor="horaSaida">Saída</Label>
+                  <Input type="time" name="horaSaida" placeholder="17:00" />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="statusPonto">Status</Label>
+                <Select name="statusPonto">
+                  <SelectTrigger>
+                    <SelectValue placeholder="NORMAL" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NORMAL">Normal</SelectItem>
+                    <SelectItem value="FALTA">Falta</SelectItem>
+                    <SelectItem value="ATESTADO">Atestado</SelectItem>
+                    <SelectItem value="FERIAS">Férias</SelectItem>
+                    <SelectItem value="FOLGA">Folga</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Input type="text" name="observacoes" placeholder="Informações adicionais" />
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Nota:</strong> As horas trabalhadas e extras serão calculadas automaticamente com base nos horários informados.
+                  Jornada padrão: 8 horas. Horas acima de 8h serão contabilizadas como extras.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsPontoModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Registrar Ponto
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

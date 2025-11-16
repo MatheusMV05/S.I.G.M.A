@@ -38,7 +38,25 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/login", "/api/auth/login", "/api/auth/users", "/api/auth/debug/**").permitAll()
+                        .requestMatchers("/api/ponto-eletronico/**").authenticated()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            System.err.println("🚫 Access Denied - Path: " + request.getRequestURI());
+                            System.err.println("🚫 Access Denied - Method: " + request.getMethod());
+                            System.err.println("🚫 Access Denied - User: " + (request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "Anonymous"));
+                            System.err.println("🚫 Access Denied - Exception: " + accessDeniedException.getMessage());
+                            response.setStatus(403);
+                            response.getWriter().write("{\"error\": \"Acesso negado: " + accessDeniedException.getMessage() + "\"}");
+                        })
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            System.err.println("🔒 Authentication Failed - Path: " + request.getRequestURI());
+                            System.err.println("🔒 Authentication Failed - Method: " + request.getMethod());
+                            System.err.println("🔒 Authentication Failed - Exception: " + authException.getMessage());
+                            response.setStatus(401);
+                            response.getWriter().write("{\"error\": \"Não autenticado: " + authException.getMessage() + "\"}");
+                        })
                 )
                 // --- ADIÇÃO 2: Adicionar o nosso filtro à cadeia de segurança ---
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -25,9 +25,14 @@ public class PontoEletronicoController {
     @PostMapping
     public ResponseEntity<?> criar(@RequestBody PontoEletronico ponto) {
         try {
+            System.out.println("📝 PontoEletronicoController.criar() chamado");
+            System.out.println("📝 Dados recebidos: " + ponto);
             PontoEletronico novoPonto = pontoService.criar(ponto);
+            System.out.println("✅ Ponto criado com sucesso: " + novoPonto.getIdPonto());
             return ResponseEntity.status(HttpStatus.CREATED).body(novoPonto);
         } catch (RuntimeException e) {
+            System.err.println("❌ Erro ao criar ponto: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }

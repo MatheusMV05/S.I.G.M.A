@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ferias-funcionario")
@@ -21,10 +22,21 @@ public class FeriasFuncionarioController {
     @PostMapping
     public ResponseEntity<?> criar(@RequestBody FeriasFuncionario ferias) {
         try {
+            System.out.println("📝 FeriasFuncionarioController.criar() chamado");
+            System.out.println("📝 ID Funcionário: " + ferias.getIdFuncionario());
+            System.out.println("📝 Data Início: " + ferias.getDataInicioFerias());
+            System.out.println("📝 Data Fim: " + ferias.getDataFimFerias());
+            System.out.println("📝 Dias Gozados: " + ferias.getDiasGozados());
+            System.out.println("📝 Abono Pecuniário: " + ferias.getAbonoPecuniario());
+            System.out.println("📝 Status: " + ferias.getStatusFerias());
+            
             FeriasFuncionario novasFerias = feriasService.criar(ferias);
+            System.out.println("✅ Férias criadas com sucesso: ID " + novasFerias.getIdFerias());
             return ResponseEntity.status(HttpStatus.CREATED).body(novasFerias);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            System.err.println("❌ Erro ao criar férias: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 
