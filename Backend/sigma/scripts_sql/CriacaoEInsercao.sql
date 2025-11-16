@@ -618,404 +618,6 @@ CREATE INDEX idx_alerta_prioridade ON Alerta(prioridade);
 CREATE INDEX idx_alerta_lido ON Alerta(lido);
 CREATE INDEX idx_alerta_data ON Alerta(data_criacao);
 
--- =================================================================
--- TRIGGERS PARA AUTOMAÇÃO
--- =================================================================
-
-DELIMITER //
-
--- Trigger para calcular margem de lucro automaticamente
-CREATE TRIGGER trg_produto_calcular_margem
-    BEFORE INSERT ON Produto
-    FOR EACH ROW
-BEGIN
-    IF NEW.preco_custo > 0 THEN
-        SET NEW.margem_lucro = ((NEW.preco_venda - NEW.preco_custo) / NEW.preco_custo) * 100;
-END IF;
-END//
-
-CREATE TRIGGER trg_produto_calcular_margem_update
-    BEFORE UPDATE ON Produto
-    FOR EACH ROW
-BEGIN
-    IF NEW.preco_custo > 0 THEN
-        SET NEW.margem_lucro = ((NEW.preco_venda - NEW.preco_custo) / NEW.preco_custo) * 100;
-END IF;
-END//
-
--- Trigger para criar alerta de estoque baixo
-CREATE TRIGGER trg_alerta_estoque_baixo
-    AFTER UPDATE ON Produto
-    FOR EACH ROW
-BEGIN
-    IF NEW.estoque <= NEW.estoque_minimo AND OLD.estoque > OLD.estoque_minimo THEN
-        INSERT INTO Alerta (tipo, prioridade, titulo, mensagem, id_produto)
-        VALUES (
-            'ESTOQUE_BAIXO', 
-            'ALTA',
-            CONCAT('Estoque baixo: ', NEW.nome),
-            CONCAT('O produto "', NEW.nome, '" está com estoque de ', NEW.estoque, 
-                   ' unidades. Estoque mínimo: ', NEW.estoque_minimo, ' unidades.'),
-            NEW.id_produto
-        );
-END IF;
-END//
-
--- Trigger para atualizar total_gasto do cliente
-CREATE TRIGGER trg_venda_atualizar_cliente
-    AFTER INSERT ON Venda
-    FOR EACH ROW
-BEGIN
-    IF NEW.id_cliente IS NOT NULL AND NEW.status = 'CONCLUIDA' THEN
-    UPDATE Cliente
-    SET total_gasto = total_gasto + NEW.valor_final,
-        data_ultima_compra = DATE(NEW.data_venda)
-    WHERE id_pessoa = NEW.id_cliente;
-END IF;
-END//
-
--- Trigger para reverter total_gasto quando venda cancelada
-CREATE TRIGGER trg_venda_cancelada_atualizar_cliente
-    AFTER UPDATE ON Venda
-    FOR EACH ROW
-BEGIN
-    IF OLD.status = 'CONCLUIDA' AND NEW.status = 'CANCELADA' AND NEW.id_cliente IS NOT NULL THEN
-    UPDATE Cliente
-    SET total_gasto = total_gasto - NEW.valor_final
-    WHERE id_pessoa = NEW.id_cliente;
-END IF;
-END//
-
--- Trigger para atualizar valores do caixa
-CREATE TRIGGER trg_venda_atualizar_caixa
-    AFTER INSERT ON Venda
-    FOR EACH ROW
-BEGIN
-    IF NEW.id_caixa IS NOT NULL AND NEW.status = 'CONCLUIDA' THEN
-    UPDATE Caixa
-    SET valor_vendas = valor_vendas + NEW.valor_final
-    WHERE id_caixa = NEW.id_caixa;
-END IF;
-END//
-
--- Trigger para atualizar valores em movimentações de caixa
-CREATE TRIGGER trg_movimentacao_caixa_atualizar
-    AFTER INSERT ON MovimentacaoCaixa
-    FOR EACH ROW
-BEGIN
-    IF NEW.tipo = 'SANGRIA' THEN
-    UPDATE Caixa
-    SET valor_sangrias = valor_sangrias + NEW.valor
-    WHERE id_caixa = NEW.id_caixa;
-    ELSEIF NEW.tipo = 'REFORCO' THEN
-    UPDATE Caixa
-    SET valor_reforcos = valor_reforcos + NEW.valor
-    WHERE id_caixa = NEW.id_caixa;
-END IF;
-END//
-
-DELIMITER ;
-
--- =================================================================
--- VIEWS ÚTEIS
--- =================================================================
-
--- View de produtos com estoque baixo
-CREATE OR REPLACE VIEW vw_produtos_estoque_baixo AS
-SELECT
-    p.id_produto,
-    p.nome,
-    p.marca,
-    c.nome as categoria,
-    p.estoque,
-    p.estoque_minimo,
-    (p.estoque_minimo - p.estoque) as deficit,
-    p.preco_custo,
-    ((p.estoque_minimo - p.estoque) * p.preco_custo) as valor_reposicao_necessaria,
-    f.nome_fantasia as fornecedor,
-    f.telefone as telefone_fornecedor
-FROM Produto p
-         LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
-         LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor
-WHERE p.estoque <= p.estoque_minimo
-  AND p.status = 'ATIVO'
-ORDER BY deficit DESC;
-
--- View de vendas diárias
-CREATE OR REPLACE VIEW vw_vendas_diarias AS
-SELECT
-    DATE(v.data_venda) as data,
-    COUNT(v.id_venda) as quantidade_vendas,
-    SUM(v.valor_total) as valor_total,
-    SUM(v.desconto) as desconto_total,
-    SUM(v.valor_final) as faturamento,
-    AVG(v.valor_final) as ticket_medio
-FROM Venda v
-WHERE v.status = 'CONCLUIDA'
-GROUP BY DATE(v.data_venda)
-ORDER BY data DESC;
-
--- =================================================================
--- VIEWS DE RH E FUNCIONÁRIOS
--- =================================================================
-
--- View de funcionários com informações completas
-CREATE OR REPLACE VIEW vw_funcionarios_completo AS
-SELECT 
-    f.id_pessoa,
-    f.matricula,
-    p.nome,
-    p.email,
-    CONCAT(p.rua, ', ', IFNULL(p.numero, 'S/N'), ' - ', IFNULL(p.bairro, ''), ', ', IFNULL(p.cidade, ''), ' - ', IFNULL(p.cep, '')) as endereco_completo,
-    f.cargo,
-    f.setor,
-    f.salario,
-    f.turno,
-    f.tipo_contrato,
-    f.carga_horaria_semanal,
-    f.comissao_percentual,
-    f.meta_mensal,
-    f.status,
-    f.data_admissao,
-    f.data_desligamento,
-    TIMESTAMPDIFF(MONTH, f.data_admissao, COALESCE(f.data_desligamento, CURDATE())) as meses_empresa,
-    TIMESTAMPDIFF(YEAR, f.data_admissao, COALESCE(f.data_desligamento, CURDATE())) as anos_empresa,
-    sup.nome as nome_supervisor,
-    sup_f.cargo as cargo_supervisor,
-    (SELECT GROUP_CONCAT(t.numero SEPARATOR ', ') 
-     FROM Telefone t 
-     WHERE t.id_pessoa = f.id_pessoa) as telefones,
-    (SELECT COUNT(*) 
-     FROM Venda v 
-     WHERE v.id_funcionario = f.id_pessoa 
-     AND MONTH(v.data_venda) = MONTH(CURDATE()) 
-     AND YEAR(v.data_venda) = YEAR(CURDATE())) as vendas_mes_atual,
-    (SELECT COALESCE(SUM(v.valor_final), 0) 
-     FROM Venda v 
-     WHERE v.id_funcionario = f.id_pessoa 
-     AND MONTH(v.data_venda) = MONTH(CURDATE()) 
-     AND YEAR(v.data_venda) = YEAR(CURDATE())) as valor_vendas_mes_atual,
-    u.username as usuario_sistema,
-    u.role as perfil_sistema
-FROM Funcionario f
-INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
-LEFT JOIN Funcionario sup_f ON f.id_supervisor = sup_f.id_pessoa
-LEFT JOIN Pessoa sup ON sup_f.id_pessoa = sup.id_pessoa
-LEFT JOIN Usuario u ON f.id_pessoa = u.id_pessoa;
-
--- View de estatísticas por setor
-CREATE OR REPLACE VIEW vw_estatisticas_setor AS
-SELECT 
-    IFNULL(setor, 'SEM SETOR') as setor,
-    COUNT(*) as total_funcionarios,
-    COUNT(CASE WHEN status = 'ATIVO' THEN 1 END) as funcionarios_ativos,
-    COUNT(CASE WHEN status = 'INATIVO' THEN 1 END) as funcionarios_inativos,
-    AVG(salario) as salario_medio,
-    MIN(salario) as menor_salario,
-    MAX(salario) as maior_salario,
-    SUM(CASE WHEN status = 'ATIVO' THEN salario ELSE 0 END) as folha_pagamento_total
-FROM Funcionario
-GROUP BY setor
-ORDER BY total_funcionarios DESC;
-
--- View de aniversariantes do mês (tempo de empresa)
-CREATE OR REPLACE VIEW vw_aniversariantes_empresa_mes AS
-SELECT 
-    f.id_pessoa,
-    f.matricula,
-    p.nome,
-    p.email,
-    f.cargo,
-    f.setor,
-    YEAR(CURDATE()) - YEAR(f.data_admissao) as anos_empresa,
-    DAY(f.data_admissao) as dia_aniversario,
-    f.data_admissao,
-    (SELECT GROUP_CONCAT(t.numero SEPARATOR ', ') 
-     FROM Telefone t 
-     WHERE t.id_pessoa = f.id_pessoa) as telefones
-FROM Funcionario f
-INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
-WHERE MONTH(f.data_admissao) = MONTH(CURDATE())
-  AND f.status = 'ATIVO'
-ORDER BY DAY(f.data_admissao);
-
--- View de funcionários com férias vencidas
-CREATE OR REPLACE VIEW vw_ferias_vencidas AS
-SELECT 
-    f.id_pessoa,
-    f.matricula,
-    p.nome,
-    f.cargo,
-    f.setor,
-    f.data_admissao,
-    TIMESTAMPDIFF(MONTH, f.data_admissao, CURDATE()) as meses_empresa,
-    COALESCE(
-        (SELECT MAX(ff.periodo_aquisitivo_fim) 
-         FROM FeriasFuncionario ff 
-         WHERE ff.id_funcionario = f.id_pessoa 
-         AND ff.status_ferias = 'CONCLUIDAS'), 
-        f.data_admissao
-    ) as ultima_ferias,
-    TIMESTAMPDIFF(MONTH, 
-        COALESCE(
-            (SELECT MAX(ff.periodo_aquisitivo_fim) 
-             FROM FeriasFuncionario ff 
-             WHERE ff.id_funcionario = f.id_pessoa 
-             AND ff.status_ferias = 'CONCLUIDAS'), 
-            f.data_admissao
-        ), 
-        CURDATE()
-    ) as meses_sem_ferias
-FROM Funcionario f
-INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
-WHERE f.status = 'ATIVO'
-  AND TIMESTAMPDIFF(MONTH, 
-        COALESCE(
-            (SELECT MAX(ff.periodo_aquisitivo_fim) 
-             FROM FeriasFuncionario ff 
-             WHERE ff.id_funcionario = f.id_pessoa 
-             AND ff.status_ferias = 'CONCLUIDAS'), 
-            f.data_admissao
-        ), 
-        CURDATE()
-    ) >= 12
-ORDER BY meses_sem_ferias DESC;
-
--- View de performance de vendas por funcionário
-CREATE OR REPLACE VIEW vw_performance_vendas_funcionario AS
-SELECT 
-    f.id_pessoa,
-    f.matricula,
-    p.nome,
-    f.cargo,
-    f.setor,
-    f.meta_mensal,
-    f.comissao_percentual,
-    COUNT(v.id_venda) as total_vendas_mes,
-    COALESCE(SUM(v.valor_final), 0) as valor_vendas_mes,
-    COALESCE(SUM(v.valor_final), 0) - f.meta_mensal as diferenca_meta,
-    CASE 
-        WHEN f.meta_mensal > 0 THEN 
-            ROUND((COALESCE(SUM(v.valor_final), 0) / f.meta_mensal) * 100, 2)
-        ELSE 0 
-    END as percentual_meta,
-    CASE
-        WHEN f.meta_mensal > 0 AND COALESCE(SUM(v.valor_final), 0) >= f.meta_mensal THEN 'ATINGIU'
-        WHEN f.meta_mensal > 0 AND COALESCE(SUM(v.valor_final), 0) >= (f.meta_mensal * 0.8) THEN 'PROXIMO'
-        WHEN f.meta_mensal > 0 THEN 'ABAIXO'
-        ELSE 'SEM META'
-    END as status_meta,
-    ROUND(COALESCE(SUM(v.valor_final), 0) * (f.comissao_percentual / 100), 2) as comissao_calculada
-FROM Funcionario f
-INNER JOIN Pessoa p ON f.id_pessoa = p.id_pessoa
-LEFT JOIN Venda v ON f.id_pessoa = v.id_funcionario 
-    AND MONTH(v.data_venda) = MONTH(CURDATE())
-    AND YEAR(v.data_venda) = YEAR(CURDATE())
-    AND v.status = 'CONCLUIDA'
-WHERE f.status = 'ATIVO'
-GROUP BY f.id_pessoa, f.matricula, p.nome, f.cargo, f.setor, f.meta_mensal, f.comissao_percentual
-ORDER BY valor_vendas_mes DESC;
-
--- =================================================================
--- PROCEDURES DE RH
--- =================================================================
-
--- Procedure para registrar admissão
-DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS sp_registrar_admissao(
-    IN p_id_funcionario BIGINT,
-    IN p_cargo VARCHAR(100),
-    IN p_setor VARCHAR(100),
-    IN p_salario DECIMAL(10,2),
-    IN p_realizado_por BIGINT
-)
-BEGIN
-    INSERT INTO HistoricoFuncionario (
-        id_funcionario, tipo_evento, data_evento, 
-        cargo_novo, setor_novo, salario_novo, 
-        descricao, realizado_por
-    ) VALUES (
-        p_id_funcionario, 'ADMISSAO', CURDATE(),
-        p_cargo, p_setor, p_salario,
-        CONCAT('Admissão no cargo de ', p_cargo, ' no setor ', p_setor), 
-        p_realizado_por
-    );
-END //
-DELIMITER ;
-
--- Procedure para registrar promoção
-DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS sp_registrar_promocao(
-    IN p_id_funcionario BIGINT,
-    IN p_cargo_anterior VARCHAR(100),
-    IN p_cargo_novo VARCHAR(100),
-    IN p_salario_anterior DECIMAL(10,2),
-    IN p_salario_novo DECIMAL(10,2),
-    IN p_realizado_por BIGINT
-)
-BEGIN
-    -- Registrar no histórico
-    INSERT INTO HistoricoFuncionario (
-        id_funcionario, tipo_evento, data_evento,
-        cargo_anterior, cargo_novo,
-        salario_anterior, salario_novo,
-        descricao, realizado_por
-    ) VALUES (
-        p_id_funcionario, 'PROMOCAO', CURDATE(),
-        p_cargo_anterior, p_cargo_novo,
-        p_salario_anterior, p_salario_novo,
-        CONCAT('Promoção de ', p_cargo_anterior, ' para ', p_cargo_novo, 
-               '. Salário ajustado de R$ ', p_salario_anterior, ' para R$ ', p_salario_novo),
-        p_realizado_por
-    );
-    
-    -- Atualizar data da última promoção
-    UPDATE Funcionario 
-    SET data_ultima_promocao = CURDATE()
-    WHERE id_pessoa = p_id_funcionario;
-END //
-DELIMITER ;
-
--- Procedure para calcular férias disponíveis
-DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS sp_calcular_dias_ferias(
-    IN p_id_funcionario BIGINT,
-    OUT p_dias_disponiveis INT
-)
-BEGIN
-    DECLARE v_meses_trabalhados INT;
-    DECLARE v_dias_gozados INT;
-    
-    -- Calcular meses trabalhados desde a admissão ou última férias
-    SELECT TIMESTAMPDIFF(MONTH, 
-        COALESCE(
-            (SELECT MAX(periodo_aquisitivo_fim) 
-             FROM FeriasFuncionario 
-             WHERE id_funcionario = p_id_funcionario 
-             AND status_ferias = 'CONCLUIDAS'), 
-            (SELECT data_admissao FROM Funcionario WHERE id_pessoa = p_id_funcionario)
-        ), 
-        CURDATE()
-    ) INTO v_meses_trabalhados;
-    
-    -- Calcular dias já gozados no período aquisitivo atual
-    SELECT COALESCE(SUM(dias_gozados), 0) 
-    INTO v_dias_gozados
-    FROM FeriasFuncionario
-    WHERE id_funcionario = p_id_funcionario
-    AND status_ferias IN ('PROGRAMADAS', 'EM_ANDAMENTO', 'CONCLUIDAS')
-    AND periodo_aquisitivo_inicio >= DATE_SUB(CURDATE(), INTERVAL v_meses_trabalhados MONTH);
-    
-    -- Calcular dias disponíveis (2.5 dias por mês trabalhado)
-    SET p_dias_disponiveis = LEAST(30, FLOOR(v_meses_trabalhados * 2.5)) - v_dias_gozados;
-    
-    IF p_dias_disponiveis < 0 THEN
-        SET p_dias_disponiveis = 0;
-    END IF;
-END //
-DELIMITER ;
-
-
 -- TABELA DE AUDITORIA
 
 DROP TABLE IF EXISTS AuditoriaLog;
@@ -2056,3 +1658,892 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- =================================================================
 
 SELECT 'Script de inserção executado com sucesso!' AS Status;
+
+-- ================================================================
+-- FUNÇÕES (FUNCTIONS) DO BANCO DE DADOS
+-- Sistema S.I.G.M.A - Etapa 05
+-- Requisito: 2 funções, pelo menos 1 com estrutura condicional
+-- ================================================================
+
+USE SIGMA;
+
+-- ================================================================
+-- FUNÇÃO 1: Calcular Desconto Progressivo (COM ESTRUTURA CONDICIONAL)
+-- ================================================================
+-- Justificativa: Implementar política de descontos por volume de compra
+-- Retorna percentual de desconto baseado no valor total da compra
+-- Incentiva vendas de maior valor através de descontos progressivos
+--
+-- Regras de Negócio:
+-- - Compras >= R$ 1000,00 = 15% de desconto
+-- - Compras >= R$ 500,00 = 10% de desconto
+-- - Compras >= R$ 200,00 = 5% de desconto
+-- - Compras < R$ 200,00 = Sem desconto
+DELIMITER //
+
+CREATE FUNCTION fn_calcular_desconto_progressivo(valor_compra DECIMAL(10,2))
+    RETURNS DECIMAL(5,2)
+    DETERMINISTIC
+    COMMENT 'Calcula desconto progressivo baseado no valor da compra'
+BEGIN
+    DECLARE desconto DECIMAL(5,2);
+
+    -- Estrutura condicional IF/ELSEIF/ELSE
+    IF valor_compra >= 1000.00 THEN
+        SET desconto = 0.15; -- 15% para compras >= R$1000
+    ELSEIF valor_compra >= 500.00 THEN
+        SET desconto = 0.10; -- 10% para compras >= R$500
+    ELSEIF valor_compra >= 200.00 THEN
+        SET desconto = 0.05; -- 5% para compras >= R$200
+ELSE
+        SET desconto = 0.00; -- Sem desconto para compras < R$200
+END IF;
+
+RETURN desconto;
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- FUNÇÃO 2: Calcular Status de Ranking do Cliente
+-- ================================================================
+-- Justificativa: Classificar clientes automaticamente baseado no histórico de compras
+-- Retorna string com classificação (BRONZE, PRATA, OURO, PLATINA, DIAMANTE)
+-- Útil para segmentação de clientes e programas de fidelidade
+--
+-- Regras de Negócio:
+-- - Total gasto >= R$ 10.000 = DIAMANTE
+-- - Total gasto >= R$ 5.000 = PLATINA
+-- - Total gasto >= R$ 2.000 = OURO
+-- - Total gasto >= R$ 500 = PRATA
+-- - Total gasto < R$ 500 = BRONZE
+DELIMITER //
+
+CREATE FUNCTION fn_classificar_cliente(total_gasto DECIMAL(10,2))
+    RETURNS VARCHAR(20)
+    DETERMINISTIC
+    COMMENT 'Classifica cliente baseado no total gasto'
+BEGIN
+    DECLARE classificacao VARCHAR(20);
+
+    -- Estrutura condicional para classificação
+    IF total_gasto >= 10000.00 THEN
+        SET classificacao = 'DIAMANTE';
+    ELSEIF total_gasto >= 5000.00 THEN
+        SET classificacao = 'PLATINA';
+    ELSEIF total_gasto >= 2000.00 THEN
+        SET classificacao = 'OURO';
+    ELSEIF total_gasto >= 500.00 THEN
+        SET classificacao = 'PRATA';
+ELSE
+        SET classificacao = 'BRONZE';
+END IF;
+
+RETURN classificacao;
+END//
+
+DELIMITER ;
+
+USE SIGMA;
+
+-- Remover índices caso existam
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
+               WHERE table_schema = 'SIGMA'
+               AND table_name = 'Produto'
+               AND index_name = 'idx_produto_fornecedor_status');
+SET @sqlstmt := IF(@exist > 0, 'ALTER TABLE Produto DROP INDEX idx_produto_fornecedor_status', 'SELECT "OK"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
+               WHERE table_schema = 'SIGMA'
+               AND table_name = 'Venda'
+               AND index_name = 'idx_venda_cliente_data');
+SET @sqlstmt := IF(@exist > 0, 'ALTER TABLE Venda DROP INDEX idx_venda_cliente_data', 'SELECT "OK"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ================================================================
+-- ÍNDICE 1: Produtos por Fornecedor e Status
+-- ================================================================
+-- Justificativa: Otimiza consultas que buscam produtos ativos de um fornecedor específico
+-- Usado nas consultas avançadas (FULL OUTER JOIN) e views de estoque
+-- Melhora performance ao filtrar produtos por fornecedor e status simultaneamente
+CREATE INDEX idx_produto_fornecedor_status ON Produto(id_fornecedor, status);
+
+-- ================================================================
+-- ÍNDICE 2: Vendas por Cliente e Data
+-- ================================================================
+-- Justificativa: Acelera consultas de histórico de compras por cliente
+-- Usado nas subconsultas de clientes VIP e relatórios de vendas
+-- Essencial para dashboards que filtram vendas por cliente e período
+CREATE INDEX idx_venda_cliente_data ON Venda(id_cliente, data_venda);
+
+
+-- ================================================================
+-- PROCEDIMENTOS ARMAZENADOS (STORED PROCEDURES)
+-- Sistema S.I.G.M.A - Etapa 05
+-- Requisito: 2 procedimentos (1 para atualização, 1 com CURSOR)
+-- ================================================================
+
+USE SIGMA;
+
+-- ================================================================
+-- PROCEDIMENTO 1: Reajustar Preços por Categoria (ATUALIZAÇÃO DE DADOS)
+-- ================================================================
+-- Justificativa: Permitir reajuste em massa de preços para categorias específicas
+-- Aplica percentual de reajuste (positivo ou negativo) em todos os produtos ativos
+-- Útil para: inflação, mudanças de fornecedor, promoções de categoria, etc.
+--
+-- Parâmetros:
+-- - p_id_categoria: ID da categoria a ser reajustada
+-- - p_percentual: Percentual de reajuste (ex: 10 = +10%, -5 = -5%)
+-- - p_aplicar_custo: Se TRUE, também reajusta o preço de custo
+DELIMITER //
+
+CREATE PROCEDURE sp_reajustar_precos_categoria(
+    IN p_id_categoria BIGINT,
+    IN p_percentual DECIMAL(5,2),
+    IN p_aplicar_custo BOOLEAN
+)
+BEGIN
+    DECLARE v_produtos_atualizados INT DEFAULT 0;
+    DECLARE v_categoria_nome VARCHAR(100);
+    DECLARE v_valor_total_antes DECIMAL(15,2);
+    DECLARE v_valor_total_depois DECIMAL(15,2);
+
+    -- Validações
+    IF p_id_categoria IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'ID da categoria não pode ser NULL';
+END IF;
+
+    IF p_percentual = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Percentual não pode ser zero';
+END IF;
+
+    -- Verificar se categoria existe
+SELECT nome INTO v_categoria_nome
+FROM Categoria
+WHERE id_categoria = p_id_categoria;
+
+IF v_categoria_nome IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Categoria não encontrada';
+END IF;
+
+    -- Calcular valor total ANTES do reajuste
+SELECT COALESCE(SUM(preco_venda * estoque), 0) INTO v_valor_total_antes
+FROM Produto
+WHERE id_categoria = p_id_categoria
+  AND status = 'ATIVO';
+
+-- Atualizar preço de venda
+UPDATE Produto
+SET preco_venda = ROUND(preco_venda * (1 + p_percentual / 100), 2),
+    preco_custo = CASE
+                      WHEN p_aplicar_custo = TRUE
+                          THEN ROUND(preco_custo * (1 + p_percentual / 100), 2)
+                      ELSE preco_custo
+        END
+WHERE id_categoria = p_id_categoria
+  AND status = 'ATIVO';
+
+-- Obter quantidade de produtos atualizados
+SET v_produtos_atualizados = ROW_COUNT();
+
+    -- Calcular valor total DEPOIS do reajuste
+SELECT COALESCE(SUM(preco_venda * estoque), 0) INTO v_valor_total_depois
+FROM Produto
+WHERE id_categoria = p_id_categoria
+  AND status = 'ATIVO';
+
+-- Retornar resultado detalhado
+SELECT
+    v_categoria_nome AS categoria,
+    v_produtos_atualizados AS produtos_reajustados,
+    p_percentual AS percentual_aplicado,
+    p_aplicar_custo AS reajustou_custo,
+    ROUND(v_valor_total_antes, 2) AS valor_estoque_antes,
+    ROUND(v_valor_total_depois, 2) AS valor_estoque_depois,
+    ROUND(v_valor_total_depois - v_valor_total_antes, 2) AS diferenca_valor,
+    NOW() AS data_hora_reajuste;
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- PROCEDIMENTO 2: Gerar Relatório de Produtos Críticos (COM CURSOR)
+-- ================================================================
+-- Justificativa: Identificar produtos que necessitam ação imediata
+-- Utiliza CURSOR para processar individualmente cada produto crítico
+-- Gera relatório detalhado com recomendações específicas de ação
+--
+-- Produtos críticos:
+-- - Estoque zerado
+-- - Estoque abaixo do mínimo
+-- - Produtos próximos ao vencimento (30 dias)
+-- - Produtos sem movimentação há muito tempo
+DELIMITER //
+
+CREATE PROCEDURE sp_relatorio_produtos_criticos()
+BEGIN
+    -- Declaração de variáveis
+    DECLARE v_id_produto BIGINT;
+    DECLARE v_nome VARCHAR(255);
+    DECLARE v_estoque INT;
+    DECLARE v_estoque_minimo INT;
+    DECLARE v_preco_custo DECIMAL(10,2);
+    DECLARE v_preco_venda DECIMAL(10,2);
+    DECLARE v_categoria VARCHAR(100);
+    DECLARE v_fornecedor VARCHAR(255);
+    DECLARE v_telefone_fornecedor VARCHAR(20);
+    DECLARE v_data_validade DATE;
+    DECLARE v_data_cadastro TIMESTAMP;
+    DECLARE done INT DEFAULT FALSE;
+
+    -- Cursor para produtos críticos
+    DECLARE cur_produtos_criticos CURSOR FOR
+SELECT
+    p.id_produto,
+    p.nome,
+    p.estoque,
+    p.estoque_minimo,
+    p.preco_custo,
+    p.preco_venda,
+    COALESCE(c.nome, 'Sem Categoria') AS categoria_nome,
+    COALESCE(f.nome_fantasia, 'Sem Fornecedor') AS fornecedor_nome,
+    COALESCE(pf.telefone, 'N/A') AS fornecedor_telefone,
+    p.data_validade,
+    p.data_cadastro
+FROM Produto p
+         LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
+         LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor
+         LEFT JOIN Pessoa pf ON f.id_pessoa = pf.id_pessoa
+WHERE p.status = 'ATIVO'
+  AND (
+    p.estoque = 0  -- Sem estoque
+        OR p.estoque <= p.estoque_minimo  -- Estoque baixo
+        OR (p.data_validade IS NOT NULL AND p.data_validade <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))  -- Vencendo
+    )
+ORDER BY
+    CASE
+        WHEN p.estoque = 0 THEN 1
+        WHEN p.data_validade IS NOT NULL AND p.data_validade <= CURDATE() THEN 2
+        WHEN p.estoque <= p.estoque_minimo THEN 3
+        ELSE 4
+        END,
+    p.estoque ASC;
+
+-- Handler para fim do cursor
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    -- Criar tabela temporária
+    DROP TEMPORARY TABLE IF EXISTS temp_produtos_criticos;
+    CREATE TEMPORARY TABLE temp_produtos_criticos (
+        id_produto BIGINT,
+        nome_produto VARCHAR(255),
+        categoria VARCHAR(100),
+        estoque_atual INT,
+        estoque_minimo INT,
+        deficit INT,
+        preco_custo DECIMAL(10,2),
+        preco_venda DECIMAL(10,2),
+        valor_reposicao_necessaria DECIMAL(10,2),
+        fornecedor VARCHAR(255),
+        telefone_fornecedor VARCHAR(20),
+        data_validade DATE,
+        dias_ate_vencimento INT,
+        dias_desde_cadastro INT,
+        criticidade VARCHAR(50),
+        motivo_criticidade TEXT,
+        acao_recomendada TEXT,
+        prioridade INT
+    );
+
+    -- Abrir cursor
+OPEN cur_produtos_criticos;
+
+-- Loop através dos produtos
+read_loop: LOOP
+        FETCH cur_produtos_criticos INTO
+            v_id_produto, v_nome, v_estoque, v_estoque_minimo, v_preco_custo,
+            v_preco_venda, v_categoria, v_fornecedor, v_telefone_fornecedor,
+            v_data_validade, v_data_cadastro;
+
+        IF done THEN
+            LEAVE read_loop;
+END IF;
+
+        -- Processar cada produto e inserir na tabela temporária
+INSERT INTO temp_produtos_criticos
+SELECT
+    v_id_produto,
+    v_nome,
+    v_categoria,
+    v_estoque,
+    v_estoque_minimo,
+    GREATEST(0, v_estoque_minimo - v_estoque) AS deficit,
+    v_preco_custo,
+    v_preco_venda,
+    ROUND((v_estoque_minimo - v_estoque) * v_preco_custo, 2) AS valor_reposicao,
+    v_fornecedor,
+    v_telefone_fornecedor,
+    v_data_validade,
+    CASE
+        WHEN v_data_validade IS NOT NULL
+            THEN DATEDIFF(v_data_validade, CURDATE())
+        ELSE NULL
+        END AS dias_vencimento,
+    DATEDIFF(CURDATE(), v_data_cadastro) AS dias_cadastro,
+    -- Classificação de criticidade
+    CASE
+        WHEN v_estoque = 0 THEN 'CRÍTICO - SEM ESTOQUE'
+        WHEN v_data_validade IS NOT NULL AND v_data_validade <= CURDATE() THEN 'CRÍTICO - VENCIDO'
+        WHEN v_data_validade IS NOT NULL AND v_data_validade <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 'URGENTE - VENCE EM 7 DIAS'
+        WHEN v_estoque < (v_estoque_minimo * 0.5) THEN 'URGENTE - ESTOQUE MUITO BAIXO'
+        WHEN v_estoque <= v_estoque_minimo THEN 'ATENÇÃO - ESTOQUE BAIXO'
+        ELSE 'VERIFICAR'
+        END AS criticidade,
+    -- Motivo
+    CONCAT_WS('; ',
+              IF(v_estoque = 0, 'Produto sem estoque', NULL),
+              IF(v_estoque > 0 AND v_estoque <= v_estoque_minimo,
+                 CONCAT('Estoque abaixo do mínimo (', v_estoque, '/', v_estoque_minimo, ')'), NULL),
+              IF(v_data_validade IS NOT NULL AND v_data_validade <= DATE_ADD(CURDATE(), INTERVAL 30 DAY),
+                 CONCAT('Vencimento próximo (', DATEDIFF(v_data_validade, CURDATE()), ' dias)'), NULL)
+    ) AS motivo,
+    -- Ação recomendada
+    CASE
+        WHEN v_estoque = 0 THEN
+            CONCAT('URGENTE: Repor ', v_estoque_minimo, ' unidades imediatamente. Contatar ', v_fornecedor)
+        WHEN v_data_validade IS NOT NULL AND v_data_validade <= CURDATE() THEN
+            'URGENTE: Produto vencido - Remover do estoque e registrar perda'
+        WHEN v_data_validade IS NOT NULL AND v_data_validade <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN
+            'URGENTE: Aplicar promoção ou desconto para liquidar estoque antes do vencimento'
+        WHEN v_estoque <= v_estoque_minimo THEN
+            CONCAT('Repor ', (v_estoque_minimo - v_estoque), ' unidades. Valor necessário: R$ ',
+                   ROUND((v_estoque_minimo - v_estoque) * v_preco_custo, 2))
+        ELSE 'Monitorar'
+        END AS acao,
+    -- Prioridade numérica
+    CASE
+        WHEN v_estoque = 0 THEN 1
+        WHEN v_data_validade IS NOT NULL AND v_data_validade <= CURDATE() THEN 1
+        WHEN v_data_validade IS NOT NULL AND v_data_validade <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 2
+        WHEN v_estoque < (v_estoque_minimo * 0.5) THEN 2
+        WHEN v_estoque <= v_estoque_minimo THEN 3
+        ELSE 4
+        END AS prioridade;
+
+END LOOP;
+
+    -- Fechar cursor
+CLOSE cur_produtos_criticos;
+
+-- Retornar resultados ordenados por prioridade
+SELECT
+    *,
+    criticidade AS status_visual
+FROM temp_produtos_criticos
+ORDER BY prioridade ASC, deficit DESC, dias_ate_vencimento ASC;
+
+-- Resumo executivo
+SELECT
+    COUNT(*) AS total_produtos_criticos,
+    SUM(CASE WHEN criticidade LIKE 'CRÍTICO%' THEN 1 ELSE 0 END) AS criticos,
+    SUM(CASE WHEN criticidade LIKE 'URGENTE%' THEN 1 ELSE 0 END) AS urgentes,
+    SUM(CASE WHEN criticidade LIKE 'ATENÇÃO%' THEN 1 ELSE 0 END) AS atencao,
+    ROUND(SUM(valor_reposicao_necessaria), 2) AS valor_total_reposicao,
+    NOW() AS data_hora_relatorio
+FROM temp_produtos_criticos;
+
+-- Limpar tabela temporária
+DROP TEMPORARY TABLE IF EXISTS temp_produtos_criticos;
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- EXEMPLOS DE USO DOS PROCEDIMENTOS
+-- ================================================================
+
+-- Exemplo 1: Aumentar 10% nos preços da categoria 1 (apenas venda)
+-- CALL sp_reajustar_precos_categoria(1, 10.00, FALSE);
+
+-- Exemplo 2: Reduzir 5% nos preços da categoria 2 (venda e custo)
+-- CALL sp_reajustar_precos_categoria(2, -5.00, TRUE);
+
+-- Exemplo 3: Gerar relatório de produtos críticos
+-- CALL sp_relatorio_produtos_criticos();
+
+-- Exemplo 4: Agendar reajuste de preços (pode ser usado em evento)
+-- CALL sp_reajustar_precos_categoria(1, 3.50, FALSE);
+
+
+   -- ================================================================
+-- TABELA DE LOGS E TRIGGERS (GATILHOS)
+-- Sistema S.I.G.M.A - Etapa 05
+-- Requisito: 2 triggers com justificativa, 1 deve atualizar tabela de logs
+-- ================================================================
+
+USE SIGMA;
+
+-- ================================================================
+-- TABELA: AuditoriaLog (Logs de Auditoria)
+-- ================================================================
+-- Justificativa: Rastreabilidade de todas as alterações críticas no sistema
+-- Armazena histórico completo de INSERT, UPDATE e DELETE em tabelas importantes
+-- Essencial para auditoria, conformidade e recuperação de dados
+CREATE TABLE IF NOT EXISTS AuditoriaLog (
+                                            id_log BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                            tabela_afetada VARCHAR(50) NOT NULL,
+    operacao ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    id_registro BIGINT,
+    id_usuario BIGINT,
+    dados_antigos TEXT,
+    dados_novos TEXT,
+    ip_origem VARCHAR(45),
+    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    descricao VARCHAR(500),
+
+    INDEX idx_tabela_operacao (tabela_afetada, operacao),
+    INDEX idx_data_hora (data_hora),
+    INDEX idx_id_registro (id_registro),
+
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_pessoa) ON DELETE SET NULL
+    ) COMMENT 'Log de auditoria para rastreamento de alterações no banco de dados';
+
+
+-- ================================================================
+-- TRIGGER 1: Atualizar Estoque ao Registrar Venda (Baixa Automática)
+-- ================================================================
+-- Justificativa: Garantir sincronização automática entre vendas e estoque
+-- Ao inserir um item de venda, o estoque é baixado automaticamente
+-- Evita inconsistências e garante controle em tempo real do estoque
+--
+-- Funcionamento:
+-- - Quando VendaItem é inserido, diminui estoque do Produto
+-- - Registra movimentação no log de auditoria
+-- - Valida se há estoque suficiente antes da baixa
+DELIMITER //
+
+CREATE TRIGGER trg_baixar_estoque_venda
+    AFTER INSERT ON VendaItem
+    FOR EACH ROW
+BEGIN
+    DECLARE v_estoque_atual INT;
+    DECLARE v_produto_nome VARCHAR(255);
+
+    -- Buscar estoque atual e nome do produto
+    SELECT estoque, nome INTO v_estoque_atual, v_produto_nome
+    FROM Produto
+    WHERE id_produto = NEW.id_produto;
+
+    -- Verificar se há estoque suficiente
+    IF v_estoque_atual < NEW.quantidade THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Estoque insuficiente para realizar a venda';
+END IF;
+
+-- Atualizar estoque do produto
+UPDATE Produto
+SET estoque = estoque - NEW.quantidade
+WHERE id_produto = NEW.id_produto;
+
+-- Registrar no log de auditoria
+INSERT INTO AuditoriaLog (
+    tabela_afetada,
+    operacao,
+    id_registro,
+    dados_antigos,
+    dados_novos,
+    descricao
+) VALUES (
+             'Produto',
+             'UPDATE',
+             NEW.id_produto,
+             CONCAT('Estoque: ', v_estoque_atual, ' | Produto: ', v_produto_nome),
+             CONCAT('Estoque: ', (v_estoque_atual - NEW.quantidade), ' | Produto: ', v_produto_nome,
+                    ' | Venda ID: ', NEW.id_venda),
+             CONCAT('Baixa automática de ', NEW.quantidade, ' unidade(s) pela venda #', NEW.id_venda)
+         );
+
+-- Registrar movimentação de estoque
+INSERT INTO MovimentacaoEstoque (
+    id_produto,
+    data_movimentacao,
+    tipo,
+    quantidade,
+    estoque_anterior,
+    estoque_atual,
+    observacao
+) VALUES (
+             NEW.id_produto,
+             NOW(),
+             'SALE',
+             NEW.quantidade,
+             v_estoque_atual,
+             v_estoque_atual - NEW.quantidade,
+             CONCAT('Venda #', NEW.id_venda, ' - Item #', NEW.id_venda_item)
+         );
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- TRIGGER 2: Auditoria de Alterações em Produtos (LOG COMPLETO)
+-- ================================================================
+-- Justificativa: Rastrear TODAS as alterações em produtos para auditoria
+-- Registra quem alterou, o que foi alterado e quando
+-- Fundamental para: análise de histórico de preços, controle de estoque, compliance
+--
+-- Funcionalidade:
+-- - Compara valores OLD vs NEW
+-- - Identifica exatamente quais campos foram alterados
+-- - Registra alterações de forma detalhada na tabela AuditoriaLog
+DELIMITER //
+
+CREATE TRIGGER trg_auditoria_produto_update
+    AFTER UPDATE ON Produto
+    FOR EACH ROW
+BEGIN
+    DECLARE v_alteracoes TEXT;
+    DECLARE v_tem_alteracao BOOLEAN DEFAULT FALSE;
+
+    SET v_alteracoes = '';
+
+    -- Detectar alteração no nome
+    IF OLD.nome != NEW.nome THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Nome: "', OLD.nome, '" → "', NEW.nome, '"; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+-- Detectar alteração no preço de venda
+IF OLD.preco_venda != NEW.preco_venda THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Preço Venda: R$',
+                                  FORMAT(OLD.preco_venda, 2), ' → R$', FORMAT(NEW.preco_venda, 2), '; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Detectar alteração no preço de custo
+    IF COALESCE(OLD.preco_custo, 0) != COALESCE(NEW.preco_custo, 0) THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Preço Custo: R$',
+                                  FORMAT(COALESCE(OLD.preco_custo, 0), 2), ' → R$',
+                                  FORMAT(COALESCE(NEW.preco_custo, 0), 2), '; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Detectar alteração no estoque (exceto se for trigger de venda)
+    IF OLD.estoque != NEW.estoque THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Estoque: ', OLD.estoque, ' → ', NEW.estoque, '; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Detectar alteração na categoria
+    IF COALESCE(OLD.id_categoria, 0) != COALESCE(NEW.id_categoria, 0) THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Categoria ID: ',
+                                  COALESCE(OLD.id_categoria, 'NULL'), ' → ',
+                                  COALESCE(NEW.id_categoria, 'NULL'), '; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Detectar alteração no fornecedor
+    IF COALESCE(OLD.id_fornecedor, 0) != COALESCE(NEW.id_fornecedor, 0) THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Fornecedor ID: ',
+                                  COALESCE(OLD.id_fornecedor, 'NULL'), ' → ',
+                                  COALESCE(NEW.id_fornecedor, 'NULL'), '; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Detectar alteração no status
+    IF OLD.status != NEW.status THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Status: ', OLD.status, ' → ', NEW.status, '; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Detectar alteração na margem de lucro
+    IF COALESCE(OLD.margem_lucro, 0) != COALESCE(NEW.margem_lucro, 0) THEN
+        SET v_alteracoes = CONCAT(v_alteracoes, 'Margem Lucro: ',
+                                  FORMAT(COALESCE(OLD.margem_lucro, 0), 2), '% → ',
+                                  FORMAT(COALESCE(NEW.margem_lucro, 0), 2), '%; ');
+        SET v_tem_alteracao = TRUE;
+END IF;
+
+    -- Registrar no log apenas se houve alteração significativa
+    IF v_tem_alteracao THEN
+        INSERT INTO AuditoriaLog (
+            tabela_afetada,
+            operacao,
+            id_registro,
+            dados_antigos,
+            dados_novos,
+            descricao
+        ) VALUES (
+            'Produto',
+            'UPDATE',
+            NEW.id_produto,
+            CONCAT('ID: ', OLD.id_produto, ' | ', v_alteracoes),
+            CONCAT('ID: ', NEW.id_produto, ' | Produto: "', NEW.nome, '" | Status: ', NEW.status),
+            CONCAT('Produto "', NEW.nome, '" atualizado - Alterações: ', v_alteracoes)
+        );
+END IF;
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- TRIGGER 3 (BONUS): Auditoria de Inserção de Produtos
+-- ================================================================
+-- Registra quando novos produtos são cadastrados no sistema
+DELIMITER //
+
+CREATE TRIGGER trg_auditoria_produto_insert
+    AFTER INSERT ON Produto
+    FOR EACH ROW
+BEGIN
+    INSERT INTO AuditoriaLog (
+        tabela_afetada,
+        operacao,
+        id_registro,
+        dados_novos,
+        descricao
+    ) VALUES (
+                 'Produto',
+                 'INSERT',
+                 NEW.id_produto,
+                 CONCAT(
+                         'Nome: "', NEW.nome, '"',
+                         ' | Marca: ', COALESCE(NEW.marca, 'N/A'),
+                         ' | Preço Venda: R$', FORMAT(NEW.preco_venda, 2),
+                         ' | Preço Custo: R$', FORMAT(COALESCE(NEW.preco_custo, 0), 2),
+                         ' | Estoque: ', NEW.estoque,
+                         ' | Categoria ID: ', COALESCE(NEW.id_categoria, 'NULL'),
+                         ' | Status: ', NEW.status
+                 ),
+                 CONCAT('Novo produto cadastrado: "', NEW.nome, '"')
+             );
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- TRIGGER 4 (BONUS): Auditoria de Exclusão de Produtos
+-- ================================================================
+-- Registra quando produtos são removidos do sistema
+DELIMITER //
+
+CREATE TRIGGER trg_auditoria_produto_delete
+    BEFORE DELETE ON Produto
+    FOR EACH ROW
+BEGIN
+    INSERT INTO AuditoriaLog (
+        tabela_afetada,
+        operacao,
+        id_registro,
+        dados_antigos,
+        descricao
+    ) VALUES (
+                 'Produto',
+                 'DELETE',
+                 OLD.id_produto,
+                 CONCAT(
+                         'Nome: "', OLD.nome, '"',
+                         ' | Preço Venda: R$', FORMAT(OLD.preco_venda, 2),
+                         ' | Estoque: ', OLD.estoque,
+                         ' | Status: ', OLD.status
+                 ),
+                 CONCAT('Produto "', OLD.nome, '" removido do sistema')
+             );
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- CONSULTAS ÚTEIS PARA AUDITORIA
+-- ================================================================
+
+-- Ver logs das últimas 24 horas
+-- SELECT * FROM AuditoriaLog
+-- WHERE data_hora >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+-- ORDER BY data_hora DESC;
+
+-- Ver histórico de alterações de um produto específico
+-- SELECT
+--     id_log,
+--     operacao,
+--     descricao,
+--     dados_antigos,
+--     dados_novos,
+--     data_hora
+-- FROM AuditoriaLog
+-- WHERE tabela_afetada = 'Produto'
+--   AND id_registro = 1
+-- ORDER BY data_hora DESC;
+
+-- Ver todas as alterações de preço
+-- SELECT * FROM AuditoriaLog
+-- WHERE tabela_afetada = 'Produto'
+--   AND (dados_antigos LIKE '%Preço Venda%' OR dados_novos LIKE '%Preço Venda%')
+-- ORDER BY data_hora DESC;
+
+-- Estatísticas de auditoria
+-- SELECT
+--     tabela_afetada,
+--     operacao,
+--     COUNT(*) AS total_operacoes,
+--     MAX(data_hora) AS ultima_operacao
+-- FROM AuditoriaLog
+-- GROUP BY tabela_afetada, operacao
+-- ORDER BY total_operacoes DESC;
+
+
+USE SIGMA;
+
+-- ================================================================
+-- VIEW 1: Análise Completa de Vendas com Detalhamento
+-- ================================================================
+-- Justificativa: Consolida informações de 4 tabelas (Venda, Cliente, Pessoa, Funcionario)
+-- para análise gerencial completa de vendas, incluindo perfil do cliente e vendedor
+-- Útil para relatórios de desempenho, comissões e análise de comportamento de compra
+CREATE OR REPLACE VIEW vw_analise_vendas_completa AS
+SELECT
+    -- Dados da Venda
+    v.id_venda,
+    v.data_venda,
+    DATE(v.data_venda) AS data_venda_simples,
+    v.valor_total,
+    v.desconto,
+    v.valor_final,
+    v.metodo_pagamento,
+    v.status AS status_venda,
+
+    -- Dados do Cliente
+    c.id_pessoa AS id_cliente,
+    pc.nome AS cliente_nome,
+    pc.email AS cliente_email,
+    pc.cidade AS cliente_cidade,
+    c.tipo_pessoa,
+    c.ranking AS ranking_cliente,
+    c.total_gasto AS total_gasto_cliente,
+
+    -- Dados do Funcionário/Vendedor
+    f.id_pessoa AS id_funcionario,
+    pf.nome AS vendedor_nome,
+    f.cargo AS vendedor_cargo,
+    f.setor AS vendedor_setor,
+
+    -- Dados do Caixa
+    cx.id_caixa,
+    cx.status AS status_caixa,
+
+    -- Métricas Calculadas
+    ROUND((v.desconto / NULLIF(v.valor_total, 0)) * 100, 2) AS percentual_desconto,
+    ROUND(v.valor_final / NULLIF((SELECT COUNT(*) FROM VendaItem WHERE id_venda = v.id_venda), 0), 2) AS valor_medio_item,
+    (SELECT COUNT(*) FROM VendaItem WHERE id_venda = v.id_venda) AS quantidade_itens,
+    DAYNAME(v.data_venda) AS dia_semana_venda,
+    HOUR(v.data_venda) AS hora_venda
+FROM Venda v
+    INNER JOIN Cliente c ON v.id_cliente = c.id_pessoa
+    INNER JOIN Pessoa pc ON c.id_pessoa = pc.id_pessoa
+    INNER JOIN Funcionario f ON v.id_funcionario = f.id_pessoa
+    INNER JOIN Pessoa pf ON f.id_pessoa = pf.id_pessoa
+    LEFT JOIN Caixa cx ON v.id_caixa = cx.id_caixa;
+
+
+-- ================================================================
+-- VIEW 2: Inventário Completo com Análise de Rentabilidade
+-- ================================================================
+-- Justificativa: Integra 4 tabelas (Produto, Categoria, Fornecedor, Pessoa)
+-- para visão 360° do estoque com análise financeira e logística
+-- Essencial para decisões de compra, reposição e precificação
+CREATE OR REPLACE VIEW vw_inventario_rentabilidade AS
+SELECT
+    -- Dados do Produto
+    p.id_produto,
+    p.nome AS produto_nome,
+    p.marca,
+    p.descricao,
+    p.codigo_barras,
+    p.codigo_interno,
+    p.status AS status_produto,
+
+    -- Preços e Margens
+    p.preco_custo,
+    p.preco_venda,
+    p.margem_lucro AS margem_lucro_percentual,
+    ROUND(p.preco_venda - p.preco_custo, 2) AS lucro_unitario,
+
+    -- Estoque
+    p.estoque,
+    p.estoque_minimo,
+    p.estoque_maximo,
+    p.unidade_medida,
+    p.localizacao_prateleira,
+
+    -- Valores Totais
+    ROUND(p.preco_custo * p.estoque, 2) AS valor_estoque_custo,
+    ROUND(p.preco_venda * p.estoque, 2) AS valor_estoque_venda,
+    ROUND((p.preco_venda - p.preco_custo) * p.estoque, 2) AS lucro_potencial_estoque,
+
+    -- Categoria
+    c.id_categoria,
+    c.nome AS categoria_nome,
+    c.descricao AS categoria_descricao,
+    c.status AS status_categoria,
+
+    -- Fornecedor
+    f.id_fornecedor,
+    f.nome_fantasia AS fornecedor_nome,
+    f.razao_social AS fornecedor_razao_social,
+    f.cnpj AS fornecedor_cnpj,
+    f.telefone AS fornecedor_telefone,
+    f.email AS fornecedor_email,
+    f.cidade AS fornecedor_cidade,
+    f.estado AS fornecedor_estado,
+    f.prazo_entrega_dias,
+    f.avaliacao AS avaliacao_fornecedor,
+    f.status AS status_fornecedor,
+
+    -- Status de Alerta
+    CASE
+        WHEN p.estoque = 0 THEN 'CRÍTICO - SEM ESTOQUE'
+        WHEN p.estoque <= p.estoque_minimo THEN 'ALERTA - ESTOQUE BAIXO'
+        WHEN p.estoque >= p.estoque_maximo THEN 'ATENÇÃO - ESTOQUE ALTO'
+        ELSE 'ESTOQUE NORMAL'
+        END AS status_estoque,
+
+    CASE
+        WHEN p.estoque <= p.estoque_minimo
+            THEN CONCAT('Repor ', (p.estoque_minimo - p.estoque + 10), ' unidades')
+        ELSE 'Estoque adequado'
+        END AS acao_recomendada,
+
+    -- Análise de Rentabilidade
+    CASE
+        WHEN p.margem_lucro >= 50 THEN 'ALTA RENTABILIDADE'
+        WHEN p.margem_lucro >= 30 THEN 'RENTABILIDADE MÉDIA'
+        WHEN p.margem_lucro >= 15 THEN 'RENTABILIDADE BAIXA'
+        ELSE 'RENTABILIDADE CRÍTICA'
+        END AS classificacao_rentabilidade,
+
+    p.data_cadastro,
+    DATEDIFF(CURDATE(), p.data_cadastro) AS dias_desde_cadastro
+
+FROM Produto p
+         LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
+         LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
+
+
+
+

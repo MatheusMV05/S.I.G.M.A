@@ -47,20 +47,20 @@ public class RelatorioAvancadoRepository {
             "ORDER BY valor_investido DESC, dias_sem_venda DESC " +
             "LIMIT ?";
 
-        System.out.println("🔍 Repository: Executando SQL - ANTI JOIN produtos nunca vendidos");
-        System.out.println("📝 SQL: " + sql);
-        System.out.println("🔢 Limit: " + limit);
+        System.out.println(" Repository: Executando SQL - ANTI JOIN produtos nunca vendidos");
+        System.out.println(" SQL: " + sql);
+        System.out.println(" Limit: " + limit);
         
         try {
             List<ProdutoNuncaVendidoDTO> resultado = jdbcTemplate.query(sql, produtoNuncaVendidoRowMapper(), limit);
             
-            System.out.println("✅ Repository: Query executada com sucesso!");
-            System.out.println("📊 Retornando " + resultado.size() + " produtos nunca vendidos");
+            System.out.println(" Repository: Query executada com sucesso!");
+            System.out.println(" Retornando " + resultado.size() + " produtos nunca vendidos");
             
             if (resultado.isEmpty()) {
-                System.out.println("⚠️ ATENÇÃO: Query retornou 0 resultados! Verificar se há produtos que nunca foram vendidos.");
+                System.out.println("⚠ ATENÇÃO: Query retornou 0 resultados! Verificar se há produtos que nunca foram vendidos.");
             } else {
-                System.out.println("📦 IDs dos produtos encontrados:");
+                System.out.println(" IDs dos produtos encontrados:");
                 resultado.forEach(p -> {
                     System.out.println("   - ID: " + p.getIdProduto() + " | " + p.getProdutoNome());
                     
@@ -182,7 +182,7 @@ public class RelatorioAvancadoRepository {
                 dto.setValorPotencialVenda(rs.getBigDecimal("valor_potencial_venda"));
                 dto.setDiasSemVenda(rs.getInt("dias_sem_venda"));
                 
-                System.out.println("📦 Mapeado produto: " + dto.getProdutoNome() + 
+                System.out.println(" Mapeado produto: " + dto.getProdutoNome() +
                     " (ID: " + dto.getIdProduto() + ", Estoque: " + dto.getEstoque() + ")");
             } catch (Exception e) {
                 System.err.println("❌ Erro ao mapear produto: " + e.getMessage());

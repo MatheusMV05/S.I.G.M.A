@@ -2,7 +2,7 @@
 -- SCRIPT COMPLETO - ETAPAS 04 E 05
 -- Sistema S.I.G.M.A - Projeto de Banco de Dados
 -- ================================================================
--- IMPORTANTE: Execute este script APÓS o scriptDeCriaçãoDasTabelas.sql
+-- IMPORTANTE: Executar este script APÓS o scriptDeCriaçãoDasTabelas.sql
 -- 
 -- Conteúdo:
 -- 1. ETAPA 04 - Índices
