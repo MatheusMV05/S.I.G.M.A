@@ -9,7 +9,11 @@
 3. **Executar script SQL** no banco MySQL criado:
    - Arquivo: `Backend/sigma/scripts_sql/CriacaoEInsercao.sql`
 4. **Adicionar repositório GitHub** ao Railway
-5. **Configurar variáveis de ambiente**:
+5. **⚠️ IMPORTANTE - Configurar Root Directory**:
+   - Vá em **Settings** → **Build**
+   - Em **Root Directory**, coloque: `Backend/sigma`
+   - Em **Watch Paths**, coloque: `Backend/sigma/**`
+6. **Configurar variáveis de ambiente**:
    ```env
    DATABASE_URL=jdbc:mysql://[HOST]:[PORT]/[DATABASE]?createDatabaseIfNotExist=true&serverTimezone=UTC&useSSL=false&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
    DATABASE_USERNAME=seu_usuario
@@ -17,10 +21,6 @@
    JWT_SECRET_KEY=sua_chave_secreta_32_caracteres_minimo
    SPRING_PROFILES_ACTIVE=prod
    ```
-6. **Configurar build**:
-   - Root Directory: `Backend/sigma`
-   - Build Command: `mvn clean package -DskipTests`
-   - Start Command: `java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/sigma-0.0.1-SNAPSHOT.jar`
 7. **Deploy** e copiar URL do backend
 
 ### ✅ Frontend (Vercel)

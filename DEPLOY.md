@@ -74,11 +74,12 @@ SPRING_PROFILES_ACTIVE=prod
 openssl rand -hex 32
 ```
 
-6. **Configure o Root Directory** (se necessário):
+6. **⚠️ IMPORTANTE - Configure o Root Directory**:
    - Vá para **"Settings"** → **"Build"**
    - Em **"Root Directory"**, coloque: `Backend/sigma`
-   - Em **"Build Command"**, coloque: `mvn clean package -DskipTests`
-   - Em **"Start Command"**, coloque: `java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/sigma-0.0.1-SNAPSHOT.jar`
+   - Em **"Watch Paths"**, coloque: `Backend/sigma/**`
+   - O Railway usará automaticamente o `nixpacks.toml` e `railway.json` da pasta Backend/sigma
+   - **NÃO** é necessário configurar Build Command e Start Command manualmente (já estão nos arquivos de configuração)
 
 7. Clique em **"Deploy"** e aguarde o build
 8. Após o deploy, copie a URL pública do seu backend (algo como `https://sigma-production.up.railway.app`)
