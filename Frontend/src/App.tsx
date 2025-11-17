@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -28,15 +28,21 @@ import Charts from "@/pages/Charts";
 import POS from "@/pages/POS";
 import RH from "@/pages/RH";
 import NotFound from "./pages/NotFound";
+import LandingPage from "@/pages/LandingPage";
 
 const queryClient = new QueryClient();
 
 // Layout principal da aplicação
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  // Páginas que não devem ter o layout do sistema
+  const noLayoutPages = ['/', '/login'];
+  const isNoLayoutPage = noLayoutPages.includes(location.pathname);
 
   // Tela de carregamento inicial
-  if (isLoading) {
+  if (isLoading && !isNoLayoutPage) {
     return (
       <LoadingScreen 
         variant="fullscreen"
@@ -46,8 +52,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
-    return children;
+  // Landing page e login não precisam de autenticação
+  if (!isAuthenticated || isNoLayoutPage) {
+    return <>{children}</>;
   }
 
   return (
@@ -85,8 +92,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route
         path="/dashboard"
         element={
