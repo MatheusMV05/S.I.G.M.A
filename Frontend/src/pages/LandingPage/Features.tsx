@@ -5,6 +5,7 @@ import {
   Check, ArrowRight, Users, UserCheck, Truck, 
   Receipt, Shield, Smartphone
 } from 'lucide-react';
+import DashboardPreview from './DashboardPreview';
 
 const Features = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -211,41 +212,17 @@ const Features = () => {
                   style={{ backgroundColor: modules[activeTab].color }}
                 />
                 
-                {/* Screenshot placeholder */}
-                <div className="relative z-10 aspect-video bg-gradient-to-br from-[#0A0A0A] to-[#1A0A1A] 
-                              flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center"
-                         style={{ 
-                           backgroundColor: `${modules[activeTab].color}20`,
-                           border: `2px solid ${modules[activeTab].color}40`
-                         }}>
-                      {(() => {
-                        const IconComponent = modules[activeTab].icon;
-                        return <IconComponent className="w-8 h-8" style={{ color: modules[activeTab].color }} />;
-                      })()}
-                    </div>
-                    <p className="text-[#A1A1AA] text-sm">
-                      {modules[activeTab].name} Preview
-                    </p>
-                  </div>
+                {/* Dashboard Preview */}
+                <div className="relative z-10 aspect-video">
+                  <DashboardPreview 
+                    variant={
+                      activeTab === 0 ? 'pdv' : 
+                      activeTab === 1 ? 'estoque' : 
+                      activeTab === 2 ? 'financeiro' : 
+                      'analytics'
+                    } 
+                  />
                 </div>
-
-                {/* Stat Badge */}
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.5, type: "spring" }}
-                  className="absolute top-6 right-6 bg-[#0A0A0A]/95 backdrop-blur-xl 
-                           border border-[#1F1F23] rounded-xl p-4"
-                >
-                  <div className="text-xs text-[#A1A1AA] mb-1">
-                    {modules[activeTab].stats.label}
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {modules[activeTab].stats.value}
-                  </div>
-                </motion.div>
               </div>
             </motion.div>
 

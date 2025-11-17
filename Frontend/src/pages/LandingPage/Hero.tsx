@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Zap, Shield, BarChart3, Headphones, TrendingUp, ArrowUp, ChevronDown } from 'lucide-react';
+import { ArrowRight, Zap, Shield, BarChart3, Headphones, ChevronDown } from 'lucide-react';
+import DashboardPreview from './DashboardPreview';
 
 const Hero = () => {
   const features = [
@@ -180,38 +181,10 @@ const Hero = () => {
             >
               <div className="relative rounded-2xl overflow-hidden border border-[#1F1F23] 
                             shadow-[0_0_50px_rgba(217,70,239,0.3)] bg-[#0A0A0A]">
-                {/* Placeholder para screenshot real */}
-                <div className="aspect-video w-full bg-gradient-to-br from-[#0A0A0A] to-[#1A0A1A] 
-                              flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#D946EF] to-[#9333EA] 
-                                  rounded-2xl flex items-center justify-center">
-                      <span className="text-white font-bold text-4xl">Σ</span>
-                    </div>
-                    <p className="text-[#A1A1AA] text-sm">Dashboard Preview</p>
-                  </div>
+                {/* Dashboard Preview */}
+                <div className="aspect-video w-full">
+                  <DashboardPreview variant="hero" />
                 </div>
-                
-                {/* Overlay com stats flutuantes */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ delay: 1, duration: 0.5 }}
-                  className="absolute top-6 right-6 bg-[#0A0A0A]/95 backdrop-blur-xl 
-                           border border-[#1F1F23] rounded-xl p-4 min-w-[200px]"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-[#10B981]" />
-                    <span className="text-xs text-[#A1A1AA]">Vendas Hoje</span>
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    R$ 45.280
-                  </div>
-                  <div className="text-xs text-[#10B981] flex items-center gap-1 mt-1">
-                    <ArrowUp className="w-3 h-3" />
-                    <span>+24% vs ontem</span>
-                  </div>
-                </motion.div>
               </div>
             </motion.div>
 
