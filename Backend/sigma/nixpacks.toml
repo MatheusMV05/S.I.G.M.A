@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["jdk21"]
-
-[phases.build]
-cmds = ["mvn clean package -DskipTests"]
-
-[start]
-cmd = "java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/sigma-0.0.1-SNAPSHOT.jar"
