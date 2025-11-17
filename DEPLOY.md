@@ -46,7 +46,7 @@ Se você já tem um banco MySQL hospedado em outro lugar (AWS RDS, Azure, etc.),
 1. No mesmo projeto do Railway, clique em **"+ New"** → **"GitHub Repo"**
 2. Autorize o Railway a acessar seu repositório
 3. Selecione o repositório do S.I.G.M.A.
-4. O Railway detectará automaticamente que é um projeto Maven
+4. O Railway detectará automaticamente o Dockerfile e fará o build
 
 5. **Configure as variáveis de ambiente**:
    - Clique no serviço do backend
@@ -74,14 +74,15 @@ SPRING_PROFILES_ACTIVE=prod
 openssl rand -hex 32
 ```
 
-6. **⚠️ IMPORTANTE - Configure o Root Directory**:
-   - Vá para **"Settings"** → **"Build"**
-   - Em **"Root Directory"**, coloque: `Backend/sigma`
-   - Em **"Watch Paths"**, coloque: `Backend/sigma/**`
-   - O Railway usará automaticamente o `nixpacks.toml` e `railway.json` da pasta Backend/sigma
-   - **NÃO** é necessário configurar Build Command e Start Command manualmente (já estão nos arquivos de configuração)
+6. **⚠️ IMPORTANTE - Configuração do Build**:
+   - O Railway detectará automaticamente o `railway.json` na raiz do projeto
+   - O build usará o **Dockerfile** localizado em `Backend/sigma/Dockerfile`
+   - O Dockerfile usa multi-stage build:
+     - **Stage 1**: Maven build (compila o projeto)
+     - **Stage 2**: Runtime JRE (executa o JAR)
+   - **NÃO** é necessário configurar Build Command e Start Command manualmente
 
-7. Clique em **"Deploy"** e aguarde o build
+7. Clique em **"Deploy"** e aguarde o build (pode levar 3-5 minutos na primeira vez)
 8. Após o deploy, copie a URL pública do seu backend (algo como `https://sigma-production.up.railway.app`)
 
 ### 3. Configurar CORS no Backend
@@ -184,10 +185,16 @@ curl -X POST https://sua-url-do-railway.up.railway.app/api/auth/login \
 
 ### Build falha no Railway
 
-**Erro: "Maven build failed"**
-- Verifique se o Java 21 está configurado
-- Tente adicionar a variável `MAVEN_OPTS=-Xmx1024m` para aumentar a memória
+**Erro: "mvn: not found" ou "Maven build failed"**
+- O projeto agora usa **Dockerfile** ao invés de Nixpacks/Railpack
+- Certifique-se de que o `railway.json` está configurado com `"builder": "DOCKERFILE"`
+- Verifique se o caminho do Dockerfile está correto: `Backend/sigma/Dockerfile`
+- O Dockerfile já inclui Maven e Java 21 automaticamente
+
+**Erro: "Docker build failed"**
 - Verifique os logs de build para erros específicos
+- Certifique-se de que o `pom.xml` está correto
+- Tente fazer um build local: `docker build -f Backend/sigma/Dockerfile Backend/sigma`
 
 ### Build falha no Vercel
 
