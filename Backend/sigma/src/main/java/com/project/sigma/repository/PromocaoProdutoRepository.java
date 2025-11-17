@@ -15,17 +15,17 @@ public class PromocaoProdutoRepository {
     private JdbcTemplate jdbcTemplate;
 
     public void save(PromocaoProduto promocaoProduto) {
-        String sql = "INSERT INTO PROMOCAO_PRODUTO (id_promocao, id_produto) VALUES (?, ?)";
+        String sql = "INSERT INTO Promocao_Produto (id_promocao, id_produto) VALUES (?, ?)";
         jdbcTemplate.update(sql, promocaoProduto.getId_promocao(), promocaoProduto.getId_produto());
     }
 
     public List<Long> findProdutoIdsByPromocaoId(Long promocaoId) {
-        String sql = "SELECT id_produto FROM PROMOCAO_PRODUTO WHERE id_promocao = ?";
+        String sql = "SELECT id_produto FROM Promocao_Produto WHERE id_promocao = ?";
         return jdbcTemplate.queryForList(sql, new Object[]{promocaoId}, Long.class);
     }
 
     public void deleteByPromocaoId(Long promocaoId) {
-        String sql = "DELETE FROM PROMOCAO_PRODUTO WHERE id_promocao = ?";
+        String sql = "DELETE FROM Promocao_Produto WHERE id_promocao = ?";
         jdbcTemplate.update(sql, promocaoId);
     }
 }
