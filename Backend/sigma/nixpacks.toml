@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ['jdk21']
+
+[phases.build]
+cmds = ['chmod +x mvnw && ./mvnw clean package -DskipTests']
+
+[phases.start]
+cmd = 'java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar target/sigma-backend.jar'
