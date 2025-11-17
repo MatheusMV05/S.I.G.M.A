@@ -49,7 +49,6 @@ lerna-debug.log*
 
 # ===== BACKEND (Java/Maven/Spring Boot) =====
 Backend/**/target/
-Backend/**/.mvn/wrapper/maven-wrapper.jar
 Backend/**/HELP.md
 !Backend/**/src/main/**/target/
 !Backend/**/src/test/**/target/
