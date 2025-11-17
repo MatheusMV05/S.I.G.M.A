@@ -1,0 +1,5 @@
+[build]
+builder = "RAILPACK"
+
+[build.railpack]
+javaVersion = "21"
