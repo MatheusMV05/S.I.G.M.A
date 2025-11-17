@@ -176,18 +176,21 @@ export default function Dashboard() {
   // Usar dados reais ou fallback
   const kpis = dashboardKPIs || fallbackKPIs;
 
-  // Calcular variações
-  const revenueChange = kpis.yesterdayRevenue 
+  // Calcular variações com lógica melhorada
+  // Se ontem foi 0 mas hoje tem valor, é crescimento de 100%
+  // Se ontem tinha valor e hoje é 0, é queda de -100%
+  // Se ambos são 0, não mostra variação
+  const revenueChange = kpis.yesterdayRevenue > 0
     ? ((kpis.todayRevenue - kpis.yesterdayRevenue) / kpis.yesterdayRevenue) * 100 
-    : 0;
+    : kpis.todayRevenue > 0 ? 100 : undefined;
   
-  const salesChange = kpis.yesterdaySales 
+  const salesChange = kpis.yesterdaySales > 0
     ? ((kpis.todaySales - kpis.yesterdaySales) / kpis.yesterdaySales) * 100 
-    : 0;
+    : kpis.todaySales > 0 ? 100 : undefined;
 
-  const ticketChange = kpis.yesterdayAverageTicket 
+  const ticketChange = kpis.yesterdayAverageTicket > 0
     ? ((kpis.averageTicket - kpis.yesterdayAverageTicket) / kpis.yesterdayAverageTicket) * 100 
-    : 0;
+    : kpis.averageTicket > 0 ? 100 : undefined;
 
   // Funções de navegação
   const handleNewSale = () => navigate('/pos');
@@ -234,8 +237,8 @@ export default function Dashboard() {
         <KPICard
           title="Faturamento Hoje"
           value={`R$ ${kpis.todayRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          change={Math.round(revenueChange * 100) / 100}
-          changeType={revenueChange >= 0 ? 'increase' : 'decrease'}
+          change={revenueChange !== undefined ? Math.round(revenueChange * 100) / 100 : undefined}
+          changeType={revenueChange !== undefined && revenueChange >= 0 ? 'increase' : 'decrease'}
           icon={DollarSign}
           color="success"
           subtitle="Meta: R$ 20.000,00"
@@ -244,8 +247,8 @@ export default function Dashboard() {
         <KPICard
           title="Ticket Médio"
           value={`R$ ${kpis.averageTicket.toFixed(2)}`}
-          change={Math.round(ticketChange * 100) / 100}
-          changeType={ticketChange >= 0 ? 'increase' : 'decrease'}
+          change={ticketChange !== undefined ? Math.round(ticketChange * 100) / 100 : undefined}
+          changeType={ticketChange !== undefined && ticketChange >= 0 ? 'increase' : 'decrease'}
           icon={CreditCard}
           color="primary"
         />
@@ -253,8 +256,8 @@ export default function Dashboard() {
         <KPICard
           title="Vendas Hoje"
           value={kpis.todaySales}
-          change={Math.round(salesChange * 100) / 100}
-          changeType={salesChange >= 0 ? 'increase' : 'decrease'}
+          change={salesChange !== undefined ? Math.round(salesChange * 100) / 100 : undefined}
+          changeType={salesChange !== undefined && salesChange >= 0 ? 'increase' : 'decrease'}
           icon={ShoppingCart}
           color="primary"
         />
