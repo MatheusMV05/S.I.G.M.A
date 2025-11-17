@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "mvn clean package -DskipTests"
+    "buildCommand": "./mvnw clean package -DskipTests"
   },
   "deploy": {
     "startCommand": "java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar target/sigma-backend.jar",
