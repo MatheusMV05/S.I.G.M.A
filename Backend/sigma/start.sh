@@ -3,13 +3,13 @@ set -e
 
 echo "🚀 Starting SIGMA Backend..."
 
-# Encontra Java instalado
-if [ -z "$JAVA_HOME" ]; then
-    JAVA_BIN=$(which java 2>/dev/null || echo "")
-    if [ -n "$JAVA_BIN" ]; then
-        JAVA_HOME=$(dirname $(dirname $JAVA_BIN))
-        export JAVA_HOME
-    fi
+# O mise instala Java em /mise/installs/java/VERSION
+if [ -d "/mise/installs/java" ]; then
+    JAVA_VERSION=$(ls /mise/installs/java | head -n 1)
+    export JAVA_HOME="/mise/installs/java/$JAVA_VERSION"
+    echo "✅ Using Java at: $JAVA_HOME"
+elif [ -n "$JAVA_HOME" ]; then
+    echo "✅ Using existing JAVA_HOME: $JAVA_HOME"
 fi
 
 export PATH=$JAVA_HOME/bin:$PATH
