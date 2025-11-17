@@ -29,6 +29,9 @@ import {
 import { promotionService } from '@/services/promotionService';
 import { productService } from '@/services/productService';
 import { useAuth } from '@/contexts/AuthContext';
+import { CustomerSearchPDV } from '@/components/CustomerSearchPDV';
+import { QuickCustomerModal } from '@/components/QuickCustomerModal';
+import type { Customer } from '@/services/types';
 
 // Tipos
 interface Product {
@@ -93,6 +96,10 @@ export default function POS() {
   const [saleDiscount, setSaleDiscount] = useState(0);
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const [loadingPromos, setLoadingPromos] = useState(false);
+  
+  // Estados para identificação de cliente
+  const [clienteSelecionado, setClienteSelecionado] = useState<Customer | null>(null);
+  const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   
   // Estados para desconto progressivo
   const [descontoProgressivo, setDescontoProgressivo] = useState<{
@@ -432,7 +439,7 @@ export default function POS() {
       // Preparar dados da venda
       const salePayload: SalePayload = {
         id_funcionario: user?.id_pessoa || 101, // ID do usuário logado
-        id_cliente: null,
+        id_cliente: clienteSelecionado ? Number(clienteSelecionado.id) : null,
         itens: cart.map(item => {
           const details = getItemPriceDetails(item);
           return {
@@ -601,6 +608,13 @@ export default function POS() {
 
           {/* Seção do Carrinho */}
           <div className="space-y-4">
+            {/* Busca de Cliente */}
+            <CustomerSearchPDV
+              onClienteSelecionado={setClienteSelecionado}
+              clienteSelecionado={clienteSelecionado}
+              onCadastroRapido={() => setShowQuickCustomerModal(true)}
+            />
+            
             <Card className="h-[calc(100vh-280px)]">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -951,6 +965,19 @@ export default function POS() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Cadastro Rápido de Cliente */}
+        <QuickCustomerModal
+          isOpen={showQuickCustomerModal}
+          onClose={() => setShowQuickCustomerModal(false)}
+          onClienteCriado={(cliente) => {
+            setClienteSelecionado(cliente);
+            toast({
+              title: 'Cliente cadastrado e vinculado!',
+              description: `${cliente.name} foi vinculado à venda atual`,
+            });
+          }}
+        />
       </div>
     </DesktopOnlyPage>
   );

@@ -17,6 +17,7 @@ public class Cliente {
     private Integer ranking;
     private BigDecimal total_gasto;
     private LocalDate data_ultima_compra;
+    private Integer quantidade_compras;
 
     // Not stored in DB, populated when needed
     private Pessoa pessoa;

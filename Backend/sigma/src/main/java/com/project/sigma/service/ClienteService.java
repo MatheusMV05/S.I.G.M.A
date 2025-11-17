@@ -303,6 +303,43 @@ public class ClienteService {
         return clienteFisicoRepository.findByCpf(cpf);
     }
 
+    /**
+     * Busca cliente por documento (CPF ou CNPJ)
+     * Remove pontuação antes de buscar
+     * @param documento CPF ou CNPJ (pode ter ou não pontuação)
+     * @return ClienteDTO se encontrado
+     */
+    public Optional<ClienteDTO> buscarPorDocumento(String documento) {
+        // Remove pontuação do documento
+        String documentoLimpo = documento.replaceAll("[^0-9]", "");
+        
+        // Tenta buscar por CPF (11 dígitos)
+        if (documentoLimpo.length() == 11) {
+            // Formata CPF: 000.000.000-00
+            String cpfFormatado = documentoLimpo.substring(0, 3) + "." + 
+                                 documentoLimpo.substring(3, 6) + "." + 
+                                 documentoLimpo.substring(6, 9) + "-" + 
+                                 documentoLimpo.substring(9, 11);
+            
+            Optional<Cliente> clienteOpt = clienteRepository.findByCpf(cpfFormatado);
+            return clienteOpt.map(this::convertToDTO);
+        }
+        // Tenta buscar por CNPJ (14 dígitos)
+        else if (documentoLimpo.length() == 14) {
+            // Formata CNPJ: 00.000.000/0000-00
+            String cnpjFormatado = documentoLimpo.substring(0, 2) + "." + 
+                                  documentoLimpo.substring(2, 5) + "." + 
+                                  documentoLimpo.substring(5, 8) + "/" + 
+                                  documentoLimpo.substring(8, 12) + "-" + 
+                                  documentoLimpo.substring(12, 14);
+            
+            Optional<Cliente> clienteOpt = clienteRepository.findByCnpj(cnpjFormatado);
+            return clienteOpt.map(this::convertToDTO);
+        }
+        
+        return Optional.empty();
+    }
+
     private ClienteDTO convertToDTO(Cliente cliente) {
         ClienteDTO dto = new ClienteDTO();
 
@@ -332,6 +369,8 @@ public class ClienteService {
         dto.setAtivo(cliente.getAtivo());
         dto.setRanking(cliente.getRanking());
         dto.setTotalGasto(cliente.getTotal_gasto());
+        dto.setQuantidadeCompras(cliente.getQuantidade_compras());
+        dto.setDataUltimaCompra(cliente.getData_ultima_compra());
         
         // 👑 Calcular classificação VIP usando fn_classificar_cliente (Repository layer)
         dto.setClassificacao(classificarCliente(cliente.getId_pessoa()));

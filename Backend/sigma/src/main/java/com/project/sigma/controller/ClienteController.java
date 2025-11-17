@@ -73,6 +73,20 @@ public class ClienteController {
     }
 
     /**
+     * Endpoint para buscar cliente por documento (CPF ou CNPJ).
+     * HTTP GET /api/customers/documento/{documento}
+     * 
+     * @param documento CPF (11 dígitos) ou CNPJ (14 dígitos) - pode ter ou não pontuação
+     * @return ClienteDTO se encontrado, 404 caso contrário
+     */
+    @GetMapping("/documento/{documento}")
+    public ResponseEntity<ClienteDTO> buscarPorDocumento(@PathVariable String documento) {
+        return clienteService.buscarPorDocumento(documento)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
      * Endpoint para obter a classificação VIP de um cliente.
      * HTTP GET /api/customers/{id}/classificacao
      * 

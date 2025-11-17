@@ -193,6 +193,7 @@ CREATE TABLE Cliente (
                          ranking INT NOT NULL DEFAULT 1,
                          total_gasto DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                          data_ultima_compra DATE,
+                         quantidade_compras INT NOT NULL DEFAULT 0,
                          credito_disponivel DECIMAL(10, 2) DEFAULT 0.00,
                          observacoes TEXT,
 
@@ -200,7 +201,8 @@ CREATE TABLE Cliente (
 
                          CONSTRAINT chk_cliente_ranking CHECK (ranking BETWEEN 1 AND 5),
                          CONSTRAINT chk_cliente_total_gasto CHECK (total_gasto >= 0),
-                         CONSTRAINT chk_cliente_credito CHECK (credito_disponivel >= 0)
+                         CONSTRAINT chk_cliente_credito CHECK (credito_disponivel >= 0),
+                         CONSTRAINT chk_cliente_quantidade_compras CHECK (quantidade_compras >= 0)
 ) COMMENT 'Clientes que compram produtos.';
 
 -- Tabela para Clientes Pessoa Física
@@ -595,6 +597,10 @@ CREATE INDEX idx_movimentacao_tipo ON MovimentacaoEstoque(tipo);
 CREATE INDEX idx_cliente_tipo ON Cliente(tipo_pessoa);
 CREATE INDEX idx_cliente_ativo ON Cliente(ativo);
 CREATE INDEX idx_cliente_ranking ON Cliente(ranking);
+
+-- Índices para busca de clientes por documento (CPF/CNPJ)
+CREATE INDEX idx_cliente_fisico_cpf ON ClienteFisico(cpf);
+CREATE INDEX idx_cliente_juridico_cnpj ON ClienteJuridico(cnpj);
 
 -- Índices para Promocao
 CREATE INDEX idx_promocao_status ON PROMOCAO(status);
@@ -2363,6 +2369,52 @@ BEGIN
                  ),
                  CONCAT('Produto "', OLD.nome, '" removido do sistema')
              );
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- TRIGGER 5: Atualizar dados do Cliente ao finalizar Venda
+-- ================================================================
+-- Justificativa: Manter atualizados automaticamente os dados do cliente
+-- Incrementa quantidade_compras, atualiza total_gasto e data_ultima_compra
+-- quando uma venda é concluída
+DELIMITER //
+
+CREATE TRIGGER trg_venda_atualizar_cliente
+    AFTER INSERT ON Venda
+    FOR EACH ROW
+BEGIN
+    IF NEW.id_cliente IS NOT NULL AND NEW.status = 'CONCLUIDA' THEN
+        UPDATE Cliente
+        SET total_gasto = total_gasto + NEW.valor_final,
+            data_ultima_compra = DATE(NEW.data_venda),
+            quantidade_compras = quantidade_compras + 1
+        WHERE id_pessoa = NEW.id_cliente;
+    END IF;
+END//
+
+DELIMITER ;
+
+
+-- ================================================================
+-- TRIGGER 6: Reverter dados do Cliente ao cancelar Venda
+-- ================================================================
+-- Justificativa: Reverter os dados do cliente quando uma venda é cancelada
+-- Decrementa quantidade_compras e reverte o total_gasto
+DELIMITER //
+
+CREATE TRIGGER trg_venda_cancelada_atualizar_cliente
+    AFTER UPDATE ON Venda
+    FOR EACH ROW
+BEGIN
+    IF OLD.status = 'CONCLUIDA' AND NEW.status = 'CANCELADA' AND NEW.id_cliente IS NOT NULL THEN
+        UPDATE Cliente
+        SET total_gasto = total_gasto - NEW.valor_final,
+            quantidade_compras = GREATEST(quantidade_compras - 1, 0)
+        WHERE id_pessoa = NEW.id_cliente;
+    END IF;
 END//
 
 DELIMITER ;

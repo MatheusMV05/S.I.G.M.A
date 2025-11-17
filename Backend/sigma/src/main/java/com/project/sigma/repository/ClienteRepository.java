@@ -21,8 +21,8 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
     private JdbcTemplate jdbcTemplate;
 
     private static final String INSERT_SQL =
-            "INSERT INTO Cliente (id_pessoa, tipo_pessoa, ativo, ranking, total_gasto, data_ultima_compra) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO Cliente (id_pessoa, tipo_pessoa, ativo, ranking, total_gasto, data_ultima_compra, quantidade_compras) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SELECT_BY_ID_SQL =
             "SELECT * FROM Cliente WHERE id_pessoa = ?";
@@ -31,7 +31,7 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
             "SELECT * FROM Cliente ORDER BY ranking DESC";
 
     private static final String UPDATE_SQL =
-            "UPDATE Cliente SET tipo_pessoa = ?, ativo = ?, ranking = ?, total_gasto = ?, data_ultima_compra = ? " +
+            "UPDATE Cliente SET tipo_pessoa = ?, ativo = ?, ranking = ?, total_gasto = ?, data_ultima_compra = ?, quantidade_compras = ? " +
                     "WHERE id_pessoa = ?";
 
     private static final String DELETE_SQL =
@@ -149,7 +149,8 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
                 cliente.getAtivo(),
                 cliente.getRanking(),
                 cliente.getTotal_gasto(),
-                cliente.getData_ultima_compra() != null ? Date.valueOf(cliente.getData_ultima_compra()) : null);
+                cliente.getData_ultima_compra() != null ? Date.valueOf(cliente.getData_ultima_compra()) : null,
+                cliente.getQuantidade_compras() != null ? cliente.getQuantidade_compras() : 0);
         return cliente;
     }
 
@@ -160,6 +161,7 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
                 cliente.getRanking(),
                 cliente.getTotal_gasto(),
                 cliente.getData_ultima_compra() != null ? Date.valueOf(cliente.getData_ultima_compra()) : null,
+                cliente.getQuantidade_compras() != null ? cliente.getQuantidade_compras() : 0,
                 cliente.getId_pessoa());
         return cliente;
     }
@@ -234,6 +236,44 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
         return jdbcTemplate.queryForObject(sql, Integer.class);
     }
 
+    /**
+     * Busca cliente por CPF (Pessoa Física)
+     * Retorna o cliente completo com todos os dados
+     */
+    public Optional<Cliente> findByCpf(String cpf) {
+        String sql = """
+            SELECT c.* 
+            FROM Cliente c
+            INNER JOIN ClienteFisico cf ON c.id_pessoa = cf.id_pessoa
+            WHERE cf.cpf = ?
+            """;
+        try {
+            Cliente cliente = jdbcTemplate.queryForObject(sql, clienteRowMapper(), cpf);
+            return Optional.ofNullable(cliente);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Busca cliente por CNPJ (Pessoa Jurídica)
+     * Retorna o cliente completo com todos os dados
+     */
+    public Optional<Cliente> findByCnpj(String cnpj) {
+        String sql = """
+            SELECT c.* 
+            FROM Cliente c
+            INNER JOIN ClienteJuridico cj ON c.id_pessoa = cj.id_pessoa
+            WHERE cj.cnpj = ?
+            """;
+        try {
+            Cliente cliente = jdbcTemplate.queryForObject(sql, clienteRowMapper(), cnpj);
+            return Optional.ofNullable(cliente);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     private RowMapper<Cliente> clienteRowMapper() {
         return (ResultSet rs, int rowNum) -> {
             Cliente cliente = new Cliente();
@@ -242,6 +282,7 @@ public class ClienteRepository implements BaseRepository<Cliente, Long> {
             cliente.setAtivo(rs.getBoolean("ativo"));
             cliente.setRanking(rs.getInt("ranking"));
             cliente.setTotal_gasto(rs.getBigDecimal("total_gasto"));
+            cliente.setQuantidade_compras(rs.getInt("quantidade_compras"));
 
             Date dataUltimaCompra = rs.getDate("data_ultima_compra");
             if (dataUltimaCompra != null) {

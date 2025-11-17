@@ -23,6 +23,8 @@ public class ClienteDTO {
     private Boolean ativo;
     private Integer ranking;
     private BigDecimal totalGasto;
+    private Integer quantidadeCompras;
+    private LocalDate dataUltimaCompra;
     private String classificacao; // DIAMANTE, PLATINA, OURO, PRATA, BRONZE
 
     // ClienteFisico fields (for PF)

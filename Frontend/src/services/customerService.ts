@@ -50,9 +50,9 @@ const mapBackendToFrontend = (dto: BackendClienteDTO): Customer => {
     birthDate: dto.dataNascimento,
     totalSpent: dto.totalGasto || 0,
     classificacao: dto.classificacao, // Classificação VIP do SQL
-    totalPurchases: 0, // TODO: O backend não retorna esse campo ainda
+    totalPurchases: dto.quantidadeCompras || 0,
     registrationDate: '', // TODO: O backend não retorna esse campo ainda
-    lastPurchase: undefined, // TODO: O backend não retorna esse campo ainda
+    lastPurchase: dto.dataUltimaCompra,
     notes: '', // TODO: O backend não retorna esse campo ainda
     
     companyInfo: dto.tipoCliente === 'PJ' ? {
@@ -158,7 +158,7 @@ class CustomerService {
    * Busca cliente por documento (CPF ou CNPJ) (CORRIGIDO)
    */
   async getCustomerByDocument(document: string): Promise<Customer> {
-    const dto = await apiRequest<BackendClienteDTO>(`/customers/document/${document}`);
+    const dto = await apiRequest<BackendClienteDTO>(`/customers/documento/${document}`);
     return mapBackendToFrontend(dto);
   }
 
