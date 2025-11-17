@@ -66,6 +66,11 @@ const RHPage = () => {
   const [selectedPonto, setSelectedPonto] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFuncionarioModalOpen, setIsFuncionarioModalOpen] = useState(false);
+  
+  // Estados para modais de documentos vencidos/a vencer
+  const [isDocVencidosModalOpen, setIsDocVencidosModalOpen] = useState(false);
+  const [isDocAVencerModalOpen, setIsDocAVencerModalOpen] = useState(false);
+  const [documentosAlerta, setDocumentosAlerta] = useState<any[]>([]);
 
   // Ref para evitar múltiplas chamadas
   const statsLoadedRef = useRef(false);
@@ -452,7 +457,8 @@ const RHPage = () => {
                       className="ml-auto"
                       onClick={async () => {
                         const vencidos = await fetchVencidos();
-                        console.log('Documentos vencidos:', vencidos);
+                        setDocumentosAlerta(vencidos || []);
+                        setIsDocVencidosModalOpen(true);
                       }}
                     >
                       Ver Detalhes
@@ -472,7 +478,8 @@ const RHPage = () => {
                       className="ml-auto"
                       onClick={async () => {
                         const aVencer = await fetchVencendoEm(30);
-                        console.log('Documentos a vencer:', aVencer);
+                        setDocumentosAlerta(aVencer || []);
+                        setIsDocAVencerModalOpen(true);
                       }}
                     >
                       Ver Detalhes
@@ -1725,6 +1732,210 @@ const RHPage = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Documentos Vencidos */}
+      <Dialog open={isDocVencidosModalOpen} onOpenChange={setIsDocVencidosModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Documentos Vencidos
+            </DialogTitle>
+            <DialogDescription>
+              Documentos que já ultrapassaram a data de validade e precisam ser renovados imediatamente
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {documentosAlerta.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                <p>Nenhum documento vencido encontrado</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documentosAlerta.map((doc) => {
+                  const funcionario = employees.find(e => e.id_pessoa === doc.idFuncionario);
+                  const nomeFunc = funcionario?.nome || `Funcionário ID: ${doc.idFuncionario}`;
+                  const matricula = funcionario?.matricula || 'N/A';
+                  
+                  const dataValidade = doc.dataValidade ? new Date(doc.dataValidade) : null;
+                  const hoje = new Date();
+                  const diasVencido = dataValidade 
+                    ? Math.floor((hoje.getTime() - dataValidade.getTime()) / (1000 * 60 * 60 * 24))
+                    : 0;
+                  
+                  return (
+                    <Card key={doc.idDocumento} className="border-red-200 bg-red-50/50">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground">Funcionário</Label>
+                            <p className="text-sm font-medium mt-1">{nomeFunc}</p>
+                            <p className="text-xs text-muted-foreground">Mat: {matricula}</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground">Tipo</Label>
+                            <p className="text-sm font-medium mt-1">
+                              {doc.tipoDocumento?.replace(/_/g, ' ')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {doc.numeroDocumento || 'Sem número'}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground">Validade</Label>
+                            <p className="text-sm font-medium mt-1 text-red-600">
+                              {dataValidade 
+                                ? dataValidade.toLocaleDateString('pt-BR')
+                                : 'Não informada'
+                              }
+                            </p>
+                            <p className="text-xs text-red-600 font-medium">
+                              Vencido há {diasVencido} dias
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDocumento(doc);
+                                setIsViewModalOpen(true);
+                                setIsDocVencidosModalOpen(false);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Mais
+                            </Button>
+                          </div>
+                        </div>
+                        {doc.observacoes && (
+                          <div className="mt-3 pt-3 border-t border-red-200">
+                            <Label className="text-xs font-medium text-muted-foreground">Observações</Label>
+                            <p className="text-xs mt-1">{doc.observacoes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDocVencidosModalOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Documentos a Vencer */}
+      <Dialog open={isDocAVencerModalOpen} onOpenChange={setIsDocAVencerModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <Clock className="h-5 w-5" />
+              Documentos a Vencer (próximos 30 dias)
+            </DialogTitle>
+            <DialogDescription>
+              Documentos que vencerão em breve - planeje a renovação antecipadamente
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {documentosAlerta.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                <p>Nenhum documento vencendo nos próximos 30 dias</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documentosAlerta.map((doc) => {
+                  const funcionario = employees.find(e => e.id_pessoa === doc.idFuncionario);
+                  const nomeFunc = funcionario?.nome || `Funcionário ID: ${doc.idFuncionario}`;
+                  const matricula = funcionario?.matricula || 'N/A';
+                  
+                  const dataValidade = doc.dataValidade ? new Date(doc.dataValidade) : null;
+                  const hoje = new Date();
+                  const diasRestantes = dataValidade 
+                    ? Math.floor((dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
+                    : 0;
+                  
+                  const bgColor = diasRestantes <= 7 ? 'bg-red-50/50' : diasRestantes <= 15 ? 'bg-orange-50/50' : 'bg-yellow-50/50';
+                  const borderColor = diasRestantes <= 7 ? 'border-red-200' : diasRestantes <= 15 ? 'border-orange-200' : 'border-yellow-200';
+                  const textColor = diasRestantes <= 7 ? 'text-red-600' : diasRestantes <= 15 ? 'text-orange-600' : 'text-yellow-600';
+                  
+                  return (
+                    <Card key={doc.idDocumento} className={`${borderColor} ${bgColor}`}>
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground">Funcionário</Label>
+                            <p className="text-sm font-medium mt-1">{nomeFunc}</p>
+                            <p className="text-xs text-muted-foreground">Mat: {matricula}</p>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground">Tipo</Label>
+                            <p className="text-sm font-medium mt-1">
+                              {doc.tipoDocumento?.replace(/_/g, ' ')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {doc.numeroDocumento || 'Sem número'}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium text-muted-foreground">Validade</Label>
+                            <p className="text-sm font-medium mt-1">
+                              {dataValidade 
+                                ? dataValidade.toLocaleDateString('pt-BR')
+                                : 'Não informada'
+                              }
+                            </p>
+                            <p className={`text-xs ${textColor} font-medium`}>
+                              {diasRestantes === 0 ? 'Vence hoje!' : 
+                               diasRestantes === 1 ? 'Vence amanhã!' :
+                               `Vence em ${diasRestantes} dias`}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDocumento(doc);
+                                setIsViewModalOpen(true);
+                                setIsDocAVencerModalOpen(false);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Mais
+                            </Button>
+                          </div>
+                        </div>
+                        {doc.observacoes && (
+                          <div className={`mt-3 pt-3 border-t ${borderColor}`}>
+                            <Label className="text-xs font-medium text-muted-foreground">Observações</Label>
+                            <p className="text-xs mt-1">{doc.observacoes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDocAVencerModalOpen(false)}>
               Fechar
             </Button>
           </DialogFooter>
