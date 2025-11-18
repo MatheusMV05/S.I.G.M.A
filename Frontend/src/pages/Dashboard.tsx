@@ -176,22 +176,22 @@ export default function Dashboard() {
   // Usar dados reais ou fallback
   const kpis = dashboardKPIs || fallbackKPIs;
 
-  // Calcular variações com lógica melhorada
-  // Se ontem foi 0 mas hoje tem valor, é crescimento de 100%
-  // Se ontem tinha valor e hoje é 0, é queda de -100%
-  // Se ambos são 0, não mostra variação
+
+  // Calcular variações (corrigido para lidar com "crescimento a partir do zero")
   const revenueChange = kpis.yesterdayRevenue > 0
-    ? ((kpis.todayRevenue - kpis.yesterdayRevenue) / kpis.yesterdayRevenue) * 100 
-    : kpis.todayRevenue > 0 ? 100 : undefined;
+    // Se ontem > 0, calcula a variação normal
+    ? ((kpis.todayRevenue - kpis.yesterdayRevenue) / kpis.yesterdayRevenue) * 100
+    // Se ontem foi 0, verifica se hoje é > 0. Se sim, crescimento de 100%
+    : (kpis.todayRevenue > 0 ? 100 : 0);
   
   const salesChange = kpis.yesterdaySales > 0
-    ? ((kpis.todaySales - kpis.yesterdaySales) / kpis.yesterdaySales) * 100 
-    : kpis.todaySales > 0 ? 100 : undefined;
+    ? ((kpis.todaySales - kpis.yesterdaySales) / kpis.yesterdaySales) * 100
+    : (kpis.todaySales > 0 ? 100 : 0);
+
 
   const ticketChange = kpis.yesterdayAverageTicket > 0
-    ? ((kpis.averageTicket - kpis.yesterdayAverageTicket) / kpis.yesterdayAverageTicket) * 100 
-    : kpis.averageTicket > 0 ? 100 : undefined;
-
+    ? ((kpis.averageTicket - kpis.yesterdayAverageTicket) / kpis.yesterdayAverageTicket) * 100
+    : (kpis.averageTicket > 0 ? 100 : 0);
   // Funções de navegação
   const handleNewSale = () => navigate('/pos');
   const handleViewReports = () => navigate('/insights');

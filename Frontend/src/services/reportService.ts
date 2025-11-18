@@ -4,10 +4,14 @@ import { apiRequest } from './api';
 export interface ProdutoNuncaVendidoDTO {
   idProduto: number;
   produtoNome: string;
+  marca: string;
   precoVenda: number;
-  quantidadeEstoque: number;
+  estoque: number;
   categoriaNome: string;
-  valorEstoqueParado: number;
+  fornecedorNome: string;
+  valorInvestido: number;
+  valorPotencialVenda: number;
+  diasSemVenda: number;
 }
 
 export interface ProdutoAcimaMediaDTO {
@@ -20,14 +24,18 @@ export interface ProdutoAcimaMediaDTO {
 }
 
 export interface ClienteVIPDTO {
-  idCliente: number;
+  idPessoa: number;
   clienteNome: string;
-  cpf: string;
-  telefone: string;
+  clienteEmail: string;
+  tipoPessoa: string;
+  ranking: number;
+  totalGasto: number;
+  dataUltimaCompra: string;
   totalCompras: number;
   ticketMedio: number;
-  valorTotalGasto: number;
-  mediaComprasGeral: number;
+  mediaGastoGeral: number;
+  diferencaMedia: number;
+  percentualAcimaMedia: number;
 }
 
 class ReportService {
