@@ -1,10 +1,13 @@
 package com.project.sigma.controller;
 
+import com.project.sigma.dto.AnaliseVendasCompletaDTO;
+import com.project.sigma.repository.AnaliseVendasCompletaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +19,9 @@ public class ReportsController {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private AnaliseVendasCompletaRepository analiseVendasRepository;
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboardData() {
@@ -972,5 +978,161 @@ public class ReportsController {
         emptySegment.put("totalPurchases", 0);
         emptySegment.put("color", color);
         return emptySegment;
+    }
+
+    /**
+     * Endpoint: Análise Completa de Vendas
+     * GET /api/reports/analise-vendas-completa
+     * Utiliza a VIEW vw_analise_vendas_completa
+     * 
+     * Retorna análise detalhada de vendas com dados de cliente, vendedor e métricas
+     * 
+     * @param dias Número de dias para análise (padrão: 30)
+     * @return Lista de vendas com análise completa
+     */
+    @GetMapping("/analise-vendas-completa")
+    public ResponseEntity<List<AnaliseVendasCompletaDTO>> getAnaliseVendasCompleta(
+            @RequestParam(required = false, defaultValue = "30") Integer dias) {
+        System.out.println("📊 GET /api/reports/analise-vendas-completa - Últimos " + dias + " dias");
+        
+        try {
+            List<AnaliseVendasCompletaDTO> vendas = analiseVendasRepository.findUltimosDias(dias);
+            
+            System.out.println("✅ Retornando " + vendas.size() + " vendas com análise completa");
+            
+            return ResponseEntity.ok(vendas);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar análise de vendas: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Análise de Vendas por Cliente
+     * GET /api/reports/analise-vendas-completa/cliente/{id}
+     * 
+     * @param id ID do cliente
+     * @return Lista de vendas do cliente com análise completa
+     */
+    @GetMapping("/analise-vendas-completa/cliente/{id}")
+    public ResponseEntity<List<AnaliseVendasCompletaDTO>> getAnaliseVendasPorCliente(@PathVariable Long id) {
+        System.out.println("👤 GET /api/reports/analise-vendas-completa/cliente/" + id);
+        
+        try {
+            List<AnaliseVendasCompletaDTO> vendas = analiseVendasRepository.findByCliente(id);
+            
+            System.out.println("✅ Retornando " + vendas.size() + " vendas do cliente " + id);
+            
+            return ResponseEntity.ok(vendas);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar vendas do cliente: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Análise de Vendas por Vendedor
+     * GET /api/reports/analise-vendas-completa/vendedor/{id}
+     * 
+     * @param id ID do vendedor/funcionário
+     * @return Lista de vendas do vendedor com análise completa
+     */
+    @GetMapping("/analise-vendas-completa/vendedor/{id}")
+    public ResponseEntity<List<AnaliseVendasCompletaDTO>> getAnaliseVendasPorVendedor(@PathVariable Long id) {
+        System.out.println("👨‍💼 GET /api/reports/analise-vendas-completa/vendedor/" + id);
+        
+        try {
+            List<AnaliseVendasCompletaDTO> vendas = analiseVendasRepository.findByVendedor(id);
+            
+            System.out.println("✅ Retornando " + vendas.size() + " vendas do vendedor " + id);
+            
+            return ResponseEntity.ok(vendas);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar vendas do vendedor: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Top Vendas por Valor
+     * GET /api/reports/analise-vendas-completa/top-vendas
+     * 
+     * @param limit Número de vendas a retornar (padrão: 10)
+     * @return Lista das maiores vendas dos últimos 30 dias
+     */
+    @GetMapping("/analise-vendas-completa/top-vendas")
+    public ResponseEntity<List<AnaliseVendasCompletaDTO>> getTopVendas(
+            @RequestParam(required = false, defaultValue = "10") Integer limit) {
+        System.out.println("🏆 GET /api/reports/analise-vendas-completa/top-vendas - Top " + limit);
+        
+        try {
+            List<AnaliseVendasCompletaDTO> vendas = analiseVendasRepository.findTopVendasPorValor(limit);
+            
+            System.out.println("✅ Retornando top " + vendas.size() + " vendas");
+            
+            return ResponseEntity.ok(vendas);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar top vendas: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Análise de Vendas por Período
+     * GET /api/reports/analise-vendas-completa/periodo
+     * 
+     * @param dataInicio Data inicial (formato: yyyy-MM-dd)
+     * @param dataFim Data final (formato: yyyy-MM-dd)
+     * @return Lista de vendas no período com análise completa
+     */
+    @GetMapping("/analise-vendas-completa/periodo")
+    public ResponseEntity<List<AnaliseVendasCompletaDTO>> getAnaliseVendasPorPeriodo(
+            @RequestParam String dataInicio,
+            @RequestParam String dataFim) {
+        System.out.println("📅 GET /api/reports/analise-vendas-completa/periodo - " + dataInicio + " a " + dataFim);
+        
+        try {
+            LocalDate inicio = LocalDate.parse(dataInicio);
+            LocalDate fim = LocalDate.parse(dataFim);
+            
+            List<AnaliseVendasCompletaDTO> vendas = analiseVendasRepository.findByPeriodo(inicio, fim);
+            
+            System.out.println("✅ Retornando " + vendas.size() + " vendas no período");
+            
+            return ResponseEntity.ok(vendas);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar vendas por período: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Vendas com Alto Desconto
+     * GET /api/reports/analise-vendas-completa/alto-desconto
+     * 
+     * @param percentual Percentual mínimo de desconto (padrão: 10%)
+     * @return Lista de vendas com desconto acima do percentual especificado
+     */
+    @GetMapping("/analise-vendas-completa/alto-desconto")
+    public ResponseEntity<List<AnaliseVendasCompletaDTO>> getVendasComAltoDesconto(
+            @RequestParam(required = false, defaultValue = "10.0") Double percentual) {
+        System.out.println("💸 GET /api/reports/analise-vendas-completa/alto-desconto - >= " + percentual + "%");
+        
+        try {
+            List<AnaliseVendasCompletaDTO> vendas = analiseVendasRepository.findComDescontoAcimaDe(percentual);
+            
+            System.out.println("✅ Retornando " + vendas.size() + " vendas com alto desconto");
+            
+            return ResponseEntity.ok(vendas);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar vendas com alto desconto: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
     }
 }

@@ -29,6 +29,8 @@ import POS from "@/pages/POS";
 import RH from "@/pages/RH";
 import NotFound from "./pages/NotFound";
 import LandingPage from "@/pages/LandingPage";
+import AnaliseRentabilidadePage from "@/pages/AnaliseRentabilidadePage";
+import AnaliseVendasPage from "@/pages/AnaliseVendasPage";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +112,8 @@ function AppRoutes() {
       <Route path="/insights" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Insights /></ProtectedRoute>} />
       <Route path="/reports" element={<Navigate to="/insights" replace />} />
       <Route path="/charts" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Charts /></ProtectedRoute>} />
+      <Route path="/analise-rentabilidade" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><AnaliseRentabilidadePage /></ProtectedRoute>} />
+      <Route path="/analise-vendas" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><AnaliseVendasPage /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute requiredRoles={['ADMIN', 'MANAGER', 'SUPERVISOR']}><Customers /></ProtectedRoute>} />
       <Route path="/registrations" element={<ProtectedRoute requiredRoles={['ADMIN']}><Registrations /></ProtectedRoute>} />
       

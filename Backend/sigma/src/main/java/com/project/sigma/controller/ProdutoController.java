@@ -1,10 +1,12 @@
 package com.project.sigma.controller;
 
+import com.project.sigma.dto.InventarioRentabilidadeDTO;
 import com.project.sigma.dto.LogAuditoriaDTO;
 import com.project.sigma.dto.PaginatedResponseDTO;
 import com.project.sigma.dto.ProdutoRequestDTO;
 import com.project.sigma.dto.ProdutoResponseDTO;
 import com.project.sigma.model.Produto;
+import com.project.sigma.repository.InventarioRentabilidadeRepository;
 import com.project.sigma.repository.LogAuditoriaRepository;
 import com.project.sigma.repository.ProdutoRepository;
 import com.project.sigma.service.ProdutoService;
@@ -13,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -36,6 +37,9 @@ public class ProdutoController {
 
     @Autowired
     private ProdutoRepository produtoRepository;
+
+    @Autowired
+    private InventarioRentabilidadeRepository inventarioRentabilidadeRepository;
 
     @GetMapping
     public ResponseEntity<PaginatedResponseDTO<ProdutoResponseDTO>> getProdutos(
@@ -310,12 +314,136 @@ public class ProdutoController {
             List<LogAuditoriaDTO> historico = logAuditoriaRepository.buscarPorRegistro("Produto", id.intValue());
             
             System.out.println("✅ Encontrados " + historico.size() + " registros de auditoria para o produto ID " + id);
-            
             return ResponseEntity.ok(historico);
         } catch (Exception e) {
             System.err.println("❌ Erro ao buscar histórico do produto: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(List.of()); // Retorna lista vazia em caso de erro
+        }
+    }
+
+    /**
+     * Endpoint: Inventário com Análise de Rentabilidade
+     * GET /api/products/inventario-rentabilidade
+     * Utiliza a VIEW vw_inventario_rentabilidade
+     * 
+     * Retorna análise completa de inventário com dados de rentabilidade,
+     * fornecedor, categoria e recomendações de ação
+     * 
+     * @return Lista completa de produtos com análise de rentabilidade
+     */
+    @GetMapping("/inventario-rentabilidade")
+    public ResponseEntity<List<InventarioRentabilidadeDTO>> getInventarioRentabilidade() {
+        System.out.println("📊 GET /api/products/inventario-rentabilidade - Buscando análise completa");
+        
+        try {
+            List<InventarioRentabilidadeDTO> inventario = inventarioRentabilidadeRepository.findAll();
+            
+            System.out.println("✅ Retornando " + inventario.size() + " produtos com análise de rentabilidade");
+            
+            return ResponseEntity.ok(inventario);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar inventário com rentabilidade: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Produtos com Alta Rentabilidade
+     * GET /api/products/alta-rentabilidade
+     * 
+     * Retorna os top 20 produtos com maior margem de lucro (>= 50%)
+     * 
+     * @return Lista de produtos com alta rentabilidade
+     */
+    @GetMapping("/alta-rentabilidade")
+    public ResponseEntity<List<InventarioRentabilidadeDTO>> getAltaRentabilidade() {
+        System.out.println("💰 GET /api/products/alta-rentabilidade - Produtos mais lucrativos");
+        
+        try {
+            List<InventarioRentabilidadeDTO> produtos = inventarioRentabilidadeRepository.findAltaRentabilidade();
+            
+            System.out.println("✅ Retornando " + produtos.size() + " produtos com alta rentabilidade");
+            
+            return ResponseEntity.ok(produtos);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar produtos com alta rentabilidade: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Produtos com Rentabilidade Crítica
+     * GET /api/products/rentabilidade-critica
+     * 
+     * Retorna produtos com margem de lucro baixa ou crítica (< 15%)
+     * 
+     * @return Lista de produtos com rentabilidade crítica
+     */
+    @GetMapping("/rentabilidade-critica")
+    public ResponseEntity<List<InventarioRentabilidadeDTO>> getRentabilidadeCritica() {
+        System.out.println("⚠️ GET /api/products/rentabilidade-critica - Produtos com baixa margem");
+        
+        try {
+            List<InventarioRentabilidadeDTO> produtos = inventarioRentabilidadeRepository.findRentabilidadeCritica();
+            
+            System.out.println("✅ Retornando " + produtos.size() + " produtos com rentabilidade crítica");
+            
+            return ResponseEntity.ok(produtos);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar produtos com rentabilidade crítica: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Inventário por Categoria com Rentabilidade
+     * GET /api/products/inventario-rentabilidade/categoria/{id}
+     * 
+     * @param id ID da categoria
+     * @return Lista de produtos da categoria com análise de rentabilidade
+     */
+    @GetMapping("/inventario-rentabilidade/categoria/{id}")
+    public ResponseEntity<List<InventarioRentabilidadeDTO>> getInventarioPorCategoria(@PathVariable Long id) {
+        System.out.println("📂 GET /api/products/inventario-rentabilidade/categoria/" + id);
+        
+        try {
+            List<InventarioRentabilidadeDTO> produtos = inventarioRentabilidadeRepository.findByCategoria(id);
+            
+            System.out.println("✅ Retornando " + produtos.size() + " produtos da categoria " + id);
+            
+            return ResponseEntity.ok(produtos);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar inventário por categoria: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    /**
+     * Endpoint: Inventário por Fornecedor com Rentabilidade
+     * GET /api/products/inventario-rentabilidade/fornecedor/{id}
+     * 
+     * @param id ID do fornecedor
+     * @return Lista de produtos do fornecedor com análise de rentabilidade
+     */
+    @GetMapping("/inventario-rentabilidade/fornecedor/{id}")
+    public ResponseEntity<List<InventarioRentabilidadeDTO>> getInventarioPorFornecedor(@PathVariable Long id) {
+        System.out.println("🏭 GET /api/products/inventario-rentabilidade/fornecedor/" + id);
+        
+        try {
+            List<InventarioRentabilidadeDTO> produtos = inventarioRentabilidadeRepository.findByFornecedor(id);
+            
+            System.out.println("✅ Retornando " + produtos.size() + " produtos do fornecedor " + id);
+            
+            return ResponseEntity.ok(produtos);
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao buscar inventário por fornecedor: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(List.of());
         }
     }
 }

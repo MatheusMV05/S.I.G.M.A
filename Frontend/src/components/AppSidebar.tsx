@@ -38,6 +38,7 @@ import {
   ChevronUp,
   PieChart,
   Briefcase,
+  TrendingUp,
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -139,6 +140,18 @@ const reportItems = [
     title: 'Comportamento do Cliente',
     url: '/charts',
     icon: PieChart,
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
+  },
+  {
+    title: 'Análise de Rentabilidade',
+    url: '/analise-rentabilidade',
+    icon: TrendingUp,
+    roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
+  },
+  {
+    title: 'Análise de Vendas',
+    url: '/analise-vendas',
+    icon: ShoppingCart,
     roles: ['ADMIN', 'MANAGER', 'SUPERVISOR'] as UserRole[],
   },
 ];

@@ -2461,6 +2461,9 @@ DELIMITER ;
 
 USE SIGMA;
 
+
+USE SIGMA;
+
 -- ================================================================
 -- VIEW 1: Análise Completa de Vendas com Detalhamento
 -- ================================================================
@@ -2478,7 +2481,7 @@ SELECT
     v.valor_final,
     v.metodo_pagamento,
     v.status AS status_venda,
-
+    
     -- Dados do Cliente
     c.id_pessoa AS id_cliente,
     pc.nome AS cliente_nome,
@@ -2487,17 +2490,17 @@ SELECT
     c.tipo_pessoa,
     c.ranking AS ranking_cliente,
     c.total_gasto AS total_gasto_cliente,
-
+    
     -- Dados do Funcionário/Vendedor
     f.id_pessoa AS id_funcionario,
     pf.nome AS vendedor_nome,
     f.cargo AS vendedor_cargo,
     f.setor AS vendedor_setor,
-
+    
     -- Dados do Caixa
     cx.id_caixa,
     cx.status AS status_caixa,
-
+    
     -- Métricas Calculadas
     ROUND((v.desconto / NULLIF(v.valor_total, 0)) * 100, 2) AS percentual_desconto,
     ROUND(v.valor_final / NULLIF((SELECT COUNT(*) FROM VendaItem WHERE id_venda = v.id_venda), 0), 2) AS valor_medio_item,
@@ -2505,11 +2508,11 @@ SELECT
     DAYNAME(v.data_venda) AS dia_semana_venda,
     HOUR(v.data_venda) AS hora_venda
 FROM Venda v
-    INNER JOIN Cliente c ON v.id_cliente = c.id_pessoa
-    INNER JOIN Pessoa pc ON c.id_pessoa = pc.id_pessoa
-    INNER JOIN Funcionario f ON v.id_funcionario = f.id_pessoa
-    INNER JOIN Pessoa pf ON f.id_pessoa = pf.id_pessoa
-    LEFT JOIN Caixa cx ON v.id_caixa = cx.id_caixa;
+INNER JOIN Cliente c ON v.id_cliente = c.id_pessoa
+INNER JOIN Pessoa pc ON c.id_pessoa = pc.id_pessoa
+INNER JOIN Funcionario f ON v.id_funcionario = f.id_pessoa
+INNER JOIN Pessoa pf ON f.id_pessoa = pf.id_pessoa
+LEFT JOIN Caixa cx ON v.id_caixa = cx.id_caixa;
 
 
 -- ================================================================
@@ -2528,31 +2531,37 @@ SELECT
     p.codigo_barras,
     p.codigo_interno,
     p.status AS status_produto,
-
+    
     -- Preços e Margens
     p.preco_custo,
     p.preco_venda,
-    p.margem_lucro AS margem_lucro_percentual,
+    -- Calcular margem de lucro: ((preco_venda - preco_custo) / preco_custo) * 100
+    ROUND(
+        CASE 
+            WHEN p.preco_custo > 0 THEN ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100
+            ELSE 0
+        END, 
+    2) AS margem_lucro_percentual,
     ROUND(p.preco_venda - p.preco_custo, 2) AS lucro_unitario,
-
+    
     -- Estoque
     p.estoque,
     p.estoque_minimo,
     p.estoque_maximo,
     p.unidade_medida,
     p.localizacao_prateleira,
-
+    
     -- Valores Totais
     ROUND(p.preco_custo * p.estoque, 2) AS valor_estoque_custo,
     ROUND(p.preco_venda * p.estoque, 2) AS valor_estoque_venda,
     ROUND((p.preco_venda - p.preco_custo) * p.estoque, 2) AS lucro_potencial_estoque,
-
+    
     -- Categoria
     c.id_categoria,
     c.nome AS categoria_nome,
     c.descricao AS categoria_descricao,
     c.status AS status_categoria,
-
+    
     -- Fornecedor
     f.id_fornecedor,
     f.nome_fantasia AS fornecedor_nome,
@@ -2565,35 +2574,38 @@ SELECT
     f.prazo_entrega_dias,
     f.avaliacao AS avaliacao_fornecedor,
     f.status AS status_fornecedor,
-
+    
     -- Status de Alerta
-    CASE
+    CASE 
         WHEN p.estoque = 0 THEN 'CRÍTICO - SEM ESTOQUE'
         WHEN p.estoque <= p.estoque_minimo THEN 'ALERTA - ESTOQUE BAIXO'
         WHEN p.estoque >= p.estoque_maximo THEN 'ATENÇÃO - ESTOQUE ALTO'
         ELSE 'ESTOQUE NORMAL'
-        END AS status_estoque,
-
-    CASE
-        WHEN p.estoque <= p.estoque_minimo
-            THEN CONCAT('Repor ', (p.estoque_minimo - p.estoque + 10), ' unidades')
+    END AS status_estoque,
+    
+    CASE 
+        WHEN p.estoque <= p.estoque_minimo 
+        THEN CONCAT('Repor ', (p.estoque_minimo - p.estoque + 10), ' unidades')
         ELSE 'Estoque adequado'
-        END AS acao_recomendada,
-
+    END AS acao_recomendada,
+    
     -- Análise de Rentabilidade
-    CASE
-        WHEN p.margem_lucro >= 50 THEN 'ALTA RENTABILIDADE'
-        WHEN p.margem_lucro >= 30 THEN 'RENTABILIDADE MÉDIA'
-        WHEN p.margem_lucro >= 15 THEN 'RENTABILIDADE BAIXA'
+    CASE 
+        WHEN p.preco_custo > 0 AND ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100 >= 50 THEN 'ALTA RENTABILIDADE'
+        WHEN p.preco_custo > 0 AND ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100 >= 30 THEN 'RENTABILIDADE MÉDIA'
+        WHEN p.preco_custo > 0 AND ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100 >= 15 THEN 'RENTABILIDADE BAIXA'
         ELSE 'RENTABILIDADE CRÍTICA'
-        END AS classificacao_rentabilidade,
-
+    END AS classificacao_rentabilidade,
+    
     p.data_cadastro,
     DATEDIFF(CURDATE(), p.data_cadastro) AS dias_desde_cadastro
-
+    
 FROM Produto p
-         LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
-         LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
+LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
+LEFT JOIN Fornecedor f ON p.id_fornecedor = f.id_fornecedor;
+
+
+
 
 
 

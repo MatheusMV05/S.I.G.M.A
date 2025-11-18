@@ -72,7 +72,13 @@ SELECT
     -- Preços e Margens
     p.preco_custo,
     p.preco_venda,
-    p.margem_lucro AS margem_lucro_percentual,
+    -- Calcular margem de lucro: ((preco_venda - preco_custo) / preco_custo) * 100
+    ROUND(
+        CASE 
+            WHEN p.preco_custo > 0 THEN ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100
+            ELSE 0
+        END, 
+    2) AS margem_lucro_percentual,
     ROUND(p.preco_venda - p.preco_custo, 2) AS lucro_unitario,
     
     -- Estoque
@@ -122,9 +128,9 @@ SELECT
     
     -- Análise de Rentabilidade
     CASE 
-        WHEN p.margem_lucro >= 50 THEN 'ALTA RENTABILIDADE'
-        WHEN p.margem_lucro >= 30 THEN 'RENTABILIDADE MÉDIA'
-        WHEN p.margem_lucro >= 15 THEN 'RENTABILIDADE BAIXA'
+        WHEN p.preco_custo > 0 AND ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100 >= 50 THEN 'ALTA RENTABILIDADE'
+        WHEN p.preco_custo > 0 AND ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100 >= 30 THEN 'RENTABILIDADE MÉDIA'
+        WHEN p.preco_custo > 0 AND ((p.preco_venda - p.preco_custo) / p.preco_custo) * 100 >= 15 THEN 'RENTABILIDADE BAIXA'
         ELSE 'RENTABILIDADE CRÍTICA'
     END AS classificacao_rentabilidade,
     
