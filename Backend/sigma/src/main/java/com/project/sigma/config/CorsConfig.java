@@ -1,6 +1,5 @@
 package com.project.sigma.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -13,22 +12,12 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${spring.web.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
-    private String allowedOrigins;
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Permitir origens configuradas via variável de ambiente
-        // Em produção, configure FRONTEND_URL no Railway
-        List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        configuration.setAllowedOrigins(origins);
-        
-        // Fallback para desenvolvimento local
-        if (origins.isEmpty() || origins.get(0).isEmpty()) {
-            configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        }
+        // Permitir todas as origens durante desenvolvimento
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         
         // Métodos HTTP permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));

@@ -55,7 +55,7 @@ public class PromocaoRepository {
     }
 
     public Optional<Promocao> findById(Long id) {
-        String sql = "SELECT * FROM Promocao WHERE id_promocao = ?";
+        String sql = "SELECT * FROM PROMOCAO WHERE id_promocao = ?";
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, new Object[]{id}, rowMapper));
         } catch (Exception e) {
@@ -65,13 +65,13 @@ public class PromocaoRepository {
 
     // Método 'findAll' antigo (sem paginação/filtro) - mantido para referência se necessário
     // public List<Promocao> findAll() {
-    //     String sql = "SELECT * FROM Promocao";
+    //     String sql = "SELECT * FROM PROMOCAO";
     //     return jdbcTemplate.query(sql, rowMapper);
     // }
 
     //findAll com filtros e paginação (é oque o front usa)
     public List<Promocao> findAll(String search, Promocao.StatusPromocao status, int page, int size) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM Promocao");
+        StringBuilder sql = new StringBuilder("SELECT * FROM PROMOCAO");
         List<Object> params = new ArrayList<>();
         List<Integer> types = new ArrayList<>();
 
@@ -113,7 +113,7 @@ public class PromocaoRepository {
     }
 
     public int countAll(String search, Promocao.StatusPromocao status) {
-        StringBuilder sql = new StringBuilder("SELECT count(*) FROM Promocao");
+        StringBuilder sql = new StringBuilder("SELECT count(*) FROM PROMOCAO");
         List<Object> params = new ArrayList<>();
         List<Integer> types = new ArrayList<>();
 
@@ -148,7 +148,7 @@ public class PromocaoRepository {
     }
 
     public Promocao save(Promocao promocao) {
-        String sql = "INSERT INTO Promocao (nome, descricao, tipo_desconto, valor_desconto, data_inicio, data_fim, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO PROMOCAO (nome, descricao, tipo_desconto, valor_desconto, data_inicio, data_fim, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -170,7 +170,7 @@ public class PromocaoRepository {
     }
 
     public void update(Promocao promocao) {
-        String sql = "UPDATE Promocao SET nome = ?, descricao = ?, tipo_desconto = ?, valor_desconto = ?, data_inicio = ?, data_fim = ?, status = ? WHERE id_promocao = ?";
+        String sql = "UPDATE PROMOCAO SET nome = ?, descricao = ?, tipo_desconto = ?, valor_desconto = ?, data_inicio = ?, data_fim = ?, status = ? WHERE id_promocao = ?";
         jdbcTemplate.update(sql,
                 promocao.getNome(),
                 promocao.getDescricao(),
@@ -184,19 +184,19 @@ public class PromocaoRepository {
     }
 
     public void updateStatus(Long id, Promocao.StatusPromocao status) {
-        String sql = "UPDATE Promocao SET status = ? WHERE id_promocao = ?";
+        String sql = "UPDATE PROMOCAO SET status = ? WHERE id_promocao = ?";
         jdbcTemplate.update(sql, status.name(), id);
     }
 
     public void deleteById(Long id) {
-        // A tabela Promocao_Produto usará ON DELETE CASCADE
-        String sql = "DELETE FROM Promocao WHERE id_promocao = ?";
+        // A tabela PROMOCAO_PRODUTO usará ON DELETE CASCADE
+        String sql = "DELETE FROM PROMOCAO WHERE id_promocao = ?";
         jdbcTemplate.update(sql, id);
     }
 
     // Método para a tarefa agendada
     public List<Promocao> findAllByStatus(Promocao.StatusPromocao status) {
-        String sql = "SELECT * FROM Promocao WHERE status = ?";
+        String sql = "SELECT * FROM PROMOCAO WHERE status = ?";
         return jdbcTemplate.query(sql, new Object[]{status.name()}, rowMapper);
     }
 }

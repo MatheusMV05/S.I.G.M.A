@@ -450,7 +450,7 @@ CREATE TABLE Venda (
 ) COMMENT 'Registro de vendas realizadas.';
 
 -- Tabela de Promoções
-CREATE TABLE Promocao (
+CREATE TABLE PROMOCAO (
                           id_promocao BIGINT AUTO_INCREMENT PRIMARY KEY,
                           nome VARCHAR(255) NOT NULL,
                           descricao TEXT,
@@ -478,7 +478,7 @@ CREATE TABLE VendaItem (
 
                            FOREIGN KEY (id_venda) REFERENCES Venda(id_venda) ON DELETE CASCADE,
                            FOREIGN KEY (id_produto) REFERENCES Produto(id_produto) ON DELETE RESTRICT,
-                           FOREIGN KEY (id_promocao) REFERENCES Promocao(id_promocao) ON DELETE SET NULL
+                           FOREIGN KEY (id_promocao) REFERENCES PROMOCAO(id_promocao) ON DELETE SET NULL
 ) COMMENT 'Itens individuais de cada venda.';
 
 -- =================================================================
@@ -506,11 +506,11 @@ CREATE TABLE MovimentacaoEstoque (
 -- =================================================================
 
 -- Tabela de relacionamento Promoção-Produto
-CREATE TABLE Promocao_Produto (
+CREATE TABLE PROMOCAO_PRODUTO (
                                   id_promocao BIGINT NOT NULL,
                                   id_produto BIGINT NOT NULL,
                                   PRIMARY KEY (id_promocao, id_produto),
-                                  FOREIGN KEY (id_promocao) REFERENCES Promocao(id_promocao) ON DELETE CASCADE,
+                                  FOREIGN KEY (id_promocao) REFERENCES PROMOCAO(id_promocao) ON DELETE CASCADE,
                                   FOREIGN KEY (id_produto) REFERENCES Produto(id_produto) ON DELETE CASCADE
 ) COMMENT 'Define quais produtos participam de cada promoção.';
 
@@ -603,8 +603,8 @@ CREATE INDEX idx_cliente_fisico_cpf ON ClienteFisico(cpf);
 CREATE INDEX idx_cliente_juridico_cnpj ON ClienteJuridico(cnpj);
 
 -- Índices para Promocao
-CREATE INDEX idx_promocao_status ON Promocao(status);
-CREATE INDEX idx_promocao_datas ON Promocao(data_inicio, data_fim);
+CREATE INDEX idx_promocao_status ON PROMOCAO(status);
+CREATE INDEX idx_promocao_datas ON PROMOCAO(data_inicio, data_fim);
 
 -- Índices para Categoria
 CREATE INDEX idx_categoria_status ON Categoria(status);
@@ -1307,7 +1307,7 @@ INSERT INTO Produto (nome, marca, descricao, id_categoria, id_fornecedor, preco_
 -- 10. PROMOÇÕES (15 registros)
 -- =================================================================
 
-INSERT INTO Promocao (nome, descricao, tipo_desconto, valor_desconto, data_inicio, data_fim, status) VALUES
+INSERT INTO PROMOCAO (nome, descricao, tipo_desconto, valor_desconto, data_inicio, data_fim, status) VALUES
 ('Black Friday 2024', 'Super descontos em toda loja', 'PERCENTUAL', 25.00, '2024-11-29', '2024-11-29', 'INATIVA'),
 ('Natal Mágico 2024', 'Promoções especiais de Natal', 'PERCENTUAL', 20.00, '2024-12-15', '2024-12-25', 'INATIVA'),
 ('Ano Novo 2025', 'Comece 2025 economizando', 'PERCENTUAL', 15.00, '2025-01-01', '2025-01-05', 'INATIVA'),
@@ -1328,7 +1328,7 @@ INSERT INTO Promocao (nome, descricao, tipo_desconto, valor_desconto, data_inici
 -- 11. PRODUTOS EM PROMOÇÃO (80 relacionamentos)
 -- =================================================================
 
-INSERT INTO Promocao_Produto (id_promocao, id_produto) VALUES
+INSERT INTO PROMOCAO_PRODUTO (id_promocao, id_produto) VALUES
 -- Mega Oferta Semanal ATIVA (promoção 12) - 10 produtos variados
 (12, 1), (12, 2), (12, 11), (12, 21), (12, 31), (12, 51), (12, 61), (12, 71), (12, 81), (12, 91),
 

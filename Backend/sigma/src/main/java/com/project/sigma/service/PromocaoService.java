@@ -176,7 +176,7 @@ public class PromocaoService {
         Promocao savedPromocao = promocaoRepository.save(promocao);
         Long promocaoId = savedPromocao.getId_promocao();
 
-        // 2. Salva os links em Promocao_Produto
+        // 2. Salva os links em PROMOCAO_PRODUTO
         if (request.getProdutoIds() != null && !request.getProdutoIds().isEmpty()) {
             for (Long produtoId : request.getProdutoIds()) {
                 // TODO: Adicionar verificação se o produto existe
@@ -221,7 +221,7 @@ public class PromocaoService {
         if (!promocaoRepository.findById(id).isPresent()) {
             throw new EntityNotFoundException("Promoção não encontrada com ID: " + id);
         }
-        // O ON DELETE CASCADE no SQL cuidará da tabela Promocao_Produto
+        // O ON DELETE CASCADE no SQL cuidará da tabela PROMOCAO_PRODUTO
         promocaoRepository.deleteById(id);
     }
 
