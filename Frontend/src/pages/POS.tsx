@@ -44,7 +44,7 @@ interface Product {
   estoque: number;
   estoque_minimo: number;
   status: string;
-  category?: {
+  categoria?: {
     id: number;
     nome: string;
   };
@@ -587,7 +587,7 @@ export default function POS() {
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">
-                            {product.marca} | {product.category?.nome || 'Sem categoria'}
+                            {product.marca} | {product.categoria?.nome || 'Sem categoria'}
                           </p>
                           <div className="flex justify-between items-center">
                             <span className="text-lg font-bold text-primary">
