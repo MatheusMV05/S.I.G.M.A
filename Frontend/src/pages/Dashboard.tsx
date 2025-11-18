@@ -176,6 +176,7 @@ export default function Dashboard() {
   // Usar dados reais ou fallback
   const kpis = dashboardKPIs || fallbackKPIs;
 
+
   // Calcular variações (corrigido para lidar com "crescimento a partir do zero")
   const revenueChange = kpis.yesterdayRevenue > 0
     // Se ontem > 0, calcula a variação normal
@@ -186,6 +187,7 @@ export default function Dashboard() {
   const salesChange = kpis.yesterdaySales > 0
     ? ((kpis.todaySales - kpis.yesterdaySales) / kpis.yesterdaySales) * 100
     : (kpis.todaySales > 0 ? 100 : 0);
+
 
   const ticketChange = kpis.yesterdayAverageTicket > 0
     ? ((kpis.averageTicket - kpis.yesterdayAverageTicket) / kpis.yesterdayAverageTicket) * 100
@@ -235,8 +237,8 @@ export default function Dashboard() {
         <KPICard
           title="Faturamento Hoje"
           value={`R$ ${kpis.todayRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          change={Math.round(revenueChange * 100) / 100}
-          changeType={revenueChange >= 0 ? 'increase' : 'decrease'}
+          change={revenueChange !== undefined ? Math.round(revenueChange * 100) / 100 : undefined}
+          changeType={revenueChange !== undefined && revenueChange >= 0 ? 'increase' : 'decrease'}
           icon={DollarSign}
           color="success"
           subtitle="Meta: R$ 20.000,00"
@@ -245,8 +247,8 @@ export default function Dashboard() {
         <KPICard
           title="Ticket Médio"
           value={`R$ ${kpis.averageTicket.toFixed(2)}`}
-          change={Math.round(ticketChange * 100) / 100}
-          changeType={ticketChange >= 0 ? 'increase' : 'decrease'}
+          change={ticketChange !== undefined ? Math.round(ticketChange * 100) / 100 : undefined}
+          changeType={ticketChange !== undefined && ticketChange >= 0 ? 'increase' : 'decrease'}
           icon={CreditCard}
           color="primary"
         />
@@ -254,8 +256,8 @@ export default function Dashboard() {
         <KPICard
           title="Vendas Hoje"
           value={kpis.todaySales}
-          change={Math.round(salesChange * 100) / 100}
-          changeType={salesChange >= 0 ? 'increase' : 'decrease'}
+          change={salesChange !== undefined ? Math.round(salesChange * 100) / 100 : undefined}
+          changeType={salesChange !== undefined && salesChange >= 0 ? 'increase' : 'decrease'}
           icon={ShoppingCart}
           color="primary"
         />

@@ -627,6 +627,25 @@ Este projeto foi desenvolvido como trabalho da disciplina de Banco de Dados, ate
 
 ---
 
+## Deploy em Producao
+
+O S.I.G.M.A. esta pronto para deploy em producao! Consulte o arquivo **[DEPLOY.md](DEPLOY.md)** para instrucoes detalhadas de como fazer deploy:
+
+- **Frontend**: Vercel
+- **Backend**: Railway
+- **Banco de Dados**: MySQL (Railway ou externo)
+
+### Arquivos de Configuracao para Deploy
+
+- `Frontend/vercel.json` - Configuracao do Vercel
+- `Frontend/.env.example` - Variaveis de ambiente do frontend
+- `Frontend/.env.production.example` - Variaveis de ambiente para producao
+- `Backend/sigma/Procfile` - Comando de start para Railway
+- `Backend/sigma/railway.json` - Configuracao do Railway
+- `Backend/sigma/nixpacks.toml` - Configuracao do Nixpacks
+- `Backend/sigma/src/main/resources/application-prod.properties.example` - Configuracao de producao do Spring Boot
+
+---
 
 ## Licenca
 
