@@ -163,11 +163,11 @@ export default function Insights() {
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>
                               <span className="text-muted-foreground">Estoque:</span>
-                              <p className="font-semibold">{produto.quantidadeEstoque} un</p>
+                              <p className="font-semibold">{produto.estoque} un</p>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Valor parado:</span>
-                              <p className="font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(produto.valorEstoqueParado)}</p>
+                              <p className="font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(produto.valorInvestido)}</p>
                             </div>
                           </div>
                         </div>
@@ -247,7 +247,7 @@ export default function Insights() {
                   ) : clientesVIP && clientesVIP.length > 0 ? (
                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-50">
                       {clientesVIP.map((cliente) => (
-                        <div key={cliente.idCliente} className="p-3 border rounded-lg hover:bg-purple-200/50 dark:hover:bg-purple-950/50 transition-colors">
+                        <div key={cliente.idPessoa} className="p-3 border rounded-lg hover:bg-purple-200/50 dark:hover:bg-purple-950/50 transition-colors">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
                               <p className="font-medium text-sm line-clamp-1">{cliente.clienteNome}</p>
@@ -258,7 +258,7 @@ export default function Insights() {
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>
                               <span className="text-muted-foreground">Total gasto:</span>
-                              <p className="font-semibold text-purple-600 dark:text-purple-400">{formatCurrency(cliente.valorTotalGasto)}</p>
+                              <p className="font-semibold text-purple-600 dark:text-purple-400">{formatCurrency(cliente.totalGasto)}</p>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Ticket médio:</span>
@@ -295,7 +295,7 @@ export default function Insights() {
                     </p>
                     <p className="text-sm text-orange-800 dark:text-orange-300 mt-1">
                       Valor total: {formatCurrency(
-                        produtosNuncaVendidos?.reduce((sum, p) => sum + p.valorEstoqueParado, 0) || 0
+                        produtosNuncaVendidos?.reduce((sum, p) => sum + p.valorInvestido, 0) || 0
                       )}
                     </p>
                   </div>
@@ -325,7 +325,7 @@ export default function Insights() {
                     </p>
                     <p className="text-sm text-purple-800 dark:text-purple-300 mt-1">
                       Faturamento total: {formatCurrency(
-                        clientesVIP?.reduce((sum, c) => sum + c.valorTotalGasto, 0) || 0
+                        clientesVIP?.reduce((sum, c) => sum + c.totalGasto, 0) || 0
                       )}
                     </p>
                   </div>
