@@ -608,6 +608,302 @@ Este projeto foi desenvolvido como trabalho da disciplina de Banco de Dados, ate
 
 ---
 
+## Mapeamento de Requisitos - Localizacao no Sistema
+
+### ETAPA 04 - Consultas Avancadas, Visoes e Indices
+
+#### **INDICES (2/2 implementados)**
+
+**Localizacao no Codigo:**
+```
+📁 Backend/sigma/scripts_sql/
+   ├── indices.sql                    # Script dedicado
+   └── CriacaoEInsercao.sql          # Incluído no script principal
+```
+
+**Indices Criados:**
+
+1. **idx_produto_fornecedor_status**
+   - **Arquivo SQL:** `indices.sql`
+   - **Justificativa:** Otimiza consultas que buscam produtos ativos de um fornecedor
+   - **Usado em:** Consultas avancadas, views de estoque, relatorios
+
+2. **idx_venda_cliente_data**
+   - **Arquivo SQL:** `indices.sql`
+   - **Justificativa:** Acelera historico de compras por cliente e periodo
+   - **Usado em:** Dashboard, relatorios de vendas, subconsultas
+
+---
+
+#### **CONSULTAS AVANCADAS (4/4 implementadas)**
+
+**Localizacao no Codigo:**
+
+```
+📁 Backend/sigma/
+   ├── scripts_sql/
+   │   └── consultas_avancadas.sql                 # SQL puro
+   ├── src/main/java/com/project/sigma/
+   │   ├── controller/
+   │   │   └── AdvancedQueriesController.java      # Endpoints REST
+   │   ├── service/
+   │   │   └── AdvancedQueriesService.java         # Logica de negocio
+   │   └── repository/
+   │       └── ConsultasAvancadasRepository.java   # JDBC puro
+```
+
+**1. ANTI JOIN - Produtos Nunca Vendidos**
+- **SQL:** `consultas_avancadas.sql`
+- **Repository:** `ConsultasAvancadasRepository.java`
+- **Endpoint:** `GET /api/advanced-queries/produtos-nunca-vendidos`
+- **Interface:** Menu `Insights` → Aba `Consultas Avancadas` → Card "Produtos Nunca Vendidos"
+
+**2. FULL OUTER JOIN - Produtos e Fornecedores**
+- **SQL:** `consultas_avancadas.sql`
+- **Repository:** `ConsultasAvancadasRepository.java`
+- **Endpoint:** `GET /api/advanced-queries/produtos-fornecedores`
+- **Interface:** `Insights` → `Consultas Avancadas` → "Produtos vs Fornecedores"
+
+**3. SUBCONSULTA 1 - Clientes VIP**
+- **SQL:** `consultas_avancadas.sql`
+- **Repository:** `ConsultasAvancadasRepository.java`
+- **Endpoint:** `GET /api/advanced-queries/clientes-vip?minimoCompras=1000`
+- **Interface:** `Insights` → `Consultas Avancadas` → "Clientes VIP"
+
+**4. SUBCONSULTA 2 - Produtos Acima da Media**
+- **SQL:** `consultas_avancadas.sql`
+- **Repository:** `ConsultasAvancadasRepository.java`
+- **Endpoint:** `GET /api/advanced-queries/produtos-vendas-media`
+- **Interface:** `Insights` → `Consultas Avancadas` → "Produtos Acima da Media"
+
+---
+
+#### **VIEWS (2/2 implementadas)**
+
+**Localizacao no Codigo:**
+```
+📁 Backend/sigma/scripts_sql/
+   └── views.sql                           # Definicoes SQL
+   └── CriacaoEInsercao.sql               # Incluído no script principal
+```
+
+**1. vw_analise_vendas_completa**
+- **Arquivo SQL:** `views.sql`
+- **Joins:** 4 tabelas (Venda, Cliente, Pessoa, Funcionario, Caixa)
+- **Usado em:** Dashboard principal, modulo de vendas
+- **Interface:** Menu `Dashboard` → Cards de vendas utilizam esta view
+
+**2. vw_inventario_rentabilidade**
+- **Arquivo SQL:** `views.sql`
+- **Joins:** 4 tabelas (Produto, Categoria, Fornecedor, Pessoa)
+- **Usado em:** Modulo de produtos, relatorios de estoque
+- **Interface:** Menu `Estoque` → Aba "Analise de Rentabilidade"
+
+---
+
+### ETAPA 05 - Funcoes, Procedimentos e Triggers
+
+#### **FUNCOES (2/2 implementadas)**
+
+**Localizacao no Codigo:**
+```
+📁 Backend/sigma/scripts_sql/
+   └── funcoes.sql                         # Definicoes SQL
+   └── CriacaoEInsercao.sql               # Incluído no script principal
+```
+
+**1. fn_calcular_desconto_progressivo (COM CONDICIONAL ✓)**
+- **Arquivo SQL:** `funcoes.sql`
+- **Estrutura:** IF/ELSEIF/ELSE
+- **Justificativa:** Politica de descontos por volume de compra
+- **Regras:**
+  - >= R$ 1000 → 15% desconto
+  - >= R$ 500 → 10% desconto
+  - >= R$ 200 → 5% desconto
+  - < R$ 200 → Sem desconto
+- **Uso na Interface:** Automaticamente aplicado no PDV ao calcular totais
+
+**2. fn_classificar_cliente**
+- **Arquivo SQL:** `funcoes.sql`
+- **Justificativa:** Segmentacao automatica de clientes por historico
+- **Classificacoes:** BRONZE, PRATA, OURO, PLATINA, DIAMANTE
+- **Uso na Interface:** Menu `Clientes` → Coluna "Classificacao"
+
+---
+
+#### **PROCEDIMENTOS (2/2 implementados)**
+
+**Localizacao no Codigo:**
+```
+📁 Backend/sigma/
+   ├── scripts_sql/
+   │   └── procedimentos.sql                       # Definicoes SQL
+   ├── src/main/java/com/project/sigma/
+   │   ├── controller/
+   │   │   └── ProceduresController.java           # Endpoints
+   │   └── repository/
+   │       └── ProceduresRepository.java           # Execucao JDBC
+```
+
+**1. sp_reajustar_precos_categoria (ATUALIZACAO ✓)**
+- **Arquivo SQL:** `procedimentos.sql`
+- **Tipo:** UPDATE em massa
+- **Parametros:**
+  - `p_id_categoria` - ID da categoria
+  - `p_percentual` - % de reajuste (positivo ou negativo)
+  - `p_ajustar_custo` - Incluir preco de custo (TRUE/FALSE)
+- **Endpoint:** `POST /api/procedures/reajustar-precos`
+- **Interface:** Menu `Produtos` → Botao "Reajuste em Massa"
+
+**2. sp_relatorio_produtos_criticos (COM CURSOR ✓)**
+- **Arquivo SQL:** `procedimentos.sql`
+- **Tipo:** Analise complexa com cursor
+- **Funcionalidade:** Gera relatorio de produtos em situacao critica (estoque zerado, abaixo do minimo, proximos do vencimento)
+- **Endpoint:** `GET /api/procedures/produtos-criticos`
+- **Interface:** Menu `Dashboard` → Card "Alertas de Estoque"
+
+---
+
+#### **TRIGGERS (2/2 implementados)**
+
+**Localizacao no Codigo:**
+```
+📁 Backend/sigma/scripts_sql/
+   └── triggers.sql                        # Definicoes SQL
+   └── CriacaoEInsercao.sql               # Incluído no script principal
+```
+
+**1. trg_baixar_estoque_venda**
+- **Arquivo SQL:** `triggers.sql`
+- **Tipo:** AFTER INSERT em VendaItem
+- **Funcionalidade:** Baixa automatica de estoque ao registrar venda
+- **Tabela Log:** Registra em `AuditoriaLog` e `MovimentacaoEstoque`
+- **Acionamento:** Automatico ao realizar vendas no PDV
+
+**2. trg_auditoria_produto_update (ATUALIZA LOG ✓)**
+- **Arquivo SQL:** `triggers.sql`
+- **Tipo:** AFTER UPDATE em Produto
+- **Funcionalidade:** Registra todas as alteracoes em produtos
+- **Tabela Log:** `AuditoriaLog`
+- **Endpoint:** `GET /api/audit-logs`
+- **Interface:** Menu `Configuracoes` → `Logs de Auditoria`
+
+---
+
+### ETAPA 06 - Interface Funcional com Dashboard
+
+#### **CRUD (10+ tabelas implementadas)**
+
+**Localizacao no Codigo:**
+```
+📁 Backend/sigma/src/main/java/com/project/sigma/
+   ├── controller/
+   │   ├── ProdutoController.java
+   │   ├── ClienteController.java
+   │   ├── FornecedorController.java
+   │   ├── FuncionarioController.java
+   │   └── ... (outros)
+   └── repository/
+       ├── ProdutoRepository.java
+       └── ... (JDBC puro em todos)
+```
+
+**Tabelas com CRUD Completo:**
+
+| # | Tabela | Controller | Tela na Interface | Endpoints |
+|---|--------|------------|-------------------|-----------|
+| 1 | **Produto** | `ProdutoController.java` | `/products` | GET/POST/PUT/DELETE `/api/produtos` |
+| 2 | **Cliente** | `ClienteController.java` | `/customers` | GET/POST/PUT/DELETE `/api/clientes` |
+| 3 | **Fornecedor** | `FornecedorController.java` | `/suppliers` | GET/POST/PUT/DELETE `/api/fornecedores` |
+| 4 | **Funcionario** | `FuncionarioController.java` | `/employees` | GET/POST/PUT/DELETE `/api/funcionarios` |
+| 5 | **Categoria** | `CategoriaController.java` | `/categories` | GET/POST/PUT/DELETE `/api/categorias` |
+| 6 | **Usuario** | `UsuarioController.java` | `/users` | GET/POST/PUT/DELETE `/api/usuarios` |
+| 7 | **Venda** | `VendaController.java` | `/pos` (PDV) | GET/POST/PUT/DELETE `/api/vendas` |
+| 8 | **Caixa** | `CaixaController.java` | `/cash` | GET/POST/PUT `/api/caixas` |
+| 9 | **Promocao** | `PromocaoController.java` | `/promotions` | GET/POST/PUT/DELETE `/api/promocoes` |
+| 10 | **MovimentacaoEstoque** | `EstoqueController.java` | `/inventory` | GET/POST `/api/estoque` |
+
+---
+
+#### **DASHBOARD COM GRAFICOS (10+ graficos)**
+
+**Localizacao no Codigo:**
+```
+📁 Frontend/src/
+   ├── pages/
+   │   └── Dashboard.tsx                   # Pagina principal
+   ├── components/
+   │   ├── charts/
+   │   │   ├── RevenueChart.tsx           # Grafico de receita
+   │   │   ├── TopProductsChart.tsx       # Produtos mais vendidos
+   │   │   └── ... (outros graficos)
+   └── hooks/
+       └── useDashboardData.ts            # Integracao com API
+```
+
+**Graficos Implementados:**
+
+| # | Tipo | Nome | Dados | Endpoint API |
+|---|------|------|-------|--------------|
+| 1 | **Linha** | Faturamento 30 Dias | Receita diaria | `GET /api/dashboard/receita-diaria?dias=30` |
+| 2 | **Barras** | Produtos Mais Vendidos | Top 6 produtos | `GET /api/dashboard/top-produtos?limit=6` |
+| 3 | **Pizza** | Vendas por Categoria | Distribuicao | `GET /api/dashboard/vendas-categoria` |
+| 4 | **Area** | Vendas por Hora | Padrao horario | `GET /api/dashboard/vendas-hora` |
+| 5 | **Box/Estat** | Estatisticas de Vendas | Media, mediana, moda | `GET /api/dashboard/estatisticas-vendas?dias=30` |
+| 6 | **Histograma** | Distribuicao de Vendas | Frequencia | `GET /api/dashboard/distribuicao-vendas?dias=30` |
+| 7 | **Radar** | Vendas por Dia da Semana | Padrao semanal | `GET /api/dashboard/vendas-dia-semana?dias=30` |
+| 8 | **Pizza** | Formas de Pagamento | Distribuicao | `GET /api/dashboard/formas-pagamento?dias=30` |
+| 9 | **Barras Duplas** | Receita vs Lucro Mensal | Comparativo | `GET /api/dashboard/receita-lucro-mensal?meses=12` |
+| 10 | **Pizza** | Segmentacao de Clientes | Por ranking | `GET /api/dashboard/segmentacao-clientes` |
+
+**Interface:** `http://localhost:5173/dashboard`
+
+**Indicadores Resumidos:**
+- Total de clientes cadastrados
+- Total de produtos ativos
+- Faturamento do dia/mes
+- Ticket medio
+- Total de vendas
+- Produtos em estoque baixo
+- Taxa de crescimento
+- Metas atingidas
+
+---
+
+#### **INTEGRACAO FUNCOES/PROCEDURES/TRIGGERS NA INTERFACE**
+
+**1. Funcao: Desconto Progressivo**
+- **Localizacao:** PDV (Ponto de Venda)
+- **Tela:** `http://localhost:5173/pos`
+- **Funcionamento:** Desconto automatico aplicado ao calcular totais no carrinho
+
+**2. Funcao: Classificacao de Clientes**
+- **Localizacao:** Modulo de Clientes
+- **Tela:** `http://localhost:5173/customers`
+- **Visualizacao:** Coluna "Classificacao" (BRONZE, PRATA, OURO, PLATINA, DIAMANTE)
+
+**3. Procedimento: Reajuste de Precos**
+- **Localizacao:** Modulo de Produtos
+- **Tela:** `http://localhost:5173/products`
+- **Acionamento:** Botao "Reajuste em Massa"
+
+**4. Procedimento: Produtos Criticos**
+- **Localizacao:** Dashboard
+- **Tela:** `http://localhost:5173/dashboard`
+- **Visualizacao:** Card "Alertas de Estoque"
+
+**5. Trigger: Baixa de Estoque**
+- **Localizacao:** PDV (automatico)
+- **Acionamento:** Ao finalizar vendas
+- **Logs:** `Configuracoes` → `Logs de Auditoria`
+
+**6. Trigger: Auditoria de Alteracoes**
+- **Localizacao:** Sistema todo
+- **Acionamento:** Ao editar produtos
+- **Visualizacao:** `Configuracoes` → `Logs de Auditoria`
+
+---
+
 ## Tecnologias e Padroes
 
 ### Design Patterns Implementados
