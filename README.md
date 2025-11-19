@@ -304,7 +304,7 @@ npm run dev
 **Usuario Administrador:**
 ```
 Usuario: admin
-Senha: admin123
+Senha: admin
 ```
 
 **Usuario Gerente:**
